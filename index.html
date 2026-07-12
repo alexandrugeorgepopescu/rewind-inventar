@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>REWIND CAFE - Sistem Gestiune Phygital</title>
+    <title>REWIND CAFE - Hub Centralizat Gestiune</title>
     
-    <!-- Google Fonts - Import LATO conform Manualului de Brand -->
+    <!-- Google Fonts - LATO (Ghid Brand 5.3) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
@@ -14,25 +14,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* DEFINIRE PALETĂ DE CULORI CONFORM CAPITOLULUI 5.2 */
         :root {
-            --cloud-dancer: #F0EEE9;    /* Culoare principală fundal (Premium-Organic) */
-            --black-night: #212529;     /* Text principal și contrast puternic (Profunzimea basului) */
-            --white-warm: #FFFBF3;      /* Spații de respiro și fundal carduri */
-            --yellow-coffee: #FBE485;   /* Accent - Energia cofeinei și lumina vibe-ului */
+            --cloud-dancer: #F0EEE9;    /* Fundal Premium Organic */
+            --black-night: #212529;     /* Text & Contrast profund */
+            --white-warm: #FFFBF3;      /* Carduri de respiro */
+            --yellow-coffee: #FBE485;   /* Accent energetic */
             --soft-border: #DCD9D2;
+            --orange-alert: #e67e22;
         }
 
         body { 
-            font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif; 
+            font-family: 'Lato', sans-serif; 
             background-color: var(--cloud-dancer); 
             margin: 0; 
             padding: 0; 
             color: var(--black-night);
-            padding-bottom: 50px;
+            padding-bottom: 60px;
         }
 
-        /* ANTET PROFESIONIST CU SIGLA OFICIALĂ REWIND */
         .brand-header { 
             text-align: center; 
             background-color: var(--black-night); 
@@ -41,283 +40,152 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             border-bottom: 4px solid var(--yellow-coffee);
         }
-        .brand-header img {
-            max-width: 140px;
-            height: auto;
-            margin-bottom: 8px;
-        }
+        .brand-header img { max-width: 130px; height: auto; margin-bottom: 8px; }
         .brand-header .tagline { 
-            margin: 5px 0 0 0; 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            letter-spacing: 3px; 
-            color: var(--yellow-coffee);
-            font-weight: 700;
+            margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--yellow-coffee); font-weight: 700;
         }
 
         .main-container { padding: 15px; max-width: 600px; margin: 0 auto; }
 
-        /* SELECTOR LOCAȚIE */
         select { 
-            width: 100%; 
-            padding: 15px; 
-            font-size: 15px; 
-            border-radius: 8px; 
-            border: 2px solid var(--black-night); 
-            margin-bottom: 15px; 
-            background-color: var(--white-warm); 
-            font-weight: 900; 
-            color: var(--black-night);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            outline: none;
+            width: 100%; padding: 15px; font-size: 15px; border-radius: 8px; border: 2px solid var(--black-night); 
+            margin-bottom: 15px; background-color: var(--white-warm); font-weight: 900; color: var(--black-night);
+            text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); outline: none;
         }
 
-        /* STATUS MESSAGES - TONE OF VOICE ALCHIMIE */
         .status-notice { 
-            text-align: center; 
-            font-size: 13px; 
-            margin-bottom: 15px; 
-            font-weight: 700; 
-            padding: 12px; 
-            border-radius: 6px; 
-            display: none;
-            border: 1px solid transparent;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-align: center; font-size: 13px; margin-bottom: 15px; font-weight: 700; padding: 12px; 
+            border-radius: 6px; display: none; border: 1px solid transparent; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
-        /* MENIU RAPID DE NAVIGARE (STICKY CAT) - CAPITOLUL 6.3 */
+        /* STICKY NAVBAR PENTRU CATEGORII REWIND */
         .category-navbar {
-            position: sticky;
-            top: 0;
-            background: var(--white-warm);
-            padding: 12px 8px;
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-            z-index: 999;
-            border-bottom: 1px solid var(--soft-border);
-            -webkit-overflow-scrolling: touch;
+            position: sticky; top: 0; background: var(--white-warm); padding: 12px 8px; display: flex; gap: 10px;
+            overflow-x: auto; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.06); z-index: 999;
+            border-bottom: 1px solid var(--soft-border); -webkit-overflow-scrolling: touch;
         }
         .category-navbar::-webkit-scrollbar { display: none; } 
         
         .nav-tab {
-            background: var(--cloud-dancer);
-            border: 1px solid var(--soft-border);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 900;
-            color: var(--black-night);
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
+            background: var(--cloud-dancer); border: 1px solid var(--soft-border); padding: 8px 16px;
+            border-radius: 20px; font-size: 11px; font-weight: 900; color: var(--black-night);
+            text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease;
         }
-        .nav-tab:active, .nav-tab:hover {
-            background: var(--black-night);
-            color: var(--yellow-coffee);
-            border-color: var(--black-night);
-        }
+        .nav-tab:active, .nav-tab:hover { background: var(--black-night); color: var(--yellow-coffee); border-color: var(--black-night); }
 
-        /* SECTIUNI DE CATEGORII REWIND - IERARHIE DJ FORMA STYLE */
-        .category-section {
-            margin-top: 30px;
-            scroll-margin-top: 75px; 
-        }
+        .category-section { margin-top: 30px; scroll-margin-top: 75px; }
         .category-title {
-            font-family: 'Lato', sans-serif; /* Emulare DJ FORMA prin font greu asimetric */
-            font-weight: 900;
-            font-size: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--white-warm);
-            background: var(--black-night);
-            padding: 10px 14px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            display: inline-block;
-            box-shadow: 3px 3px 0px var(--yellow-coffee);
+            font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--white-warm); background: var(--black-night); padding: 10px 14px; border-radius: 6px;
+            margin-bottom: 12px; display: inline-block; box-shadow: 3px 3px 0px var(--yellow-coffee);
         }
 
-        /* CARDURI PRODUSE PREMIUM - SMART CASUAL */
+        /* CARDURI SMAR-CASUAL PRODUSE */
         .item-card { 
-            background: var(--white-warm); 
-            padding: 16px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-wrap: wrap; 
-            margin-bottom: 10px;
-            border: 1px solid var(--soft-border);
-            transition: transform 0.15s ease;
+            background: var(--white-warm); padding: 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px;
+            border: 1px solid var(--soft-border); transition: transform 0.15s ease;
         }
-        .item-card:focus-within {
-            border-color: var(--black-night);
-            transform: scale(1.01);
-        }
+        .item-card:focus-within { border-color: var(--black-night); transform: scale(1.01); }
         .item-name { 
-            font-weight: 700; 
-            font-size: 15px; 
-            width: 100%; 
-            margin-bottom: 12px; 
-            color: var(--black-night); 
-            border-bottom: 1px dashed var(--soft-border);
-            padding-bottom: 6px;
+            font-weight: 700; font-size: 15px; width: 100%; margin-bottom: 12px; color: var(--black-night); 
+            border-bottom: 1px dashed var(--soft-border); padding-bottom: 6px;
         }
-        .inputs-container {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            gap: 15px;
-        }
+        .inputs-container { display: flex; justify-content: space-between; width: 100%; gap: 15px; }
         .input-group { display: flex; align-items: center; gap: 8px; flex: 1; }
-        .input-group label { font-size: 11px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-group label { font-size: 11px; color: var(--black-night); font-weight: 900; text-transform: uppercase; }
         .input-group input { 
-            width: 100%; 
-            padding: 10px; 
-            text-align: center; 
-            border: 2px solid var(--soft-border); 
-            border-radius: 6px; 
-            font-size: 15px; 
-            font-weight: 900; 
-            background: var(--cloud-dancer);
-            color: var(--black-night);
+            width: 100%; padding: 10px; text-align: center; border: 2px solid var(--soft-border); border-radius: 6px; 
+            font-size: 15px; font-weight: 900; background: var(--cloud-dancer); color: var(--black-night);
         }
-        .input-group input:focus { 
-            border-color: var(--black-night); 
-            background: var(--white-warm);
-            outline: none; 
-        }
+        .input-group input:focus { border-color: var(--black-night); background: var(--white-warm); outline: none; }
 
-        /* CTA BUTOANE ACTIUNE FINALĂ */
-        .actions-box { display: flex; gap: 12px; margin: 30px 0; }
+        /* BUTOANE STRATEGICE DE PANOU */
+        .actions-box { display: flex; flex-direction: column; gap: 10px; margin: 30px 0; }
         .btn { 
-            border: none; 
-            padding: 16px; 
-            font-size: 14px; 
-            border-radius: 8px; 
-            font-weight: 900; 
-            cursor: pointer; 
-            flex: 1; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            transition: all 0.2s ease; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            border: none; padding: 16px; font-size: 14px; border-radius: 8px; font-weight: 900; 
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s ease; 
+            text-transform: uppercase; letter-spacing: 1px; text-align: center;
         }
-        .btn-save { 
-            background-color: var(--black-night); 
-            color: var(--yellow-coffee); 
-            border: 2px solid var(--black-night);
-        }
+        .btn-save { background-color: var(--black-night); color: var(--yellow-coffee); border: 2px solid var(--black-night); }
         .btn-save:active { background-color: #343a40; }
-        
-        .btn-generate { 
-            background-color: var(--yellow-coffee); 
-            color: var(--black-night);
-            border: 2px solid var(--black-night);
-        }
-        .btn-generate:active { background-color: #f9d95c; }
+        .btn-global { background-color: var(--yellow-coffee); color: var(--black-night); border: 2px solid var(--black-night); }
+        .btn-global:active { background-color: #f9d95c; }
 
-        /* CONTAINER WHATSAPP TEXT GENERATE */
         #shopping-list-container { 
-            display: none; 
-            margin-top: 25px; 
-            background: var(--white-warm); 
-            padding: 18px; 
-            border-radius: 8px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
-            border: 2px solid var(--black-night); 
+            display: none; margin-top: 25px; background: var(--white-warm); padding: 18px; 
+            border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 2px solid var(--black-night); 
         }
-        #shopping-list-container h3 {
-            margin-top: 0;
-            text-transform: uppercase;
-            font-weight: 900;
-            font-size: 15px;
-            letter-spacing: 1px;
-            color: var(--black-night);
-        }
+        #shopping-list-container h3 { margin-top: 0; text-transform: uppercase; font-weight: 900; font-size: 14px; color: var(--black-night); }
         textarea { 
-            width: 100%; 
-            height: 250px; 
-            padding: 12px; 
-            font-size: 14px; 
-            border: 2px solid var(--soft-border); 
-            border-radius: 6px; 
-            box-sizing: border-box; 
-            margin-bottom: 12px; 
-            font-family: 'Courier New', monospace; 
-            background: var(--cloud-dancer); 
-            color: var(--black-night);
+            width: 100%; height: 320px; padding: 12px; font-size: 14px; border: 2px solid var(--soft-border); 
+            border-radius: 6px; box-sizing: border-box; margin-bottom: 12px; font-family: 'Courier New', monospace; 
+            background: var(--cloud-dancer); color: var(--black-night);
         }
         .btn-copy { 
-            background-color: #e67e22; 
-            color: white; 
-            border: none; 
-            width: 100%; 
-            padding: 15px; 
-            font-size: 14px; 
-            border-radius: 8px; 
-            font-weight: 900; 
-            cursor: pointer; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            background-color: var(--orange-alert); color: white; border: none; width: 100%; padding: 15px; 
+            font-size: 14px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase;
             box-shadow: 0 4px 10px rgba(230,126,34,0.3);
         }
     </style>
 </head>
 <body>
 
-    <!-- BRAND HEADER UNIT CU SISTEMUL DIGITAL -->
     <div class="brand-header">
         <img src="https://rewindcafe.ro/wp-content/themes/rewind-theme/images/sigla.png" alt="REWIND CAFE">
         <div class="tagline">COFFEE • MUSIC • VIBE</div>
     </div>
 
-    <!-- NAVBAR RAPID - ACCES PE CATEGORII (CAPITOLUL 6.3) -->
+    <!-- NAVBAR CATEGORII -->
     <div class="category-navbar" id="category-nav"></div>
 
     <div class="main-container">
-        <!-- LOCAȚII STRATEGICE REWIND -->
+        <!-- SELECTOR LOCAȚIE SINK -->
         <select id="location-select" onchange="loadInventory()">
             <option value="Miroslava">Locația: Miroslava (Family Market)</option>
             <option value="Pacurari">Locația: Păcurari (Kaufland)</option>
             <option value="Alexandru">Locația: Alexandru (Kaufland)</option>
         </select>
 
-        <div class="status-notice" id="status-text">Se inițializează conexiunea sonică...</div>
+        <div class="status-notice" id="status-text">Se inițializează fluxul de date...</div>
 
-        <!-- ZONE INVENTARIERE GENERATĂ AUTOMAT -->
+        <!-- ZONE PRODUSE -->
         <div class="item-list" id="inventory-container"></div>
 
-        <!-- PILONII DE ACȚIUNE -->
+        <!-- BUTOANE CONTROL PANOU -->
         <div class="actions-box">
-            <button class="btn btn-save" onclick="saveInventory()">💾 Salvează în Cloud</button>
-            <button class="btn btn-generate" onclick="generateShoppingList()">📋 Centralizează</button>
+            <button class="btn btn-save" onclick="saveInventory()">💾 Salvează Stocul Locației Selectate</button>
+            <button class="btn btn-global" onclick="generateGlobalShoppingList()">📋 GENEREAZĂ CENTRALIZATOR GLOBAL (TOATE LOCAȚIILE)</button>
         </div>
 
-        <!-- INTERFAȚĂ CENTRALIZARE WHATSAPP -->
+        <!-- REZULTAT CENTRALIZAT DIRECT ÎN INTERFAȚĂ -->
         <div id="shopping-list-container">
-            <h3>🛒 Centralizator Necesar Repede</h3>
+            <h3>🛒 Centralizator Distribuit pe Locații (WhatsApp Ready)</h3>
             <textarea id="shopping-list-text" readonly></textarea>
-            <button class="btn-copy" onclick="copyList()">📋 Copiază pentru WhatsApp</button>
+            <button class="btn-copy" onclick="copyList()">📋 Copiază Mesajul Centralizat</button>
         </div>
     </div>
 
     <script>
-        // CONFIGURARE ACCES SUPABASE UNITATE REWIND CAFE
+        // DATE CONECTARE SUPABASE REWIND CAFE
         const SUPABASE_URL = "https://btucmapzyzpnzdswisvq.supabase.co";
         const SUPABASE_KEY = "sb_publishable_qQoPWXFXHlFTqMNnEIJu0A_AvxwtwEZ";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // STRUCTURA OFICIALĂ CONFORM CATEGORIILOR LOGICE ALE CAFENELEI
+        // STRUCTURĂ ACTUALIZATĂ CU CATEGORIA DE CAFEA DE SPECIALITATE DIN FACTURĂ
         const inventoryStructure = {
+            "Cafea de Specialitate (Pungi)": [
+                "Aromatic Blend - 3kg", 
+                "Aromatic Blend - 1kg (Beandrops)", 
+                "Aromatic Blend - 250g", 
+                "Lava Cake Blend - 250g", 
+                "Milky Way Blend - 250g", 
+                "Cherry Tart Blend - 250g", 
+                "Colombia El Vergel DECAF Sugar Cane - 1kg",
+                "Ethiopia Guji - 1kg",
+                "Bombon - 1kg",
+                "Bombon - 250g"
+            ],
             "Ambalaje & Consumabile": [
                 "Plicuri pt bani", "Role casa de marcat", "post-it", "Filtre ceai", "Paletine", 
                 "Paie ambalate individual", "Mansoane", "Suporturi pt pahare", "Ligurite", "Rola hartie prosop", 
@@ -360,21 +228,14 @@
             statusText.style.display = "block";
             statusText.innerText = text;
             if(type === "green") { 
-                statusText.style.background = "#D5F5E3"; 
-                statusText.style.borderColor = "#27AE60";
-                statusText.style.color = "#1E8449"; 
+                statusText.style.background = "#D5F5E3"; statusText.style.borderColor = "#27AE60"; statusText.style.color = "#1E8449"; 
             } else if(type === "red") { 
-                statusText.style.background = "#FCE4D6"; 
-                statusText.style.borderColor = "#C0392b";
-                statusText.style.color = "#C0392B"; 
+                statusText.style.background = "#FCE4D6"; statusText.style.borderColor = "#C0392b"; statusText.style.color = "#C0392B"; 
             } else { 
-                statusText.style.background = "var(--white-warm)"; 
-                statusText.style.borderColor = "var(--soft-border)";
-                statusText.style.color = "var(--black-night)"; 
+                statusText.style.background = "var(--white-warm)"; statusText.style.borderColor = "var(--soft-border)"; statusText.style.color = "var(--black-night)"; 
             }
         }
 
-        // CONSTRUIEȘTE INTERFAȚA PREMIUM SEGMENTATĂ LOGIC
         function buildApp() {
             container.innerHTML = '';
             navBar.innerHTML = '';
@@ -383,14 +244,12 @@
             for (const [categoryName, productList] of Object.entries(inventoryStructure)) {
                 const catId = "cat_" + categoryIndex;
                 
-                // Navigarea Rapidă de Sus
                 const tab = document.createElement('a');
                 tab.className = 'nav-tab';
-                tab.innerText = categoryName.split(' & ')[0]; 
+                tab.innerText = categoryName.split(' (')[0].split(' & ')[0]; 
                 tab.href = "#" + catId;
                 navBar.appendChild(tab);
 
-                // Secțiunea categoriei fizice
                 const section = document.createElement('div');
                 section.className = 'category-section';
                 section.id = catId;
@@ -400,7 +259,6 @@
                 title.innerText = categoryName;
                 section.appendChild(title);
 
-                // Injectare produse aferente
                 productList.forEach(product => {
                     const cleanId = btoa(unescape(encodeURIComponent(product))).replace(/=/g, ""); 
                     const card = document.createElement('div');
@@ -413,8 +271,8 @@
                                 <input type="text" data-product="${product}" data-type="stoc" id="stoc_${cleanId}" placeholder="-">
                             </div>
                             <div class="input-group">
-                                <label style="color: #e67e22;">Necesar</label>
-                                <input type="text" data-product="${product}" data-type="necesar" id="nec_${cleanId}" style="border-color: #e67e22; background: #FFF3E0;" placeholder="-">
+                                <label style="color: var(--orange-alert);">Necesar</label>
+                                <input type="text" data-product="${product}" data-type="necesar" id="nec_${cleanId}" style="border-color: var(--orange-alert);" placeholder="-">
                             </div>
                         </div>
                     `;
@@ -426,10 +284,9 @@
             }
         }
 
-        // DESCARCĂ DATELE LIVE PRIN INTERMEDIUL STRUCTURII DE CONECTARE
         async function loadInventory() {
             const location = locationSelect.value;
-            showStatus(`🔊 REWIND Vibe Check: Se încarcă frecvența stocurilor din ${location}...`);
+            showStatus(`🔊 REWIND: Se descarcă stocurile pentru ${location}...`);
             document.getElementById('shopping-list-container').style.display = 'none';
 
             try {
@@ -440,7 +297,6 @@
                     .maybeSingle();
 
                 if (error) throw error;
-
                 let cloudData = (data && data.date_produse) ? data.date_produse : {};
 
                 document.querySelectorAll('input[data-product]').forEach(input => {
@@ -454,18 +310,16 @@
                     }
                 });
 
-                showStatus(`✅ Frecvență live sincronizată. Datele din ${location} sunt la zi.`, "green");
+                showStatus(`✅ Conectat live. Datele pentru ${location} sunt afișate.`, "green");
             } catch (error) {
                 console.error(error);
-                showStatus("❌ Stop living on mute. Conexiunea Supabase a eșuat.", "red");
+                showStatus("❌ Eroare la citirea datelor live.", "red");
             }
         }
 
-        // SALVEAZĂ ÎN TIMP REAL - ACTUALIZARE INSTANTANEE ÎN JOCUL FINAL
         async function saveInventory() {
             const location = locationSelect.value;
-            showStatus(`⏳ Se stochează alchimia datelor în cloud...`);
-            
+            showStatus(`⏳ Se salvează stocurile în cloud...`);
             let dataToSave = {};
 
             document.querySelectorAll('input[data-type="stoc"]').forEach(stocInput => {
@@ -485,51 +339,79 @@
                     .upsert({ locatie: location, date_produse: dataToSave });
 
                 if (error) throw error;
-
-                showStatus(`✅ Alchimie completă! Inventar salvat pentru locația ${location}.`, "green");
-                alert(`Salvare reușită! Datele din locația ${location} sunt acum vizibile managementului.`);
+                showStatus(`✅ Datele din ${location} au fost stocate securizat!`, "green");
+                alert(`Succes! Toate stocurile și necesarele pentru ${location} au fost trimise în sistem.`);
             } catch (error) {
                 console.error(error);
-                alert("Eroare la transmiterea datelor! Verificați conexiunea magazinului.");
                 showStatus("❌ Eroare tehnică la salvare.", "red");
             }
         }
 
-        // GENERATOR WHATSAPP FORMATAT CONFORM MANIFESTULUI
-        function generateShoppingList() {
-            const locName = locationSelect.options[locationSelect.selectedIndex].text;
-            let listText = `☕ *REWIND CAFE - ${locName.toUpperCase()}*\n🔊 _Scan for a mood boost_\n📅 Data: ${new Date().toLocaleDateString('ro-RO')} | Ora: ${new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}\n\n`;
-            
-            let areProduse = false;
+        // AGREGATORUL COMPREHENSIV PENTRU ALINA (EXTRAGERE GLOBALĂ DIN APLICAȚIE)
+        async function generateGlobalShoppingList() {
+            showStatus(`🔄 Interogare Cloud: Se colectează necesarul din TOATE locațiile...`);
+            try {
+                const { data, error } = await supabaseClient
+                    .from('inventar_rewind')
+                    .select('locatie, date_produse');
 
-            for (const [categoryName, productList] of Object.entries(inventoryStructure)) {
-                let categoryHeaderAdded = false;
+                if (error) throw error;
 
-                productList.forEach(product => {
-                    const cleanId = btoa(unescape(encodeURIComponent(product))).replace(/=/g, "");
-                    const necInput = document.getElementById(`nec_${cleanId}`);
-                    const necVal = necInput ? necInput.value.trim() : '';
+                if (!data || data.length === 0) {
+                    alert("Nu s-au găsit date salvate în Cloud pentru nicio locație.");
+                    return;
+                }
 
-                    if (necVal && necVal !== "0" && necVal !== "-") {
-                        if (!categoryHeaderAdded) {
-                            listText += `🔹 *${categoryName.toUpperCase()}*\n`;
-                            categoryHeaderAdded = true;
-                        }
-                        listText += `• ${product} ➡️ *${necVal}*\n`;
-                        areProduse = true;
+                let listText = `☕ *CENTRALIZATOR NECESAR REWIND CAFE*\n🔊 _Stop living on mute • Generat direct din Aplicație_\n📅 Data: ${new Date().toLocaleDateString('ro-RO')} | Ora: ${new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}\n\n`;
+                let globalHasItems = false;
+
+                // Parcurgem fiecare locație găsită în baza de date
+                data.forEach(row => {
+                    const locName = row.locatie;
+                    const cloudData = row.date_produse || {};
+                    let locHasItems = false;
+                    let locText = `📍 *LOCAȚIA: ${locName.toUpperCase()}*\n`;
+
+                    // Organizăm produsele pe categorii în interiorul locației pentru un aspect impecabil pe WhatsApp
+                    for (const [categoryName, productList] of Object.entries(inventoryStructure)) {
+                        let catHeaderAdded = false;
+
+                        productList.forEach(product => {
+                            if (cloudData[product] && cloudData[product].necesar) {
+                                const necVal = cloudData[product].necesar.trim();
+                                // Filtrăm să nu apară zerourile sau câmpurile goale
+                                if (necVal && necVal !== "0" && necVal !== "-") {
+                                    if (!catHeaderAdded) {
+                                        locText += `  _[ ${categoryName.toUpperCase()} ]_\n`;
+                                        catHeaderAdded = true;
+                                    }
+                                    locText += `  • ${product} ➡️ *${necVal}*\n`;
+                                    locHasItems = true;
+                                    globalHasItems = true;
+                                }
+                            }
+                        });
+                    }
+
+                    if (locHasItems) {
+                        listText += locText + `\n────────────────\n\n`;
                     }
                 });
 
-                if (categoryHeaderAdded) listText += `\n`; 
-            }
+                if (!globalHasItems) {
+                    listText += "Frecvență curată: Nu există produse cu necesar adăugat în nicio locație.";
+                }
 
-            if (!areProduse) {
-                listText += "Frecvență curată: Nu s-a introdus niciun necesar nou.";
-            }
+                document.getElementById('shopping-list-text').value = listText;
+                document.getElementById('shopping-list-container').style.display = 'block';
+                document.getElementById('shopping-list-container').scrollIntoView({ behavior: 'smooth' });
+                showStatus(`✅ Centralizator distribuit generat cu succes!`, "green");
 
-            document.getElementById('shopping-list-text').value = listText;
-            document.getElementById('shopping-list-container').style.display = 'block';
-            document.getElementById('shopping-list-container').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error(error);
+                showStatus("❌ Eroare la colectarea globală a datelor.", "red");
+                alert("Nu s-au putut extrage datele globale. Asigurați-vă că locațiile au salvat cel puțin o dată.");
+            }
         }
 
         function copyList() {
@@ -537,10 +419,9 @@
             textarea.select();
             textarea.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(textarea.value);
-            alert('Lista ordonată a fost copiată! O poți trimite acum direct în grupul de coordonare WhatsApp.');
+            alert('Raportul centralizat pentru Alina a fost copiat! Îl poți trimite direct pe WhatsApp.');
         }
 
-        // Execuție
         buildApp();
         setTimeout(loadInventory, 600);
     </script>
