@@ -231,29 +231,35 @@
         <button id="btn-finalizare" class="hidden">Finalizează Inventarul</button>
     </div>
 
+    
     <!-- ECRAN 2: CENTRALIZATOR -->
     <div id="screen-centralizator" class="screen">
-        <button id="btn-genereaza-raport">Generează Centralizator Live</button>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <button id="btn-genereaza-raport" style="margin:0;">Generează Live</button>
+            <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0;">Istoric Salvate</button>
+        </div>
         <div id="centralizator-loader" class="loader hidden">Se procesează datele...</div>
         
         <div id="raport-content" class="hidden" style="margin-top: 15px;">
-            <div class="chips">
-                <div class="chip active" data-canal="Toate">Toate</div>
-                <div class="chip" data-canal="Metro">Metro</div>
-                <div class="chip" data-canal="Online">Online</div>
-                <div class="chip" data-canal="Dropshot">Dropshot</div>
-                <div class="chip" data-canal="Interuno">Interuno</div>
-            </div>
-
-            <!-- Export Buttons -->
-            <div id="export-buttons" class="hidden">
-                <button class="btn-whatsapp" onclick="exportWhatsApp('Metro')">🛒 Trimite Listă METRO</button>
-                <button class="btn-whatsapp" onclick="exportWhatsApp('Online')">🌐 Trimite Comenzi ONLINE</button>
-                <button class="btn-whatsapp" onclick="exportWhatsApp('Dropshot')">☕ Trimite Comandă DROPSHOT</button>
-                <button class="btn-whatsapp" onclick="exportWhatsApp('Interuno')">🥤 Trimite Comandă INTERUNO</button>
-            </div>
-
+            <div class="chips" id="raport-chips"></div>
+            <div id="export-buttons" class="hidden" style="margin-bottom:15px; display:flex; flex-direction:column; gap:5px;"></div>
+            <button id="btn-salveaza-sesiune" style="margin-bottom:15px; background:var(--success); color:white;">💾 Salvează Sesiunea</button>
             <div id="raport-list"></div>
+        </div>
+
+        <div id="istoric-sesiuni" class="hidden" style="margin-top: 15px;">
+            <h3 style="margin-bottom:10px;">Sesiuni Salvate</h3>
+            <div id="lista-sesiuni"></div>
+        </div>
+
+        <div id="sesiune-view" class="hidden" style="margin-top: 15px;">
+            <button class="btn-secondary" onclick="showIstoricSesiuni()" style="margin-bottom:15px;">&larr; Înapoi la Istoric</button>
+            <div id="sesiune-header" style="margin-bottom:15px; font-weight:bold;"></div>
+            <div class="chips" id="sesiune-chips"></div>
+            <div id="sesiune-export-buttons" class="hidden" style="margin-bottom: 15px; display:flex; flex-direction:column; gap:5px;"></div>
+            <button id="btn-export-csv" class="btn-secondary" style="margin-bottom:15px;">📄 Descarcă CSV</button>
+            <div id="sesiune-linii"></div>
+            <button id="btn-finalizare-sesiune" style="margin-top:20px; background:var(--success); color:white;">✔️ Finalizează Sesiunea</button>
         </div>
     </div>
 
@@ -289,6 +295,16 @@
                 <button class="btn-secondary" onclick="document.getElementById('admin-add-form').classList.add('hidden')">Anulează</button>
             </div>
 
+            
+            <div id="admin-channels" class="admin-product" style="margin-top:20px; border: 2px solid var(--black-night);">
+                <h4>Administrare Canale</h4>
+                <div style="display:flex; gap:10px; margin-bottom:10px; margin-top:10px;">
+                    <input type="text" id="new-canal-name" placeholder="Nume canal nou" style="margin:0;">
+                    <button onclick="saveNewCanal()" style="margin:0; width:auto; white-space:nowrap;">Adaugă</button>
+                </div>
+                <div id="canale-list"></div>
+            </div>
+
             <div style="margin-top: 20px;">
                 <input type="text" id="search-admin" placeholder="Caută produs pentru editare...">
                 <div id="admin-product-list"></div>
@@ -300,7 +316,7 @@
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
-    <div class="nav-item active" onclick="switchScreen('inventar', this)">📋<br>Inventar</div>
+    <div class="nav-item active" onclick="switchScreen('inventar', this)">📋<br>Stoc</div>
     <div class="nav-item" onclick="switchScreen('centralizator', this)">📊<br>Centralizator</div>
     <div class="nav-item" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
 </div>
@@ -315,6 +331,9 @@
 
     // Variabile Globale
     let catalogProduse = [];
+    let canaleList = [];
+    let currentSesiune = null;
+    let currentSesiuneLinii = [];
     let stateInventar = {}; // { produs_id: { stoc, necesar } }
     let saveTimeout = null;
     let currentLocation = localStorage.getItem('rewind_location') || '';
@@ -344,7 +363,10 @@
         document.getElementById('search-inventar').addEventListener('input', renderInventarUI);
         
         // Incarcam catalogul complet o singura data la startup
+        
+        await fetchCanale();
         await fetchCatalog();
+
         if (currentLocation) {
             await loadInventarData();
         } else {
@@ -393,6 +415,88 @@
         } else {
             catalogProduse = data;
         }
+    }
+
+    
+    async function fetchCanale() {
+        const { data, error } = await supabaseClient.from('canale').select('*').order('ordine', { ascending: true });
+        if (!error && data) {
+            canaleList = data;
+            renderCanaleUI();
+        }
+    }
+
+    function renderCanaleUI() {
+        const activeCanale = canaleList.filter(c => c.activ);
+        
+        // Admin Select
+        const newCanalSelect = document.getElementById('new-canal');
+        if (newCanalSelect) {
+            newCanalSelect.innerHTML = activeCanale.map(c => `<option value="${c.nume}">${c.nume}</option>`).join('');
+        }
+
+        // Admin List
+        const adminCanaleList = document.getElementById('canale-list');
+        if (adminCanaleList) {
+            adminCanaleList.innerHTML = canaleList.map(c => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #eee;">
+                    <span style="${!c.activ ? 'text-decoration:line-through; color:#999;' : ''}">${c.nume}</span>
+                    <button class="btn-secondary" style="width:auto; padding:3px 8px; margin:0; font-size:12px;" onclick="toggleCanalStatus('${c.id}', ${!c.activ})">
+                        ${c.activ ? 'Dezactivează' : 'Activează'}
+                    </button>
+                </div>
+            `).join('');
+        }
+    }
+
+    async function toggleCanalStatus(id, activ) {
+        await supabaseClient.from('canale').update({ activ }).eq('id', id);
+        await fetchCanale();
+        if(!document.getElementById('raport-content').classList.contains('hidden')) renderCentralizatorChips();
+    }
+
+    async function saveNewCanal() {
+        const nume = document.getElementById('new-canal-name').value.trim();
+        if (!nume) return;
+        const { error } = await supabaseClient.from('canale').insert([{ nume, ordine: 99 }]);
+        if (error) alert("Eroare: " + error.message);
+        else {
+            document.getElementById('new-canal-name').value = '';
+            await fetchCanale();
+        }
+    }
+
+    function renderCentralizatorChips(containerId = 'raport-chips', isSesiune = false) {
+        const activeCanale = canaleList.filter(c => c.activ);
+        const chipsContainer = document.getElementById(containerId);
+        if(!chipsContainer) return;
+
+        let chipsHTML = `<div class="chip active" data-canal="Toate">Toate</div>`;
+        activeCanale.forEach(c => {
+            chipsHTML += `<div class="chip" data-canal="${c.nume}">${c.nume}</div>`;
+        });
+        chipsContainer.innerHTML = chipsHTML;
+        
+        chipsContainer.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                chipsContainer.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                if (isSesiune) {
+                    renderSesiuneLinii(e.target.dataset.canal);
+                } else {
+                    renderRaportUI(e.target.dataset.canal);
+                }
+            });
+        });
+
+        // Export Buttons
+        const expCont = document.getElementById(isSesiune ? 'sesiune-export-buttons' : 'export-buttons');
+        let exportHTML = '';
+        activeCanale.forEach(c => {
+            exportHTML += `<button class="btn-whatsapp" style="margin-bottom:0;" onclick="${isSesiune ? 'exportWhatsAppSesiune' : 'exportWhatsApp'}('${c.nume}')">🛒 Trimite ${c.nume.toUpperCase()}</button>`;
+        });
+        expCont.innerHTML = exportHTML;
+        expCont.classList.remove('hidden');
     }
 
     async function loadInventarData() {
@@ -731,6 +835,263 @@
     }
 
     // ==========================================
+    
+    // ==========================================
+    // SESIUNI APROVIZIONARE
+    // ==========================================
+
+    document.getElementById('btn-istoric-sesiuni').addEventListener('click', showIstoricSesiuni);
+    
+    // Înlocuim click-ul original pe btn-genereaza-raport
+    document.getElementById('btn-genereaza-raport').replaceWith(document.getElementById('btn-genereaza-raport').cloneNode(true));
+    
+    document.getElementById('btn-genereaza-raport').addEventListener('click', async () => {
+        document.getElementById('istoric-sesiuni').classList.add('hidden');
+        document.getElementById('sesiune-view').classList.add('hidden');
+        document.getElementById('raport-content').classList.add('hidden');
+        document.getElementById('centralizator-loader').classList.remove('hidden');
+        
+        const { data: invData, error: invError } = await supabaseClient.from('inventar').select('produs_id, locatie, stoc, necesar, actualizat_la');
+        
+        if (invError) {
+            alert("Eroare generare raport");
+            return;
+        }
+
+        const aggregate = {};
+        if (catalogProduse.length === 0) await fetchCatalog();
+
+        invData.forEach(row => {
+            if (!row.necesar && !row.stoc) return;
+            
+            if (!aggregate[row.produs_id]) {
+                const prodInfo = catalogProduse.find(p => p.id === row.produs_id);
+                if (!prodInfo) return; 
+                aggregate[row.produs_id] = {
+                    id: row.produs_id,
+                    nume: prodInfo.nume,
+                    categorie: prodInfo.categorie,
+                    canal: prodInfo.canal,
+                    ordine: prodInfo.ordine,
+                    unitate: prodInfo.unitate,
+                    locatii: {}
+                };
+            }
+            aggregate[row.produs_id].locatii[row.locatie] = {
+                stoc: row.stoc || '—',
+                necesar: row.necesar || '—'
+            };
+        });
+
+        raportDateAgregate = Object.values(aggregate).filter(p => {
+            return Object.values(p.locatii).some(l => l.necesar !== '—' && l.necesar !== '0' && l.necesar.trim() !== '');
+        });
+
+        raportDateAgregate.sort((a, b) => {
+            if (a.canal !== b.canal) return a.canal.localeCompare(b.canal);
+            if (a.categorie !== b.categorie) return a.categorie.localeCompare(b.categorie);
+            if (a.ordine !== b.ordine) return a.ordine - b.ordine;
+            return a.nume.localeCompare(b.nume);
+        });
+
+        document.getElementById('centralizator-loader').classList.add('hidden');
+        document.getElementById('raport-content').classList.remove('hidden');
+        
+        renderCentralizatorChips('raport-chips', false);
+        const btnToate = document.querySelector('#raport-chips .chip[data-canal="Toate"]');
+        if(btnToate) btnToate.click();
+    });
+
+    async function showIstoricSesiuni() {
+        document.getElementById('raport-content').classList.add('hidden');
+        document.getElementById('sesiune-view').classList.add('hidden');
+        document.getElementById('istoric-sesiuni').classList.remove('hidden');
+        
+        const { data, error } = await supabaseClient.from('sesiuni_aprovizionare').select('*').order('creata_la', { ascending: false });
+        if (error) { alert("Eroare citire sesiuni"); return; }
+        
+        const list = document.getElementById('lista-sesiuni');
+        if (data.length === 0) {
+            list.innerHTML = '<p style="text-align:center; padding: 20px;">Nu există sesiuni salvate.</p>';
+            return;
+        }
+        
+        list.innerHTML = data.map(s => `
+            <div class="report-item" style="cursor:pointer;" onclick="openSesiune('${s.id}')">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${new Date(s.creata_la).toLocaleString('ro-RO')}</strong>
+                    <span style="color:${s.status==='deschisa'?'var(--success)':'var(--gray-text)'}">${s.status.toUpperCase()}</span>
+                </div>
+                <div style="font-size:13px; color:var(--gray-text);">Autor: ${s.creata_de} ${s.nota ? ' | Nota: '+s.nota : ''}</div>
+            </div>
+        `).join('');
+    }
+
+    async function openSesiune(id) {
+        document.getElementById('istoric-sesiuni').classList.add('hidden');
+        document.getElementById('sesiune-view').classList.remove('hidden');
+        
+        const { data: sesiune } = await supabaseClient.from('sesiuni_aprovizionare').select('*').eq('id', id).single();
+        const { data: linii } = await supabaseClient.from('sesiuni_linii').select('*').eq('sesiune_id', id);
+        
+        currentSesiune = sesiune;
+        currentSesiuneLinii = linii;
+        
+        document.getElementById('sesiune-header').innerHTML = `Sesiune: ${new Date(sesiune.creata_la).toLocaleString('ro-RO')} <br><small>Status: ${sesiune.status}</small>`;
+        
+        renderCentralizatorChips('sesiune-chips', true);
+        const btnToate = document.querySelector('#sesiune-chips .chip[data-canal="Toate"]');
+        if(btnToate) btnToate.click();
+        
+        if (sesiune.status === 'finalizata') {
+            document.getElementById('btn-finalizare-sesiune').classList.add('hidden');
+        } else {
+            document.getElementById('btn-finalizare-sesiune').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-export-csv').onclick = () => exportCSV();
+    }
+
+    function renderSesiuneLinii(canalFilter) {
+        const container = document.getElementById('sesiune-linii');
+        const isFinal = currentSesiune.status === 'finalizata';
+        document.getElementById('sesiune-export-buttons').classList.toggle('hidden', canalFilter === 'Toate');
+
+        const filtrate = canalFilter === 'Toate' ? currentSesiuneLinii : currentSesiuneLinii.filter(l => l.canal === canalFilter);
+        
+        if (filtrate.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding: 20px;">Niciun produs pentru acest canal.</p>';
+            return;
+        }
+
+        container.innerHTML = filtrate.map(l => {
+            let locHTML = '';
+            for (const [loc, data] of Object.entries(l.distributie)) {
+                if (data.necesar && data.necesar !== '—') {
+                    locHTML += `<div style="font-size:12px; color:#555; margin-left:25px;">📍 ${loc}: Stoc ${data.stoc} &rarr; Necesar ${data.necesar}</div>`;
+                }
+            }
+
+            return `
+            <div class="report-item" style="opacity: ${l.bifat ? '0.6' : '1'}; border: ${l.bifat ? '1px solid var(--success)' : 'none'};">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" ${l.bifat ? 'checked' : ''} ${isFinal ? 'disabled' : ''} onchange="updateSesiuneLinie('${l.id}', 'bifat', this.checked)" style="width:20px; height:20px; margin:0;">
+                    <div style="flex:1;">
+                        <strong>${l.produs_nume}</strong> <small>(${l.canal})</small>
+                        <div style="color:var(--error); font-weight:bold;">Total: ${l.total_necesar}</div>
+                    </div>
+                    <input type="text" placeholder="Cumpărat" value="${l.cumparat || ''}" ${isFinal ? 'disabled' : ''} onblur="updateSesiuneLinie('${l.id}', 'cumparat', this.value)" style="width:80px; margin:0; padding:5px;">
+                </div>
+                ${locHTML}
+            </div>`;
+        }).join('');
+    }
+
+    async function updateSesiuneLinie(id, field, value) {
+        const l = currentSesiuneLinii.find(x => x.id === id);
+        if(l) l[field] = value;
+        if(field === 'bifat') renderSesiuneLinii(document.querySelector('#sesiune-chips .chip.active').dataset.canal); 
+        
+        const indicator = document.getElementById('saving-indicator');
+        indicator.classList.add('show');
+        await supabaseClient.from('sesiuni_linii').update({ [field]: value }).eq('id', id);
+        setTimeout(() => indicator.classList.remove('show'), 500);
+    }
+
+    document.getElementById('btn-finalizare-sesiune').addEventListener('click', async () => {
+        if(!confirm("Sigur finalizezi? Nu se vor mai putea face modificări.")) return;
+        const indicator = document.getElementById('saving-indicator');
+        indicator.classList.add('show');
+        await supabaseClient.from('sesiuni_aprovizionare').update({ status: 'finalizata' }).eq('id', currentSesiune.id);
+        indicator.classList.remove('show');
+        openSesiune(currentSesiune.id);
+    });
+
+    document.getElementById('btn-salveaza-sesiune').addEventListener('click', async () => {
+        const nota = prompt("Adaugă o notă pentru această sesiune (opțional):", "");
+        if (nota === null) return;
+
+        const indicator = document.getElementById('saving-indicator');
+        indicator.classList.add('show');
+
+        const { data: sesiune, error: sesErr } = await supabaseClient.from('sesiuni_aprovizionare')
+            .insert([{ creata_de: operatorName || 'Nespecificat', nota }])
+            .select().single();
+
+        if (sesErr) { alert("Eroare la creare sesiune!"); indicator.classList.remove('show'); return; }
+
+        const linii = raportDateAgregate.map(p => {
+            let sum = 0, rawVals = [], hasNonNumeric = false;
+            Object.values(p.locatii).forEach(l => {
+                if (l.necesar !== '—') {
+                    const n = parseFloat(l.necesar.replace(',', '.'));
+                    if (!isNaN(n)) sum += n;
+                    else hasNonNumeric = true;
+                    rawVals.push(l.necesar);
+                }
+            });
+            let total = hasNonNumeric ? rawVals.join(' + ') : sum.toString() + ' ' + p.unitate;
+
+            return {
+                sesiune_id: sesiune.id,
+                produs_id: p.id,
+                produs_nume: p.nume,
+                canal: p.canal,
+                categorie: p.categorie,
+                total_necesar: total,
+                distributie: p.locatii
+            };
+        });
+
+        await supabaseClient.from('sesiuni_linii').insert(linii);
+        indicator.classList.remove('show');
+        alert("Sesiune salvată!");
+        showIstoricSesiuni();
+    });
+
+    function exportCSV() {
+        if (!currentSesiuneLinii) return;
+        let csvContent = "\uFEFFCanal;Categorie;Produs;Total Necesar;Cumparat;Bifat;Detalii Locatii\n";
+        
+        currentSesiuneLinii.forEach(l => {
+            let locs = [];
+            for (const [loc, data] of Object.entries(l.distributie)) {
+                if (data.necesar && data.necesar !== '—') locs.push(`${loc}: ${data.necesar} (stoc ${data.stoc})`);
+            }
+            csvContent += `"${l.canal}";"${l.categorie}";"${l.produs_nume}";"${l.total_necesar}";"${l.cumparat||''}";"${l.bifat?'Da':'Nu'}";"${locs.join(', ')}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Aprovizionare_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportWhatsAppSesiune(canal) {
+        const dateCanal = currentSesiuneLinii.filter(l => l.canal === canal && !l.bifat);
+        if(dateCanal.length === 0) { alert("Niciun produs rămas de comandat pe acest canal."); return; }
+
+        const dateString = new Date().toLocaleString('ro-RO');
+        let text = `*COMANDĂ ${canal.toUpperCase()}* - ${dateString}\n\n`;
+
+        dateCanal.forEach(l => {
+            text += `📦 *${l.produs_nume}* — ${l.total_necesar}\n`;
+            if (canal === 'Metro' || canal === 'Online') {
+                for (const [loc, data] of Object.entries(l.distributie)) {
+                    if (data.necesar && data.necesar !== '—') {
+                        text += `   📍 ${loc}: Stoc ${data.stoc} -> Necesar ${data.necesar}\n`;
+                    }
+                }
+            }
+        });
+
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
     // ECRAN 3: ADMIN
     // ==========================================
 
