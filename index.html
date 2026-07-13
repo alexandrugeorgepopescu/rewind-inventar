@@ -3,427 +3,836 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>REWIND CAFE - Hub Centralizat Gestiune</title>
-    
-    <!-- Google Fonts - LATO (Ghid Brand 5.3) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
-
-    <!-- Supabase JS Library -->
+    <title>Rewind Inventar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
         :root {
-            --cloud-dancer: #F0EEE9;    /* Fundal Premium Organic */
-            --black-night: #212529;     /* Text & Contrast profund */
-            --white-warm: #FFFBF3;      /* Carduri de respiro */
-            --yellow-coffee: #FBE485;   /* Accent energetic */
-            --soft-border: #DCD9D2;
-            --orange-alert: #e67e22;
+            --cloud-dancer: #F0EEE9;
+            --black-night: #212529;
+            --yellow-coffee: #FBE485;
+            --alb-cald: #FFFBF3;
+            --gray-text: #6c757d;
+            --error: #dc3545;
+            --success: #198754;
         }
 
-        body { 
-            font-family: 'Lato', sans-serif; 
-            background-color: var(--cloud-dancer); 
-            margin: 0; 
-            padding: 0; 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--cloud-dancer);
             color: var(--black-night);
-            padding-bottom: 60px;
+            padding-bottom: 70px; /* space for bottom nav */
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .brand-header { 
-            text-align: center; 
-            background-color: var(--black-night); 
-            color: var(--white-warm); 
-            padding: 25px 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border-bottom: 4px solid var(--yellow-coffee);
+        /* Header */
+        header {
+            background-color: var(--black-night);
+            color: var(--cloud-dancer);
+            text-align: center;
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        .brand-header img { max-width: 130px; height: auto; margin-bottom: 8px; }
-        .brand-header .tagline { 
-            margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--yellow-coffee); font-weight: 700;
-        }
+        header img { height: 40px; margin-bottom: 5px; }
+        .tagline { font-size: 11px; letter-spacing: 2px; font-weight: 700; color: var(--yellow-coffee); }
+        .header-content { display: flex; flex-direction: column; align-items: center; }
 
-        .main-container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        /* Container */
+        .container { padding: 15px; max-width: 800px; margin: 0 auto; }
+        .screen { display: none; }
+        .screen.active { display: block; }
 
-        select { 
-            width: 100%; padding: 15px; font-size: 15px; border-radius: 8px; border: 2px solid var(--black-night); 
-            margin-bottom: 15px; background-color: var(--white-warm); font-weight: 900; color: var(--black-night);
-            text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); outline: none;
+        /* Inputs & Buttons */
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Lato', sans-serif;
+            font-size: 16px;
+            background: var(--alb-cald);
         }
-
-        .status-notice { 
-            text-align: center; font-size: 13px; margin-bottom: 15px; font-weight: 700; padding: 12px; 
-            border-radius: 6px; display: none; border: 1px solid transparent; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
-        /* STICKY NAVBAR PENTRU CATEGORII REWIND */
-        .category-navbar {
-            position: sticky; top: 0; background: var(--white-warm); padding: 12px 8px; display: flex; gap: 10px;
-            overflow-x: auto; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.06); z-index: 999;
-            border-bottom: 1px solid var(--soft-border); -webkit-overflow-scrolling: touch;
-        }
-        .category-navbar::-webkit-scrollbar { display: none; } 
+        input:focus, select:focus { outline: 2px solid var(--yellow-coffee); }
         
-        .nav-tab {
-            background: var(--cloud-dancer); border: 1px solid var(--soft-border); padding: 8px 16px;
-            border-radius: 20px; font-size: 11px; font-weight: 900; color: var(--black-night);
-            text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease;
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--yellow-coffee);
+            color: var(--black-night);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.2s;
         }
-        .nav-tab:active, .nav-tab:hover { background: var(--black-night); color: var(--yellow-coffee); border-color: var(--black-night); }
+        button:active { opacity: 0.8; }
+        button.btn-secondary { background-color: var(--black-night); color: var(--yellow-coffee); }
+        button.btn-whatsapp { background-color: #25D366; color: white; margin-bottom: 10px; }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--alb-cald);
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 15px 0;
+            color: var(--gray-text);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .nav-item.active { color: var(--black-night); border-top: 3px solid var(--yellow-coffee); }
 
-        .category-section { margin-top: 30px; scroll-margin-top: 75px; }
-        .category-title {
-            font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px;
-            color: var(--white-warm); background: var(--black-night); padding: 10px 14px; border-radius: 6px;
-            margin-bottom: 12px; display: inline-block; box-shadow: 3px 3px 0px var(--yellow-coffee);
+        /* Screen 1: Inventar */
+        .sticky-top-controls {
+            position: sticky;
+            top: 75px; /* header height approx */
+            background: var(--cloud-dancer);
+            padding: 10px 0;
+            z-index: 99;
+            border-bottom: 1px solid #ddd;
         }
+        .progress-bar-container { background: #ddd; height: 8px; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .progress-bar { background: var(--yellow-coffee); height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 12px; font-weight: 700; text-align: right; margin-top: 2px; }
+        
+        .accordion { margin-top: 15px; }
+        .accordion-header {
+            background: var(--alb-cald);
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        .accordion-content {
+            display: none;
+            padding: 0 5px 15px;
+        }
+        .accordion-content.open { display: block; }
+        
+        .product-row {
+            background: var(--alb-cald);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .product-name { font-weight: 700; font-size: 14px; }
+        .product-row input { margin: 0; padding: 8px; font-size: 14px; text-align: center; }
 
-        /* CARDURI SMAR-CASUAL PRODUSE */
-        .item-card { 
-            background: var(--white-warm); padding: 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px;
-            border: 1px solid var(--soft-border); transition: transform 0.15s ease;
+        .saving-indicator {
+            position: fixed;
+            bottom: 70px;
+            right: 15px;
+            background: var(--black-night);
+            color: var(--yellow-coffee);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
         }
-        .item-card:focus-within { border-color: var(--black-night); transform: scale(1.01); }
-        .item-name { 
-            font-weight: 700; font-size: 15px; width: 100%; margin-bottom: 12px; color: var(--black-night); 
-            border-bottom: 1px dashed var(--soft-border); padding-bottom: 6px;
-        }
-        .inputs-container { display: flex; justify-content: space-between; width: 100%; gap: 15px; }
-        .input-group { display: flex; align-items: center; gap: 8px; flex: 1; }
-        .input-group label { font-size: 11px; color: var(--black-night); font-weight: 900; text-transform: uppercase; }
-        .input-group input { 
-            width: 100%; padding: 10px; text-align: center; border: 2px solid var(--soft-border); border-radius: 6px; 
-            font-size: 15px; font-weight: 900; background: var(--cloud-dancer); color: var(--black-night);
-        }
-        .input-group input:focus { border-color: var(--black-night); background: var(--white-warm); outline: none; }
+        .saving-indicator.show { opacity: 1; }
 
-        /* BUTOANE STRATEGICE DE PANOU */
-        .actions-box { display: flex; flex-direction: column; gap: 10px; margin: 30px 0; }
-        .btn { 
-            border: none; padding: 16px; font-size: 14px; border-radius: 8px; font-weight: 900; 
-            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s ease; 
-            text-transform: uppercase; letter-spacing: 1px; text-align: center;
+        /* Screen 2: Centralizator */
+        .chips { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
+        .chip {
+            padding: 8px 15px;
+            background: var(--alb-cald);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 1px solid #ddd;
         }
-        .btn-save { background-color: var(--black-night); color: var(--yellow-coffee); border: 2px solid var(--black-night); }
-        .btn-save:active { background-color: #343a40; }
-        .btn-global { background-color: var(--yellow-coffee); color: var(--black-night); border: 2px solid var(--black-night); }
-        .btn-global:active { background-color: #f9d95c; }
+        .chip.active { background: var(--black-night); color: var(--yellow-coffee); border-color: var(--black-night); }
+        
+        .report-section { margin-bottom: 25px; }
+        .report-title { font-weight: 900; margin-bottom: 10px; border-bottom: 2px solid var(--yellow-coffee); padding-bottom: 5px; }
+        .report-item { background: var(--alb-cald); padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+        .report-item-header { font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .report-loc { font-size: 13px; display: flex; justify-content: space-between; color: var(--gray-text); margin-left: 10px; border-left: 2px solid #ddd; padding-left: 5px;}
+        .report-loc.has-necesar { color: var(--black-night); font-weight: bold;}
 
-        #shopping-list-container { 
-            display: none; margin-top: 25px; background: var(--white-warm); padding: 18px; 
-            border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 2px solid var(--black-night); 
-        }
-        #shopping-list-container h3 { margin-top: 0; text-transform: uppercase; font-weight: 900; font-size: 14px; color: var(--black-night); }
-        textarea { 
-            width: 100%; height: 320px; padding: 12px; font-size: 14px; border: 2px solid var(--soft-border); 
-            border-radius: 6px; box-sizing: border-box; margin-bottom: 12px; font-family: 'Courier New', monospace; 
-            background: var(--cloud-dancer); color: var(--black-night);
-        }
-        .btn-copy { 
-            background-color: var(--orange-alert); color: white; border: none; width: 100%; padding: 15px; 
-            font-size: 14px; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase;
-            box-shadow: 0 4px 10px rgba(230,126,34,0.3);
-        }
+        /* Screen 3: Admin */
+        #admin-auth { text-align: center; margin-top: 50px; }
+        .admin-product { background: var(--alb-cald); padding: 15px; border-radius: 8px; margin-bottom: 10px; position: relative; }
+        .admin-product.inactive { opacity: 0.6; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .checkbox-group { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+        .checkbox-group input { width: auto; }
+
+        /* Utils */
+        .hidden { display: none !important; }
+        .loader { text-align: center; padding: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="brand-header">
-        <img src="https://rewindcafe.ro/wp-content/themes/rewind-theme/images/sigla.png" alt="REWIND CAFE">
+<header>
+    <div class="header-content">
+        <!-- Sigla Rewind din brand manual -->
+        <img src="https://rewindcafe.ro/wp-content/themes/rewind-theme/images/sigla.png" alt="Rewind" onerror="this.style.display='none'; document.getElementById('alt-logo').style.display='block';">
+        <h2 id="alt-logo" style="display:none; color: var(--yellow-coffee);">REWIND</h2>
         <div class="tagline">COFFEE • MUSIC • VIBE</div>
     </div>
+</header>
 
-    <!-- NAVBAR CATEGORII -->
-    <div class="category-navbar" id="category-nav"></div>
-
-    <div class="main-container">
-        <!-- SELECTOR LOCAȚIE SINK -->
-        <select id="location-select" onchange="loadInventory()">
-            <option value="Miroslava">Locația: Miroslava (Family Market)</option>
-            <option value="Pacurari">Locația: Păcurari (Kaufland)</option>
-            <option value="Alexandru">Locația: Alexandru (Kaufland)</option>
-        </select>
-
-        <div class="status-notice" id="status-text">Se inițializează fluxul de date...</div>
-
-        <!-- ZONE PRODUSE -->
-        <div class="item-list" id="inventory-container"></div>
-
-        <!-- BUTOANE CONTROL PANOU -->
-        <div class="actions-box">
-            <button class="btn btn-save" onclick="saveInventory()">💾 Salvează Stocul Locației Selectate</button>
-            <button class="btn btn-global" onclick="generateGlobalShoppingList()">📋 GENEREAZĂ CENTRALIZATOR GLOBAL (TOATE LOCAȚIILE)</button>
+<div class="container">
+    
+    <!-- ECRAN 1: INVENTAR -->
+    <div id="screen-inventar" class="screen active">
+        <div class="sticky-top-controls">
+            <select id="select-locatie">
+                <option value="" disabled selected>Alege locația...</option>
+                <option value="Miroslava">Miroslava</option>
+                <option value="Pacurari">Kaufland Păcurari</option>
+                <option value="Alexandru">Kaufland Alexandru</option>
+            </select>
+            <input type="text" id="input-operator" placeholder="Numele tău (Operator)">
+            <input type="text" id="search-inventar" placeholder="Caută produs (ex: Portocale)...">
+            
+            <div class="progress-text" id="progress-text">0/0 produse completate</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
         </div>
 
-        <!-- REZULTAT CENTRALIZAT DIRECT ÎN INTERFAȚĂ -->
-        <div id="shopping-list-container">
-            <h3>🛒 Centralizator Distribuit pe Locații (WhatsApp Ready)</h3>
-            <textarea id="shopping-list-text" readonly></textarea>
-            <button class="btn-copy" onclick="copyList()">📋 Copiază Mesajul Centralizat</button>
+        <div id="inventar-loader" class="loader">Se încarcă produsele...</div>
+        <div id="inventar-container"></div>
+        
+        <br>
+        <button id="btn-finalizare" class="hidden">Finalizează Inventarul</button>
+    </div>
+
+    <!-- ECRAN 2: CENTRALIZATOR -->
+    <div id="screen-centralizator" class="screen">
+        <button id="btn-genereaza-raport">Generează Centralizator Live</button>
+        <div id="centralizator-loader" class="loader hidden">Se procesează datele...</div>
+        
+        <div id="raport-content" class="hidden" style="margin-top: 15px;">
+            <div class="chips">
+                <div class="chip active" data-canal="Toate">Toate</div>
+                <div class="chip" data-canal="Metro">Metro</div>
+                <div class="chip" data-canal="Online">Online</div>
+                <div class="chip" data-canal="Dropshot">Dropshot</div>
+                <div class="chip" data-canal="Interuno">Interuno</div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div id="export-buttons" class="hidden">
+                <button class="btn-whatsapp" onclick="exportWhatsApp('Metro')">🛒 Trimite Listă METRO</button>
+                <button class="btn-whatsapp" onclick="exportWhatsApp('Online')">🌐 Trimite Comenzi ONLINE</button>
+                <button class="btn-whatsapp" onclick="exportWhatsApp('Dropshot')">☕ Trimite Comandă DROPSHOT</button>
+                <button class="btn-whatsapp" onclick="exportWhatsApp('Interuno')">🥤 Trimite Comandă INTERUNO</button>
+            </div>
+
+            <div id="raport-list"></div>
         </div>
     </div>
 
-    <script>
-        // DATE CONECTARE SUPABASE REWIND CAFE
-        const SUPABASE_URL = "https://btucmapzyzpnzdswisvq.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_qQoPWXFXHlFTqMNnEIJu0A_AvxwtwEZ";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <!-- ECRAN 3: ADMIN -->
+    <div id="screen-admin" class="screen">
+        <div id="admin-auth">
+            <h3>Acces Management</h3>
+            <input type="password" id="admin-pin" placeholder="Introdu PIN-ul">
+            <button onclick="checkAdminPin()">Log in</button>
+        </div>
+        <div id="admin-dashboard" class="hidden">
+            <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
+            
+            <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
+                <h4>Adaugă Produs</h4>
+                <input type="text" id="new-nume" placeholder="Nume Produs">
+                <input type="text" id="new-categorie" placeholder="Categorie">
+                <div class="admin-grid">
+                    <select id="new-canal">
+                        <option value="Metro">Metro</option>
+                        <option value="Online">Online</option>
+                        <option value="Dropshot">Dropshot</option>
+                        <option value="Interuno">Interuno</option>
+                    </select>
+                    <input type="text" id="new-unitate" placeholder="Unitate (buc/kg/etc)" value="buc">
+                </div>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" class="new-loc" value="Miroslava" checked> Miroslava</label>
+                    <label><input type="checkbox" class="new-loc" value="Pacurari" checked> Păcurari</label>
+                    <label><input type="checkbox" class="new-loc" value="Alexandru" checked> Alexandru</label>
+                </div>
+                <button onclick="saveNewProduct()">Salvează Produs</button>
+                <button class="btn-secondary" onclick="document.getElementById('admin-add-form').classList.add('hidden')">Anulează</button>
+            </div>
 
-        // STRUCTURĂ ACTUALIZATĂ CU CATEGORIA DE CAFEA DE SPECIALITATE DIN FACTURĂ
-        const inventoryStructure = {
-            "Cafea de Specialitate (Pungi)": [
-                "Aromatic Blend - 3kg", 
-                "Aromatic Blend - 1kg (Beandrops)", 
-                "Aromatic Blend - 250g", 
-                "Lava Cake Blend - 250g", 
-                "Milky Way Blend - 250g", 
-                "Cherry Tart Blend - 250g", 
-                "Colombia El Vergel DECAF Sugar Cane - 1kg",
-                "Ethiopia Guji - 1kg",
-                "Bombon - 1kg",
-                "Bombon - 250g"
-            ],
-            "Ambalaje & Consumabile": [
-                "Plicuri pt bani", "Role casa de marcat", "post-it", "Filtre ceai", "Paletine", 
-                "Paie ambalate individual", "Mansoane", "Suporturi pt pahare", "Ligurite", "Rola hartie prosop", 
-                "Servetele patrate", "Saci menajeri 120l", "Saci menajeri 30l", "Saci menajeri 60l", 
-                "Pahare de apa", "Pungi pt pachet", "PAHAR CARTON", "PAHAR PLASTIC"
-            ],
-            "Curățenie & Chimicale": [
-                "Servetele umede", "Bureti vase", "Manusi de unica folosinta", "Detergent pt masina de spalat", 
-                "Clatitor pt masina de spalat", "Lavete", "Clor", "Solutie Pardoseli", "Sare pt masina de spalat", 
-                "Sapun lichid", "Detergent vase", "Rezerva mop", "Solutie geamuri", "Solutie inox"
-            ],
-            "Cafea, Siropuri & Bar": [
-                "Capsule frisca", "Ness", "Miere", "Topping Caramel", "Topping Ciocolata", "Frișcă", 
-                "Sirop Caramel sarat", "Zahar alb baghete", "Zahar brun baghete", "Zahar brun kg", 
-                "Sirop Vanilie", "Sirop Pumpkin Spice", "Sirop Creme Brulee", "Ness deco", "Zahar alb kg", 
-                "Sirop Menta", "Sirop Macadamia Nut", "Sirop Amareto", "Sirop Cocos", "Sirop Chocolate Cookie", 
-                "Sirop Trandafir", "Sirop Lavanda", "Sirop Alune", "Piure Mango", "Piure Capsuni", 
-                "Piure Fructul pasiunii", "Scortisoara", "Indulcitor"
-            ],
-            "Băuturi & Răcoritoare": [
-                "Suc pfanner portocale", "Apa plata", "Apa minerala", "Apa Plata 5l", "Pepsi", "Mirinda", 
-                "7UP", "Pepsi max", "TONICA", "APA", "PEPSI (Locație)", "MIRINDA (Locație)", "7UP (Locație)", 
-                "CAPRA NOASTRA", "VIN", "PROSECCO"
-            ],
-            "Fructe & Ingrediente Fresh": [
-                "Menta", "zeama de lamaie", "Lamai", "Portocale", "Grapefruit", "Breezer", "Portocale Lamai (zeama)"
-            ],
-            "Dulciuri & Patiserie": [
-                "COOKIES", "CIOCOLATA de casa", "TARTA CIOCOLATA", "TARTA CARAMEL SARAT", "CESCUTA DUBAI", 
-                "CESCUTA CIOC CALDA", "BANANA BREAD", "TARTA LEMON CURD", "TARTA MERE"
-            ]
-        };
+            <div style="margin-top: 20px;">
+                <input type="text" id="search-admin" placeholder="Caută produs pentru editare...">
+                <div id="admin-product-list"></div>
+            </div>
+        </div>
+    </div>
 
-        const container = document.getElementById('inventory-container');
-        const navBar = document.getElementById('category-nav');
-        const locationSelect = document.getElementById('location-select');
-        const statusText = document.getElementById('status-text');
+</div>
 
-        function showStatus(text, type = "normal") {
-            statusText.style.display = "block";
-            statusText.innerText = text;
-            if(type === "green") { 
-                statusText.style.background = "#D5F5E3"; statusText.style.borderColor = "#27AE60"; statusText.style.color = "#1E8449"; 
-            } else if(type === "red") { 
-                statusText.style.background = "#FCE4D6"; statusText.style.borderColor = "#C0392b"; statusText.style.color = "#C0392B"; 
-            } else { 
-                statusText.style.background = "var(--white-warm)"; statusText.style.borderColor = "var(--soft-border)"; statusText.style.color = "var(--black-night)"; 
-            }
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="switchScreen('inventar', this)">📋<br>Inventar</div>
+    <div class="nav-item" onclick="switchScreen('centralizator', this)">📊<br>Centralizator</div>
+    <div class="nav-item" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
+</div>
+
+<div id="saving-indicator" class="saving-indicator">Se salvează...</div>
+
+<script>
+    // Configurare Supabase v2
+    const supabaseUrl = 'https://btucmapzyzpnzdswisvq.supabase.co';
+    const supabaseKey = 'sb_publishable_qQoPWXFXHlFTqMNnEIJu0A_AvxwtwEZ';
+    const supabase = customElements.get('supabase') ? null : window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Variabile Globale
+    let catalogProduse = [];
+    let stateInventar = {}; // { produs_id: { stoc, necesar } }
+    let saveTimeout = null;
+    let currentLocation = localStorage.getItem('rewind_location') || '';
+    let operatorName = localStorage.getItem('rewind_operator') || '';
+    const ADMIN_PIN = '2024'; // PIN simplu conform cerintei §5 protecție simplă
+
+    // Inițializare
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (currentLocation) {
+            document.getElementById('select-locatie').value = currentLocation;
+        }
+        if (operatorName) {
+            document.getElementById('input-operator').value = operatorName;
         }
 
-        function buildApp() {
-            container.innerHTML = '';
-            navBar.innerHTML = '';
-            let categoryIndex = 0;
+        document.getElementById('select-locatie').addEventListener('change', async (e) => {
+            currentLocation = e.target.value;
+            localStorage.setItem('rewind_location', currentLocation);
+            await loadInventarData();
+        });
 
-            for (const [categoryName, productList] of Object.entries(inventoryStructure)) {
-                const catId = "cat_" + categoryIndex;
-                
-                const tab = document.createElement('a');
-                tab.className = 'nav-tab';
-                tab.innerText = categoryName.split(' (')[0].split(' & ')[0]; 
-                tab.href = "#" + catId;
-                navBar.appendChild(tab);
+        document.getElementById('input-operator').addEventListener('change', (e) => {
+            operatorName = e.target.value;
+            localStorage.setItem('rewind_operator', operatorName);
+        });
 
-                const section = document.createElement('div');
-                section.className = 'category-section';
-                section.id = catId;
-                
-                const title = document.createElement('div');
-                title.className = 'category-title';
-                title.innerText = categoryName;
-                section.appendChild(title);
-
-                productList.forEach(product => {
-                    const cleanId = btoa(unescape(encodeURIComponent(product))).replace(/=/g, ""); 
-                    const card = document.createElement('div');
-                    card.className = 'item-card';
-                    card.innerHTML = `
-                        <div class="item-name">${product}</div>
-                        <div class="inputs-container">
-                            <div class="input-group">
-                                <label>Stoc Real</label>
-                                <input type="text" data-product="${product}" data-type="stoc" id="stoc_${cleanId}" placeholder="-">
-                            </div>
-                            <div class="input-group">
-                                <label style="color: var(--orange-alert);">Necesar</label>
-                                <input type="text" data-product="${product}" data-type="necesar" id="nec_${cleanId}" style="border-color: var(--orange-alert);" placeholder="-">
-                            </div>
-                        </div>
-                    `;
-                    section.appendChild(card);
-                });
-
-                container.appendChild(section);
-                categoryIndex++;
-            }
+        document.getElementById('search-inventar').addEventListener('input', renderInventarUI);
+        
+        // Incarcam catalogul complet o singura data la startup
+        await fetchCatalog();
+        if (currentLocation) {
+            await loadInventarData();
+        } else {
+            document.getElementById('inventar-loader').style.display = 'none';
         }
 
-        async function loadInventory() {
-            const location = locationSelect.value;
-            showStatus(`🔊 REWIND: Se descarcă stocurile pentru ${location}...`);
-            document.getElementById('shopping-list-container').style.display = 'none';
+        // Setup Centralizator Chips
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                renderRaportUI(e.target.dataset.canal);
+            });
+        });
+    });
 
-            try {
-                const { data, error } = await supabaseClient
-                    .from('inventar_rewind')
-                    .select('date_produse')
-                    .eq('locatie', location)
-                    .maybeSingle();
+    function switchScreen(screenId, navEl) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + screenId).classList.add('active');
+        
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        navEl.classList.add('active');
 
-                if (error) throw error;
-                let cloudData = (data && data.date_produse) ? data.date_produse : {};
-
-                document.querySelectorAll('input[data-product]').forEach(input => {
-                    const product = input.getAttribute('data-product');
-                    const type = input.getAttribute('data-type'); 
-                    
-                    if (cloudData[product]) {
-                        input.value = cloudData[product][type] || '';
-                    } else {
-                        input.value = '';
-                    }
-                });
-
-                showStatus(`✅ Conectat live. Datele pentru ${location} sunt afișate.`, "green");
-            } catch (error) {
-                console.error(error);
-                showStatus("❌ Eroare la citirea datelor live.", "red");
-            }
+        if (screenId === 'admin' && document.getElementById('admin-dashboard').classList.contains('hidden')) {
+            // reset pin state
+            document.getElementById('admin-pin').value = '';
         }
+        window.scrollTo(0, 0);
+    }
 
-        async function saveInventory() {
-            const location = locationSelect.value;
-            showStatus(`⏳ Se salvează stocurile în cloud...`);
-            let dataToSave = {};
+    // ==========================================
+    // ECRAN 1: INVENTAR
+    // ==========================================
 
-            document.querySelectorAll('input[data-type="stoc"]').forEach(stocInput => {
-                const product = stocInput.getAttribute('data-product');
-                const cleanId = btoa(unescape(encodeURIComponent(product))).replace(/=/g, "");
-                const necesarInput = document.getElementById(`nec_${cleanId}`);
+    async function fetchCatalog() {
+        const { data, error } = await supabase
+            .from('produse')
+            .select('*')
+            .eq('activ', true)
+            .order('ordine', { ascending: true })
+            .order('nume', { ascending: true });
+        
+        if (error) {
+            console.error("Error fetching catalog", error);
+            alert("Eroare la descărcarea produselor. Verifică conexiunea.");
+        } else {
+            catalogProduse = data;
+        }
+    }
 
-                dataToSave[product] = {
-                    stoc: stocInput.value,
-                    necesar: necesarInput ? necesarInput.value : ''
-                };
+    async function loadInventarData() {
+        if (!currentLocation) return;
+        document.getElementById('inventar-loader').style.display = 'block';
+        document.getElementById('inventar-container').innerHTML = '';
+        document.getElementById('btn-finalizare').classList.add('hidden');
+
+        const { data, error } = await supabase
+            .from('inventar')
+            .select('produs_id, stoc, necesar')
+            .eq('locatie', currentLocation);
+
+        if (error) {
+            console.error("Error fetching inventar", error);
+            alert("Eroare la citirea inventarului.");
+        } else {
+            stateInventar = {};
+            data.forEach(item => {
+                stateInventar[item.produs_id] = { stoc: item.stoc || '', necesar: item.necesar || '' };
+            });
+            renderInventarUI();
+        }
+        document.getElementById('inventar-loader').style.display = 'none';
+    }
+
+    function renderInventarUI() {
+        if (!currentLocation) return;
+        const container = document.getElementById('inventar-container');
+        const searchTerm = document.getElementById('search-inventar').value.toLowerCase();
+        
+        // Filtram produsele pentru locatia curenta si cautare
+        const produseFiltrate = catalogProduse.filter(p => {
+            const hasLocation = p.locatii.includes(currentLocation) || p.locatii.includes(currentLocation.replace('Kaufland ', ''));
+            const matchesSearch = p.nume.toLowerCase().includes(searchTerm);
+            return hasLocation && matchesSearch;
+        });
+
+        // Grupăm pe categorii
+        const categorii = {};
+        produseFiltrate.forEach(p => {
+            if (!categorii[p.categorie]) categorii[p.categorie] = [];
+            categorii[p.categorie].push(p);
+        });
+
+        container.innerHTML = '';
+        
+        // Pentru calcul progres
+        let totalItems = produseFiltrate.length;
+        let completedItems = 0;
+
+        for (const [catName, produseCat] of Object.entries(categorii)) {
+            const accWrapper = document.createElement('div');
+            accWrapper.className = 'accordion';
+
+            const header = document.createElement('div');
+            header.className = 'accordion-header';
+            header.innerHTML = `<span>${catName} (${produseCat.length})</span> <span>▼</span>`;
+            
+            const content = document.createElement('div');
+            content.className = 'accordion-content';
+            // Deschide acordeonul automat dacă se face o căutare specifică
+            if (searchTerm.length > 1) content.classList.add('open');
+
+            header.onclick = () => {
+                content.classList.toggle('open');
+                header.querySelector('span:last-child').textContent = content.classList.contains('open') ? '▲' : '▼';
+            };
+
+            produseCat.forEach(p => {
+                const valStoc = stateInventar[p.id]?.stoc || '';
+                const valNecesar = stateInventar[p.id]?.necesar || '';
+                if (valStoc.trim() !== '') completedItems++;
+
+                const row = document.createElement('div');
+                row.className = 'product-row';
+                row.innerHTML = `
+                    <div class="product-name">${p.nume} <br><small style="color:#666">${p.unitate}</small></div>
+                    <input type="text" placeholder="Stoc real" value="${valStoc}" oninput="queueSave('${p.id}', 'stoc', this.value)">
+                    <input type="text" placeholder="Necesar" value="${valNecesar}" oninput="queueSave('${p.id}', 'necesar', this.value)">
+                `;
+                content.appendChild(row);
             });
 
-            try {
-                const { error } = await supabaseClient
-                    .from('inventar_rewind')
-                    .upsert({ locatie: location, date_produse: dataToSave });
+            accWrapper.appendChild(header);
+            accWrapper.appendChild(content);
+            container.appendChild(accWrapper);
+        }
 
-                if (error) throw error;
-                showStatus(`✅ Datele din ${location} au fost stocate securizat!`, "green");
-                alert(`Succes! Toate stocurile și necesarele pentru ${location} au fost trimise în sistem.`);
-            } catch (error) {
-                console.error(error);
-                showStatus("❌ Eroare tehnică la salvare.", "red");
+        // Actualizare progres
+        const progressPercent = totalItems === 0 ? 0 : (completedItems / totalItems) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+        document.getElementById('progress-text').textContent = `${completedItems}/${totalItems} produse completate`;
+
+        if (totalItems > 0 && document.getElementById('search-inventar').value === '') {
+            document.getElementById('btn-finalizare').classList.remove('hidden');
+        } else {
+            document.getElementById('btn-finalizare').classList.add('hidden');
+        }
+    }
+
+    function queueSave(produsId, field, value) {
+        if (!stateInventar[produsId]) stateInventar[produsId] = { stoc: '', necesar: '' };
+        stateInventar[produsId][field] = value;
+        
+        // Debounce salvare in Supabase
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            saveToSupabase(produsId);
+            updateProgress(); // update local UI quickly
+        }, 800);
+    }
+
+    async function saveToSupabase(produsId) {
+        if (!currentLocation || !operatorName) {
+            if (!operatorName) {
+                alert("Te rugăm să completezi Numele Operatorului sus!");
+                document.getElementById('input-operator').focus();
             }
+            return;
         }
 
-        // AGREGATORUL COMPREHENSIV PENTRU ALINA (EXTRAGERE GLOBALĂ DIN APLICAȚIE)
-        async function generateGlobalShoppingList() {
-            showStatus(`🔄 Interogare Cloud: Se colectează necesarul din TOATE locațiile...`);
-            try {
-                const { data, error } = await supabaseClient
-                    .from('inventar_rewind')
-                    .select('locatie, date_produse');
+        const indicator = document.getElementById('saving-indicator');
+        indicator.classList.add('show');
+        
+        const data = stateInventar[produsId];
+        
+        const { error } = await supabase.from('inventar').upsert({
+            produs_id: produsId,
+            locatie: currentLocation,
+            stoc: data.stoc,
+            necesar: data.necesar,
+            actualizat_de: operatorName
+        }, { onConflict: 'produs_id, locatie' });
 
-                if (error) throw error;
+        if (error) console.error("Save error", error);
+        
+        setTimeout(() => indicator.classList.remove('show'), 1000);
+    }
 
-                if (!data || data.length === 0) {
-                    alert("Nu s-au găsit date salvate în Cloud pentru nicio locație.");
-                    return;
-                }
-
-                let listText = `☕ *CENTRALIZATOR NECESAR REWIND CAFE*\n🔊 _Stop living on mute • Generat direct din Aplicație_\n📅 Data: ${new Date().toLocaleDateString('ro-RO')} | Ora: ${new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}\n\n`;
-                let globalHasItems = false;
-
-                // Parcurgem fiecare locație găsită în baza de date
-                data.forEach(row => {
-                    const locName = row.locatie;
-                    const cloudData = row.date_produse || {};
-                    let locHasItems = false;
-                    let locText = `📍 *LOCAȚIA: ${locName.toUpperCase()}*\n`;
-
-                    // Organizăm produsele pe categorii în interiorul locației pentru un aspect impecabil pe WhatsApp
-                    for (const [categoryName, productList] of Object.entries(inventoryStructure)) {
-                        let catHeaderAdded = false;
-
-                        productList.forEach(product => {
-                            if (cloudData[product] && cloudData[product].necesar) {
-                                const necVal = cloudData[product].necesar.trim();
-                                // Filtrăm să nu apară zerourile sau câmpurile goale
-                                if (necVal && necVal !== "0" && necVal !== "-") {
-                                    if (!catHeaderAdded) {
-                                        locText += `  _[ ${categoryName.toUpperCase()} ]_\n`;
-                                        catHeaderAdded = true;
-                                    }
-                                    locText += `  • ${product} ➡️ *${necVal}*\n`;
-                                    locHasItems = true;
-                                    globalHasItems = true;
-                                }
-                            }
-                        });
-                    }
-
-                    if (locHasItems) {
-                        listText += locText + `\n────────────────\n\n`;
-                    }
-                });
-
-                if (!globalHasItems) {
-                    listText += "Frecvență curată: Nu există produse cu necesar adăugat în nicio locație.";
-                }
-
-                document.getElementById('shopping-list-text').value = listText;
-                document.getElementById('shopping-list-container').style.display = 'block';
-                document.getElementById('shopping-list-container').scrollIntoView({ behavior: 'smooth' });
-                showStatus(`✅ Centralizator distribuit generat cu succes!`, "green");
-
-            } catch (error) {
-                console.error(error);
-                showStatus("❌ Eroare la colectarea globală a datelor.", "red");
-                alert("Nu s-au putut extrage datele globale. Asigurați-vă că locațiile au salvat cel puțin o dată.");
+    function updateProgress() {
+        const searchTerm = document.getElementById('search-inventar').value.toLowerCase();
+        if(searchTerm.length > 0) return; // nu updatam cand e filtrat
+        let total = 0, completed = 0;
+        catalogProduse.forEach(p => {
+            if (p.locatii.includes(currentLocation)) {
+                total++;
+                if (stateInventar[p.id] && stateInventar[p.id].stoc.trim() !== '') completed++;
             }
+        });
+        document.getElementById('progress-bar').style.width = `${total===0?0:(completed/total)*100}%`;
+        document.getElementById('progress-text').textContent = `${completed}/${total} produse completate`;
+    }
+
+    document.getElementById('btn-finalizare').addEventListener('click', () => {
+        alert("Inventarul a fost salvat și sincronizat cu succes! Mulțumim, " + (operatorName || "operator") + "!");
+        window.scrollTo(0,0);
+    });
+
+
+    // ==========================================
+    // ECRAN 2: CENTRALIZATOR
+    // ==========================================
+    
+    let raportDateAgregate = [];
+
+    document.getElementById('btn-genereaza-raport').addEventListener('click', async () => {
+        document.getElementById('centralizator-loader').classList.remove('hidden');
+        document.getElementById('raport-content').classList.add('hidden');
+        
+        // Fetch all inventar
+        const { data: invData, error: invError } = await supabase.from('inventar').select('produs_id, locatie, stoc, necesar, actualizat_la');
+        
+        if (invError) {
+            alert("Eroare generare raport");
+            return;
         }
 
-        function copyList() {
-            const textarea = document.getElementById('shopping-list-text');
-            textarea.select();
-            textarea.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(textarea.value);
-            alert('Raportul centralizat pentru Alina a fost copiat! Îl poți trimite direct pe WhatsApp.');
+        // Aggregate by product
+        const aggregate = {};
+        
+        // Ensure catalog is loaded
+        if (catalogProduse.length === 0) await fetchCatalog();
+
+        invData.forEach(row => {
+            if (!row.necesar && !row.stoc) return; // skip complet goale
+            
+            if (!aggregate[row.produs_id]) {
+                const prodInfo = catalogProduse.find(p => p.id === row.produs_id);
+                if (!prodInfo) return; // skipped inactive or deleted
+                aggregate[row.produs_id] = {
+                    id: row.produs_id,
+                    nume: prodInfo.nume,
+                    categorie: prodInfo.categorie,
+                    canal: prodInfo.canal,
+                    ordine: prodInfo.ordine,
+                    unitate: prodInfo.unitate,
+                    locatii: {}
+                };
+            }
+            aggregate[row.produs_id].locatii[row.locatie] = {
+                stoc: row.stoc || '—',
+                necesar: row.necesar || '—'
+            };
+        });
+
+        raportDateAgregate = Object.values(aggregate).filter(p => {
+            // Regula 1: produsul intra DOAR daca cel putin o locatie are necesar completat
+            return Object.values(p.locatii).some(l => l.necesar !== '—' && l.necesar !== '0' && l.necesar.trim() !== '');
+        });
+
+        // Regula 4: Sortare canal -> categorie -> ordine -> nume
+        raportDateAgregate.sort((a, b) => {
+            if (a.canal !== b.canal) return a.canal.localeCompare(b.canal);
+            if (a.categorie !== b.categorie) return a.categorie.localeCompare(b.categorie);
+            if (a.ordine !== b.ordine) return a.ordine - b.ordine;
+            return a.nume.localeCompare(b.nume);
+        });
+
+        document.getElementById('centralizator-loader').classList.add('hidden');
+        document.getElementById('raport-content').classList.remove('hidden');
+        
+        // Select 'Toate' implicitly
+        document.querySelector('.chip[data-canal="Toate"]').click();
+    });
+
+    function renderRaportUI(canalFilter) {
+        const container = document.getElementById('raport-list');
+        container.innerHTML = '';
+        document.getElementById('export-buttons').classList.toggle('hidden', canalFilter !== 'Toate');
+
+        const dateFiltrate = canalFilter === 'Toate' 
+            ? raportDateAgregate 
+            : raportDateAgregate.filter(p => p.canal === canalFilter);
+
+        if (dateFiltrate.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding: 20px;">Niciun necesar pentru acest canal.</p>';
+            return;
         }
 
-        buildApp();
-        setTimeout(loadInventory, 600);
-    </script>
+        let currentCat = '';
+
+        dateFiltrate.forEach(p => {
+            if (p.categorie !== currentCat && canalFilter === 'Toate') {
+                currentCat = p.categorie;
+                const catTitle = document.createElement('div');
+                catTitle.className = 'report-title';
+                catTitle.textContent = currentCat;
+                container.appendChild(catTitle);
+            }
+
+            // Calculare TOTAL necesar
+            let sum = 0;
+            let hasNonNumeric = false;
+            let rawVals = [];
+
+            Object.values(p.locatii).forEach(l => {
+                if (l.necesar !== '—') {
+                    const n = parseFloat(l.necesar.replace(',', '.'));
+                    if (!isNaN(n)) sum += n;
+                    else hasNonNumeric = true;
+                    rawVals.push(l.necesar);
+                }
+            });
+
+            let totalDisplay = sum.toString();
+            if (hasNonNumeric) {
+                totalDisplay = `${sum > 0 ? sum + ' + ' : ''} "${rawVals.join(', ')}" (⚠ Verifică manual)`;
+            }
+
+            const item = document.createElement('div');
+            item.className = 'report-item';
+            
+            let locHTML = '';
+            for (const loc of ['Miroslava', 'Pacurari', 'Alexandru']) {
+                const dataLoc = p.locatii[loc];
+                if (dataLoc) {
+                    const hasNecesar = dataLoc.necesar !== '—' && dataLoc.necesar !== '';
+                    locHTML += `<div class="report-loc ${hasNecesar ? 'has-necesar' : ''}">
+                        📍 ${loc}: Stoc ${dataLoc.stoc} &rarr; Necesar ${dataLoc.necesar}
+                    </div>`;
+                }
+            }
+
+            item.innerHTML = `
+                <div class="report-item-header">
+                    <span>📦 ${p.nume} <small>(${p.canal})</small></span>
+                    <span style="color:var(--error);">TOTAL: ${totalDisplay} ${p.unitate}</span>
+                </div>
+                ${locHTML}
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function exportWhatsApp(canal) {
+        const dateCanal = raportDateAgregate.filter(p => p.canal === canal);
+        if(dateCanal.length === 0) {
+            alert(`Niciun necesar pentru ${canal}.`);
+            return;
+        }
+
+        const dateString = new Date().toLocaleString('ro-RO');
+        let text = `*COMANDĂ ${canal.toUpperCase()}* - ${dateString}\n\n`;
+
+        dateCanal.forEach(p => {
+            // calcul total
+            let sum = 0;
+            let rawVals = [];
+            let hasNonNumeric = false;
+            Object.values(p.locatii).forEach(l => {
+                if (l.necesar !== '—') {
+                    const n = parseFloat(l.necesar.replace(',', '.'));
+                    if (!isNaN(n)) sum += n;
+                    else hasNonNumeric = true;
+                    rawVals.push(l.necesar);
+                }
+            });
+            let total = hasNonNumeric ? rawVals.join(' + ') : sum;
+
+            text += `📦 *${p.nume}* — ${total} ${p.unitate}\n`;
+            
+            // Daca e Metro sau Online, pastram distributia
+            if (canal === 'Metro' || canal === 'Online') {
+                for (const loc of ['Miroslava', 'Pacurari', 'Alexandru']) {
+                    const dataLoc = p.locatii[loc];
+                    if (dataLoc && dataLoc.necesar !== '—' && dataLoc.necesar !== '') {
+                        text += `   📍 ${loc}: Stoc ${dataLoc.stoc} -> Necesar ${dataLoc.necesar}\n`;
+                    }
+                }
+            }
+        });
+
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    }
+
+    // ==========================================
+    // ECRAN 3: ADMIN
+    // ==========================================
+
+    function checkAdminPin() {
+        if (document.getElementById('admin-pin').value === ADMIN_PIN) {
+            document.getElementById('admin-auth').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            renderAdminProducts();
+        } else {
+            alert("PIN incorect!");
+        }
+    }
+
+    function renderAdminProducts() {
+        const container = document.getElementById('admin-product-list');
+        const searchTerm = document.getElementById('search-admin')?.value.toLowerCase() || '';
+        
+        container.innerHTML = '';
+        const filtru = catalogProduse.filter(p => p.nume.toLowerCase().includes(searchTerm));
+        
+        filtru.forEach(p => {
+            const div = document.createElement('div');
+            div.className = `admin-product ${p.activ ? '' : 'inactive'}`;
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <strong>${p.nume}</strong>
+                    <button class="btn-secondary" style="width:auto; padding:5px 10px; margin:0;" onclick="toggleProductStatus('${p.id}', ${!p.activ})">
+                        ${p.activ ? 'Dezactivează' : 'Activează'}
+                    </button>
+                </div>
+                <div class="admin-grid">
+                    <div><small>Categorie:</small> ${p.categorie}</div>
+                    <div><small>Canal:</small> 
+                        <select onchange="updateProductField('${p.id}', 'canal', this.value)" style="padding:4px; margin:0;">
+                            <option value="Metro" ${p.canal==='Metro'?'selected':''}>Metro</option>
+                            <option value="Online" ${p.canal==='Online'?'selected':''}>Online</option>
+                            <option value="Dropshot" ${p.canal==='Dropshot'?'selected':''}>Dropshot</option>
+                            <option value="Interuno" ${p.canal==='Interuno'?'selected':''}>Interuno</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    document.getElementById('search-admin').addEventListener('input', renderAdminProducts);
+
+    function openAddProduct() {
+        document.getElementById('admin-add-form').classList.remove('hidden');
+        document.getElementById('new-nume').value = '';
+        document.getElementById('new-categorie').value = '';
+    }
+
+    async function saveNewProduct() {
+        const nume = document.getElementById('new-nume').value.trim();
+        const categorie = document.getElementById('new-categorie').value.trim();
+        const canal = document.getElementById('new-canal').value;
+        const unitate = document.getElementById('new-unitate').value.trim();
+        
+        const locatiiChecks = document.querySelectorAll('.new-loc:checked');
+        const locatii = Array.from(locatiiChecks).map(cb => cb.value);
+
+        if (!nume || !categorie || locatii.length === 0) {
+            alert("Numele, categoria și cel puțin o locație sunt obligatorii!");
+            return;
+        }
+
+        const { data, error } = await supabase.from('produse').insert([{
+            nume, categorie, canal, unitate, locatii, ordine: 999
+        }]).select();
+
+        if (error) {
+            alert("Eroare la adăugare: " + error.message);
+        } else {
+            alert("Produs adăugat cu succes!");
+            document.getElementById('admin-add-form').classList.add('hidden');
+            await fetchCatalog(); // refresh catalog
+            renderAdminProducts();
+            if (currentLocation) loadInventarData(); // refresh on inv screen
+        }
+    }
+
+    async function updateProductField(id, field, value) {
+        const { error } = await supabase.from('produse').update({ [field]: value }).eq('id', id);
+        if (error) alert("Eroare la actualizare");
+        else {
+            await fetchCatalog();
+            if (currentLocation) loadInventarData(); // background refresh
+        }
+    }
+
+    async function toggleProductStatus(id, newStatus) {
+        const { error } = await supabase.from('produse').update({ activ: newStatus }).eq('id', id);
+        if (error) alert("Eroare la modificare status");
+        else {
+            await fetchCatalog();
+            renderAdminProducts();
+            if (currentLocation) loadInventarData();
+        }
+    }
+
+</script>
 </body>
 </html>

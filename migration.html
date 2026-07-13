@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrare Date - Rewind Inventar</title>
+    <style>
+        body { font-family: 'Lato', sans-serif; background-color: #F0EEE9; color: #212529; padding: 20px; }
+        h1 { color: #212529; }
+        .container { max-width: 800px; margin: 0 auto; background: #FFFBF3; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { background-color: #FBE485; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:hover { background-color: #e5cd6e; }
+        #log { margin-top: 20px; background: #212529; color: #FFFBF3; padding: 15px; border-radius: 4px; height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; }
+        .warning { color: #ffeb3b; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+    </style>
+    <!-- Incarcare Supabase v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Migrare Date către v3.0</h1>
+    <p>Acest script copiază datele din vechiul tabel <code>inventar_rewind</code> în noul tabel <code>inventar</code> (pe baza <code>produse</code>).</p>
+    <p><strong>Atenție:</strong> Asigură-te că ai rulat <code>seed.sql</code> înainte de a rula această migrare!</p>
+    
+    <button id="btnMigrate">Pornește Migrarea</button>
+
+    <div id="log">Așteptare pornire...</div>
+</div>
+
+<script>
+    const supabaseUrl = 'https://btucmapzyzpnzdswisvq.supabase.co';
+    const supabaseKey = 'sb_publishable_qQoPWXFXHlFTqMNnEIJu0A_AvxwtwEZ';
+    const supabase = customElements.get('supabase') ? null : window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const logEl = document.getElementById('log');
+    
+    function logMessage(msg, type = '') {
+        const span = document.createElement('span');
+        span.className = type;
+        span.textContent = msg + '\n';
+        logEl.appendChild(span);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    document.getElementById('btnMigrate').addEventListener('click', async () => {
+        logEl.innerHTML = ''; // clear
+        logMessage('=== ÎNCEPERE MIGRARE ===');
+        
+        try {
+            // 1. Fetch produse
+            logMessage('Se descarcă noul catalog de produse...');
+            const { data: produse, error: errProduse } = await supabase.from('produse').select('id, nume');
+            if (errProduse) throw errProduse;
+            
+            const produseMap = {};
+            produse.forEach(p => {
+                // normalizam numele pentru potrivire (lowercase, trim)
+                produseMap[p.nume.trim().toLowerCase()] = p.id;
+            });
+            logMessage(`✅ Am încărcat ${produse.length} produse din noul catalog.`, 'success');
+
+            // 2. Fetch inventar_rewind (vechi)
+            logMessage('Se descarcă inventarul vechi (inventar_rewind)...');
+            const { data: inventarVechi, error: errVechi } = await supabase.from('inventar_rewind').select('*');
+            if (errVechi) throw errVechi;
+            logMessage(`✅ Am găsit ${inventarVechi.length} locații cu date de inventar.`, 'success');
+
+            let totalTransferate = 0;
+            let produseLipsa = new Set();
+
+            // 3. Procesare pe fiecare locatie
+            for (const row of inventarVechi) {
+                const locatie = row.locatie;
+                const dateProduse = row.date_produse; // jsonb { "nume": { stoc, necesar } }
+                
+                logMessage(`\nProcesez locația: ${locatie}...`);
+                let transferateLocatie = 0;
+                
+                const insertPromises = [];
+
+                for (const [numeProdus, valori] of Object.entries(dateProduse)) {
+                    const stoc = valori.stoc || '';
+                    const necesar = valori.necesar || '';
+                    
+                    // Sarim peste cele complet goale pentru a nu umple DB-ul degeaba
+                    if (!stoc.trim() && !necesar.trim()) continue;
+
+                    const numeNormalizat = numeProdus.trim().toLowerCase();
+                    const produsId = produseMap[numeNormalizat];
+                    
+                    if (!produsId) {
+                        produseLipsa.add(numeProdus);
+                        logMessage(`  [!] Produs negăsit în noul catalog: "${numeProdus}" (Stoc: ${stoc}, Necesar: ${necesar})`, 'warning');
+                        continue;
+                    }
+
+                    // Pregatim insert-ul
+                    insertPromises.push(
+                        supabase.from('inventar').upsert({
+                            produs_id: produsId,
+                            locatie: locatie,
+                            stoc: stoc.trim(),
+                            necesar: necesar.trim(),
+                            actualizat_de: 'Migrare Automată'
+                        }, { onConflict: 'produs_id, locatie' })
+                    );
+                    transferateLocatie++;
+                }
+
+                // Asteptam inserturile
+                if (insertPromises.length > 0) {
+                    const results = await Promise.all(insertPromises);
+                    const errors = results.filter(r => r.error).map(r => r.error.message);
+                    if (errors.length > 0) {
+                        logMessage(`  ❌ Erori la salvare pentru ${locatie}: ${errors.join('; ')}`, 'error');
+                    } else {
+                        logMessage(`  ✅ Transferate cu succes ${transferateLocatie} înregistrări.`, 'success');
+                        totalTransferate += transferateLocatie;
+                    }
+                } else {
+                    logMessage(`  Nicio înregistrare validă de transferat.`, 'warning');
+                }
+            }
+
+            logMessage(`\n=== RAPORT FINAL MIGRARE ===`, 'success');
+            logMessage(`Total înregistrări transferate cu succes: ${totalTransferate}`, 'success');
+            
+            if (produseLipsa.size > 0) {
+                logMessage(`\nProduse din vechiul sistem care NU au fost găsite în noul catalog (${produseLipsa.size}):`, 'warning');
+                Array.from(produseLipsa).forEach(p => logMessage(` - ${p}`, 'warning'));
+                logMessage(`\nAceste produse trebuie adăugate manual în catalog (din Admin) și datele lor completate ulterior, dacă mai sunt necesare.`, 'warning');
+            } else {
+                logMessage(`\nNu a existat niciun produs orfan. Toate s-au potrivit!`, 'success');
+            }
+
+        } catch (e) {
+            logMessage(`\n❌ Eroare critică: ${e.message}`, 'error');
+            console.error(e);
+        }
+    });
+</script>
+
+</body>
+</html>
