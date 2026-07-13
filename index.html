@@ -275,16 +275,14 @@
 
 <header>
     <div class="header-content">
-        <!-- Sigla Rewind din brand manual -->
-        <div style="font-size:32px; font-weight:900; letter-spacing:4px; color:var(--black-night); margin-bottom:10px; margin-top:5px;">REWIND</div>
+        <img src="images/logo1.png" alt="Rewind Logo" style="height: 55px; margin-bottom: 5px; margin-top: 5px;">
         <h2 id="alt-logo" style="display:none; color: var(--yellow-coffee);">REWIND</h2>
-        <div class="tagline">COFFEE • MUSIC • VIBE</div>
+        <div class="tagline" style="color: var(--yellow-coffee); font-size: 13px; letter-spacing: 3px;">COFFEE • MUSIC • VIBE</div>
     </div>
+    <button id="btn-install-pwa-header" class="hidden" style="margin-top:10px; padding: 10px; background:var(--black-night); color:var(--yellow-coffee); display:none; width: 100%; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="installPWA()">📱 Instalează Aplicația</button>
 </header>
 
 <div class="container">
-    
-    <!-- ECRAN 1: INVENTAR -->
     <div id="screen-inventar" class="screen active">
         <div class="sticky-top-controls">
             <select id="select-locatie">
