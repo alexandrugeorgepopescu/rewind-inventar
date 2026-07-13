@@ -23,17 +23,15 @@
             font-family: 'Lato', sans-serif;
             background-color: var(--cloud-dancer);
             color: var(--black-night);
-            padding-bottom: 85px; /* space for bottom nav */
+            padding-bottom: 85px; 
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Animații */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Header (Redesign pe deschis) */
         header {
             background-color: var(--cloud-dancer);
             color: var(--black-night);
@@ -45,21 +43,14 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        header img { 
-            height: 45px; /* Micșorat la jumătate */
-            margin-bottom: 5px; 
-            transition: transform 0.3s;
-        }
-        header img:hover { transform: scale(1.05); }
+        
         .tagline { font-size: 11px; letter-spacing: 2.5px; font-weight: 900; color: var(--black-night); opacity: 0.8; }
         .header-content { display: flex; flex-direction: column; align-items: center; }
 
-        /* Container & Ecrane */
         .container { padding: 15px; max-width: 800px; margin: 0 auto; }
         .screen { display: none; }
         .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
 
-        /* Inputs & Buttons Premium */
         input, select {
             width: 100%;
             padding: 14px;
@@ -79,7 +70,6 @@
         }
         
         button {
-            width: 100%;
             padding: 16px;
             background-color: var(--yellow-coffee);
             color: var(--black-night);
@@ -88,16 +78,21 @@
             font-size: 16px;
             font-weight: 900;
             cursor: pointer;
-            margin-top: 10px;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            margin-top: 10px;
         }
+        /* Exceptii pentru butoane flex (Live si Istoric) */
+        div[style*="display:flex;"] > button {
+            margin-top: 0;
+        }
+
         button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         button:active { transform: translateY(0); scale: 0.98; }
         button.btn-secondary { background-color: var(--black-night); color: var(--yellow-coffee); }
         button.btn-whatsapp { background-color: #25D366; color: white; margin-bottom: 10px; }
         
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -109,7 +104,7 @@
             box-shadow: 0 -5px 20px rgba(0,0,0,0.08);
             z-index: 100;
             border-radius: 20px 20px 0 0;
-            padding-bottom: env(safe-area-inset-bottom, 0px); /* Pentru iOS */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         .nav-item {
             flex: 1;
@@ -130,7 +125,6 @@
             border-radius: 4px 4px 0 0;
         }
 
-        /* Inventar */
         .sticky-top-controls {
             position: sticky;
             top: 86px;
@@ -145,7 +139,6 @@
         .progress-bar { background: var(--yellow-coffee); height: 100%; width: 0%; transition: width 0.4s ease-out; }
         .progress-text { font-size: 13px; font-weight: 700; text-align: right; margin-top: 4px; color: var(--gray-text); }
         
-        /* Accordion (Meniuri Dropdown) */
         .accordion { margin-top: 15px; }
         .accordion-header {
             background: var(--alb-cald);
@@ -167,7 +160,6 @@
         }
         .accordion-content.open { display: block; animation: fadeIn 0.25s ease-out; }
         
-        /* Product Row (Carduri) */
         .product-row {
             background: var(--alb-cald);
             padding: 14px;
@@ -204,9 +196,8 @@
         }
         .saving-indicator.show { opacity: 1; transform: translateY(0); }
 
-        /* Centralizator */
         .chips { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 15px; }
-        .chips::-webkit-scrollbar { display: none; } /* Hide scrollbar */
+        .chips::-webkit-scrollbar { display: none; }
         .chip {
             padding: 10px 18px;
             background: var(--alb-cald);
@@ -229,7 +220,6 @@
         .report-loc { font-size: 14px; display: flex; justify-content: space-between; color: var(--gray-text); margin-left: 10px; border-left: 3px solid rgba(0,0,0,0.05); padding-left: 8px; margin-top: 4px; }
         .report-loc.has-necesar { color: var(--black-night); font-weight: bold; border-color: var(--yellow-coffee); }
 
-        /* Admin */
         #admin-auth { text-align: center; margin-top: 50px; background: var(--alb-cald); padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .admin-product { background: var(--alb-cald); padding: 20px; border-radius: 12px; margin-bottom: 15px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.05); }
         .admin-product.inactive { opacity: 0.6; filter: grayscale(50%); }
@@ -261,7 +251,10 @@
           e.preventDefault();
           deferredPrompt = e;
           const installBtn = document.getElementById('btn-install-pwa');
-          if(installBtn) installBtn.classList.remove('hidden');
+          if(installBtn) {
+              installBtn.classList.remove('hidden');
+              installBtn.style.display = 'block';
+          }
       });
 
       async function installPWA() {
@@ -269,7 +262,8 @@
               deferredPrompt.prompt();
               const { outcome } = await deferredPrompt.userChoice;
               if (outcome === 'accepted') {
-                  document.getElementById('btn-install-pwa').classList.add('hidden');
+                  const btn = document.getElementById('btn-install-pwa');
+                  if(btn) { btn.style.display = 'none'; btn.classList.add('hidden'); }
               }
               deferredPrompt = null;
           }
@@ -282,7 +276,7 @@
 <header>
     <div class="header-content">
         <!-- Sigla Rewind din brand manual -->
-        <img src="https://rewindcafe.ro/wp-content/themes/rewind-theme/images/sigla.png" alt="Rewind" onerror="this.style.display='none'; document.getElementById('alt-logo').style.display='block';">
+        <div style="font-size:32px; font-weight:900; letter-spacing:4px; color:var(--black-night); margin-bottom:10px; margin-top:5px;">REWIND</div>
         <h2 id="alt-logo" style="display:none; color: var(--yellow-coffee);">REWIND</h2>
         <div class="tagline">COFFEE • MUSIC • VIBE</div>
     </div>
@@ -355,7 +349,7 @@
             <button onclick="checkAdminPin()">Log in</button>
         </div>
         <div id="admin-dashboard" class="hidden">
-            <button id="btn-install-pwa" class="hidden" style="margin-top:20px; margin-bottom:20px; background:var(--black-night); color:var(--yellow-coffee);" onclick="installPWA()">📱 Instalează Aplicația pe Telefon</button>
+            <button id="btn-install-pwa" class="hidden" style="margin-top:20px; margin-bottom:20px; background:var(--black-night); color:var(--yellow-coffee); display:none;" onclick="installPWA()">📱 Instalează Aplicația pe Telefon</button>
             <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
             
             <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
