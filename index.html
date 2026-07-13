@@ -311,7 +311,7 @@
     // Configurare Supabase v2
     const supabaseUrl = 'https://btucmapzyzpnzdswisvq.supabase.co';
     const supabaseKey = 'sb_publishable_qQoPWXFXHlFTqMNnEIJu0A_AvxwtwEZ';
-    const supabase = customElements.get('supabase') ? null : window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = customElements.get('supabase') ? null : window.supabase.createClient(supabaseUrl, supabaseKey);
 
     // Variabile Globale
     let catalogProduse = [];
@@ -520,7 +520,7 @@
         
         const data = stateInventar[produsId];
         
-        const { error } = await supabase.from('inventar').upsert({
+        const { error } = await supabaseClient.from('inventar').upsert({
             produs_id: produsId,
             locatie: currentLocation,
             stoc: data.stoc,
@@ -564,7 +564,7 @@
         document.getElementById('raport-content').classList.add('hidden');
         
         // Fetch all inventar
-        const { data: invData, error: invError } = await supabase.from('inventar').select('produs_id, locatie, stoc, necesar, actualizat_la');
+        const { data: invData, error: invError } = await supabaseClient.from('inventar').select('produs_id, locatie, stoc, necesar, actualizat_la');
         
         if (invError) {
             alert("Eroare generare raport");
@@ -799,7 +799,7 @@
             return;
         }
 
-        const { data, error } = await supabase.from('produse').insert([{
+        const { data, error } = await supabaseClient.from('produse').insert([{
             nume, categorie, canal, unitate, locatii, ordine: 999
         }]).select();
 
@@ -815,7 +815,7 @@
     }
 
     async function updateProductField(id, field, value) {
-        const { error } = await supabase.from('produse').update({ [field]: value }).eq('id', id);
+        const { error } = await supabaseClient.from('produse').update({ [field]: value }).eq('id', id);
         if (error) alert("Eroare la actualizare");
         else {
             await fetchCatalog();
@@ -824,7 +824,7 @@
     }
 
     async function toggleProductStatus(id, newStatus) {
-        const { error } = await supabase.from('produse').update({ activ: newStatus }).eq('id', id);
+        const { error } = await supabaseClient.from('produse').update({ activ: newStatus }).eq('id', id);
         if (error) alert("Eroare la modificare status");
         else {
             await fetchCatalog();

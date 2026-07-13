@@ -33,7 +33,7 @@
 <script>
     const supabaseUrl = 'https://btucmapzyzpnzdswisvq.supabase.co';
     const supabaseKey = 'sb_publishable_qQoPWXFXHlFTqMNnEIJu0A_AvxwtwEZ';
-    const supabase = customElements.get('supabase') ? null : window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = customElements.get('supabase') ? null : window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const logEl = document.getElementById('log');
     
@@ -52,7 +52,7 @@
         try {
             // 1. Fetch produse
             logMessage('Se descarcă noul catalog de produse...');
-            const { data: produse, error: errProduse } = await supabase.from('produse').select('id, nume');
+            const { data: produse, error: errProduse } = await supabaseClient.from('produse').select('id, nume');
             if (errProduse) throw errProduse;
             
             const produseMap = {};
@@ -64,7 +64,7 @@
 
             // 2. Fetch inventar_rewind (vechi)
             logMessage('Se descarcă inventarul vechi (inventar_rewind)...');
-            const { data: inventarVechi, error: errVechi } = await supabase.from('inventar_rewind').select('*');
+            const { data: inventarVechi, error: errVechi } = await supabaseClient.from('inventar_rewind').select('*');
             if (errVechi) throw errVechi;
             logMessage(`✅ Am găsit ${inventarVechi.length} locații cu date de inventar.`, 'success');
 
@@ -99,7 +99,7 @@
 
                     // Pregatim insert-ul
                     insertPromises.push(
-                        supabase.from('inventar').upsert({
+                        supabaseClient.from('inventar').upsert({
                             produs_id: produsId,
                             locatie: locatie,
                             stoc: stoc.trim(),
