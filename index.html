@@ -6,192 +6,108 @@
     <title>Rewind Inventar</title>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --cloud-dancer: #F0EEE9;
-            --black-night: #212529;
-            --yellow-coffee: #FBE485;
-            --alb-cald: #FFFBF3;
-            --gray-text: #6c757d;
-            --error: #dc3545;
-            --success: #198754;
+    
+    <link rel="manifest" href="manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'cloud-dancer': '#F0EEE9',
+              'black-night': '#212529',
+              'yellow-coffee': '#FBE485',
+              'alb-cald': '#FFFBF3',
+              'gray-text': '#6c757d',
+              'error': '#dc3545',
+              'success': '#198754'
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          }
         }
+      }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            body { @apply bg-cloud-dancer text-black-night pb-[80px] font-sans m-0 p-0; -webkit-tap-highlight-color: transparent; }
+            * { @apply box-border; }
+            
+            header { @apply bg-black-night text-cloud-dancer text-center p-6 sticky top-0 z-50 shadow-lg; }
+            /* Mărim sigla semnificativ de la 40px la 80px și dăm spațiu */
+            header img { @apply h-20 mx-auto mb-3 transition-transform hover:scale-105 duration-300; }
+            .tagline { @apply text-xs tracking-widest font-bold text-yellow-coffee; }
+            .header-content { @apply flex flex-col items-center; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Lato', sans-serif;
-            background-color: var(--cloud-dancer);
-            color: var(--black-night);
-            padding-bottom: 70px; /* space for bottom nav */
-            -webkit-tap-highlight-color: transparent;
-        }
+            .container { @apply p-4 max-w-3xl mx-auto; }
+            .screen { @apply hidden; }
+            .screen.active { @apply block animate-[fadeIn_0.3s_ease-out]; }
 
-        /* Header */
-        header {
-            background-color: var(--black-night);
-            color: var(--cloud-dancer);
-            text-align: center;
-            padding: 15px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        header img { height: 40px; margin-bottom: 5px; }
-        .tagline { font-size: 11px; letter-spacing: 2px; font-weight: 700; color: var(--yellow-coffee); }
-        .header-content { display: flex; flex-direction: column; align-items: center; }
+            input[type="text"], input[type="password"], select { @apply w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent; }
+            
+            button { @apply w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95; }
+            button.btn-secondary { @apply bg-black-night text-yellow-coffee; }
+            button.btn-whatsapp { @apply bg-[#25D366] text-white mb-2; }
+            
+            .bottom-nav { @apply fixed bottom-0 left-0 w-full bg-alb-cald flex justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[100] rounded-t-3xl; }
+            .nav-item { @apply flex-1 text-center py-4 text-gray-text font-bold text-[13px] cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-1; }
+            .nav-item.active { @apply text-black-night border-t-4 border-yellow-coffee rounded-t-sm; }
 
-        /* Container */
-        .container { padding: 15px; max-width: 800px; margin: 0 auto; }
-        .screen { display: none; }
-        .screen.active { display: block; }
+            .sticky-top-controls { @apply sticky top-[110px] bg-cloud-dancer/95 py-3 z-40 border-b border-gray-200 backdrop-blur-md mb-2; }
+            .progress-bar-container { @apply bg-gray-300 h-2 rounded-full mt-3 overflow-hidden shadow-inner; }
+            .progress-bar { @apply bg-yellow-coffee h-full w-0 transition-all duration-500 ease-out; }
+            .progress-text { @apply text-xs font-bold text-right mt-1 text-gray-600; }
+            
+            .accordion { @apply mt-4; }
+            .accordion-header { @apply bg-alb-cald p-4 rounded-xl font-black mb-2 flex justify-between shadow-sm cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-gray-100; }
+            .accordion-content { @apply hidden px-1 pb-4; }
+            .accordion-content.open { @apply block animate-[fadeIn_0.3s_ease-out]; }
+            
+            .product-row { @apply bg-alb-cald p-3 rounded-xl mb-3 grid grid-cols-[2fr_1fr_1fr] gap-3 items-center shadow-sm border border-gray-100 transition-all hover:shadow-md; }
+            .product-name { @apply font-bold text-[14px] leading-tight; }
+            .product-row input { @apply m-0 p-2.5 text-[15px] font-bold text-center; }
 
-        /* Inputs & Buttons */
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-family: 'Lato', sans-serif;
-            font-size: 16px;
-            background: var(--alb-cald);
-        }
-        input:focus, select:focus { outline: 2px solid var(--yellow-coffee); }
-        
-        button {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--yellow-coffee);
-            color: var(--black-night);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 900;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: opacity 0.2s;
-        }
-        button:active { opacity: 0.8; }
-        button.btn-secondary { background-color: var(--black-night); color: var(--yellow-coffee); }
-        button.btn-whatsapp { background-color: #25D366; color: white; margin-bottom: 10px; }
-        
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: var(--alb-cald);
-            display: flex;
-            justify-content: space-around;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 100;
-        }
-        .nav-item {
-            flex: 1;
-            text-align: center;
-            padding: 15px 0;
-            color: var(--gray-text);
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .nav-item.active { color: var(--black-night); border-top: 3px solid var(--yellow-coffee); }
+            .saving-indicator { @apply fixed bottom-[90px] right-4 bg-black-night text-yellow-coffee px-5 py-2.5 rounded-full text-xs font-bold opacity-0 transition-all duration-300 pointer-events-none shadow-xl transform translate-y-4; }
+            .saving-indicator.show { @apply opacity-100 translate-y-0; }
 
-        /* Screen 1: Inventar */
-        .sticky-top-controls {
-            position: sticky;
-            top: 75px; /* header height approx */
-            background: var(--cloud-dancer);
-            padding: 10px 0;
-            z-index: 99;
-            border-bottom: 1px solid #ddd;
-        }
-        .progress-bar-container { background: #ddd; height: 8px; border-radius: 4px; margin-top: 5px; overflow: hidden; }
-        .progress-bar { background: var(--yellow-coffee); height: 100%; width: 0%; transition: width 0.3s; }
-        .progress-text { font-size: 12px; font-weight: 700; text-align: right; margin-top: 2px; }
-        
-        .accordion { margin-top: 15px; }
-        .accordion-header {
-            background: var(--alb-cald);
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: 900;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            cursor: pointer;
-        }
-        .accordion-content {
-            display: none;
-            padding: 0 5px 15px;
-        }
-        .accordion-content.open { display: block; }
-        
-        .product-row {
-            background: var(--alb-cald);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 10px;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .product-name { font-weight: 700; font-size: 14px; }
-        .product-row input { margin: 0; padding: 8px; font-size: 14px; text-align: center; }
+            .chips { @apply flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide; }
+            .chip { @apply px-5 py-2.5 bg-alb-cald rounded-full text-sm font-bold whitespace-nowrap cursor-pointer border border-gray-200 transition-all duration-200 hover:bg-gray-100 shadow-sm; }
+            .chip.active { @apply bg-black-night text-yellow-coffee border-black-night shadow-md transform scale-105; }
+            
+            .report-section { @apply mb-6; }
+            .report-title { @apply font-black mb-3 border-b-2 border-yellow-coffee pb-2 text-lg; }
+            .report-item { @apply bg-alb-cald p-4 rounded-xl mb-3 shadow-sm border border-gray-100 transition-all hover:shadow-md; }
+            .report-item-header { @apply font-bold flex justify-between mb-3 text-[15px]; }
+            .report-loc { @apply text-[13px] flex justify-between text-gray-500 ml-3 border-l-2 border-gray-200 pl-3 py-0.5 my-1; }
+            .report-loc.has-necesar { @apply text-black-night font-bold border-yellow-coffee; }
 
-        .saving-indicator {
-            position: fixed;
-            bottom: 70px;
-            right: 15px;
-            background: var(--black-night);
-            color: var(--yellow-coffee);
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
+            #admin-auth { @apply text-center mt-12 bg-alb-cald p-8 rounded-2xl shadow-sm border border-gray-100; }
+            .admin-product { @apply bg-alb-cald p-5 rounded-xl mb-4 relative shadow-sm border border-gray-100 transition-all; }
+            .admin-product.inactive { @apply opacity-60 grayscale-[50%]; }
+            .admin-grid { @apply grid grid-cols-2 gap-3 mt-2; }
+            .checkbox-group { @apply flex gap-5 items-center text-sm my-4 flex-wrap bg-white/50 p-3 rounded-lg; }
+            .checkbox-group input[type="checkbox"] { @apply w-5 h-5 cursor-pointer accent-yellow-coffee rounded; }
+
+            .hidden { @apply !hidden; }
+            .loader { @apply text-center p-8 font-bold animate-pulse text-gray-text; }
+
+            /* Ascundere scrollbar pe elementele care fac scroll yatay */
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         }
-        .saving-indicator.show { opacity: 1; }
-
-        /* Screen 2: Centralizator */
-        .chips { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
-        .chip {
-            padding: 8px 15px;
-            background: var(--alb-cald);
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-            border: 1px solid #ddd;
-        }
-        .chip.active { background: var(--black-night); color: var(--yellow-coffee); border-color: var(--black-night); }
-        
-        .report-section { margin-bottom: 25px; }
-        .report-title { font-weight: 900; margin-bottom: 10px; border-bottom: 2px solid var(--yellow-coffee); padding-bottom: 5px; }
-        .report-item { background: var(--alb-cald); padding: 10px; border-radius: 8px; margin-bottom: 8px; }
-        .report-item-header { font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .report-loc { font-size: 13px; display: flex; justify-content: space-between; color: var(--gray-text); margin-left: 10px; border-left: 2px solid #ddd; padding-left: 5px;}
-        .report-loc.has-necesar { color: var(--black-night); font-weight: bold;}
-
-        /* Screen 3: Admin */
-        #admin-auth { text-align: center; margin-top: 50px; }
-        .admin-product { background: var(--alb-cald); padding: 15px; border-radius: 8px; margin-bottom: 10px; position: relative; }
-        .admin-product.inactive { opacity: 0.6; }
-        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .checkbox-group { display: flex; gap: 10px; align-items: center; font-size: 14px; }
-        .checkbox-group input { width: auto; }
-
-        /* Utils */
-        .hidden { display: none !important; }
-        .loader { text-align: center; padding: 20px; font-weight: bold; }
     </style>
+
 </head>
 <body>
 
