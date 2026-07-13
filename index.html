@@ -262,11 +262,14 @@
           if (deferredPrompt) {
               deferredPrompt.prompt();
               const { outcome } = await deferredPrompt.userChoice;
-              if (outcome === 'accepted') {
-                  const btn = document.getElementById('btn-install-pwa');
-                  if(btn) { btn.style.display = 'none'; btn.classList.add('hidden'); }
-              }
               deferredPrompt = null;
+          } else {
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+              if (isIOS) {
+                  alert('Pentru iPhone / iPad:\n1. Apasă pe butonul de Share (Pătratul cu săgeată în sus) din meniul de jos al telefonului.\n2. Alege "Add to Home Screen" (Adaugă pe ecranul principal).');
+              } else {
+                  alert('Aplicația pare să fie deja instalată sau browserul tău nu suportă instalarea automată. Verifică ecranul principal al telefonului sau meniul browserului pentru opțiunea "Install app".');
+              }
           }
       }
     </script>
@@ -279,7 +282,6 @@
         <img src="images/logo1.png?v=2" alt="Rewind Logo" style="width: 220px; height: auto; margin-bottom: 5px; margin-top: 5px;">
         <h2 id="alt-logo" style="display:none; color: var(--yellow-coffee);">REWIND</h2>
     </div>
-    <button id="btn-install-pwa-header" class="hidden" style="margin-top:10px; padding: 10px; background:var(--black-night); color:var(--yellow-coffee); display:none; width: 100%; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="installPWA()">📱 Instalează Aplicația</button>
 </header>
 
 <div class="container">
@@ -343,13 +345,12 @@
     <div id="screen-admin" class="screen">
         <div id="admin-auth">
             <h3>Acces Management</h3>
+            <button id="btn-install-pwa" style="margin-bottom:20px; padding: 10px; background:var(--black-night); color:var(--yellow-coffee); width: 100%; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="installPWA()">📱 Descarcă Aplicația</button>
             <input type="password" id="admin-pin" placeholder="Introdu PIN-ul">
             <button onclick="checkAdminPin()">Log in</button>
         </div>
         <div id="admin-dashboard" class="hidden">
-
             <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
-            
             <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
                 <h4>Adaugă Produs</h4>
                 <input type="text" id="new-nume" placeholder="Nume Produs">
