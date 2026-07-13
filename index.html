@@ -238,7 +238,8 @@
     </style>
 
 
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=2">
+    <link rel="apple-touch-icon" href="icon-192.png?v=2">
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -275,9 +276,8 @@
 
 <header>
     <div class="header-content">
-        <img src="images/logo1.png" alt="Rewind Logo" style="height: 55px; margin-bottom: 5px; margin-top: 5px;">
+        <img src="images/logo1.png?v=2" alt="Rewind Logo" style="width: 220px; height: auto; margin-bottom: 5px; margin-top: 5px;">
         <h2 id="alt-logo" style="display:none; color: var(--yellow-coffee);">REWIND</h2>
-        <div class="tagline" style="color: var(--yellow-coffee); font-size: 13px; letter-spacing: 3px;">COFFEE • MUSIC • VIBE</div>
     </div>
     <button id="btn-install-pwa-header" class="hidden" style="margin-top:10px; padding: 10px; background:var(--black-night); color:var(--yellow-coffee); display:none; width: 100%; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="installPWA()">📱 Instalează Aplicația</button>
 </header>
@@ -347,7 +347,7 @@
             <button onclick="checkAdminPin()">Log in</button>
         </div>
         <div id="admin-dashboard" class="hidden">
-            <button id="btn-install-pwa" class="hidden" style="margin-top:20px; margin-bottom:20px; background:var(--black-night); color:var(--yellow-coffee); display:none;" onclick="installPWA()">📱 Instalează Aplicația pe Telefon</button>
+
             <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
             
             <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
