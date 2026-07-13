@@ -39,127 +39,72 @@
         }
       }
     </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            body { @apply bg-cloud-dancer text-black-night pb-[80px] font-sans m-0 p-0; -webkit-tap-highlight-color: transparent; }
-            * { @apply box-border; }
-            
-            header { @apply bg-black-night text-cloud-dancer text-center p-6 sticky top-0 z-50 shadow-lg; }
-            /* Mărim sigla semnificativ de la 40px la 80px și dăm spațiu */
-            header img { @apply h-20 mx-auto mb-3 transition-transform hover:scale-105 duration-300; }
-            .tagline { @apply text-xs tracking-widest font-bold text-yellow-coffee; }
-            .header-content { @apply flex flex-col items-center; }
+    <style>
+.screen { display: none; }
+.screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+.hidden { display: none !important; }
+.accordion-content.open { display: block; animation: fadeIn 0.3s ease-out; }
+.saving-indicator.show { opacity: 1; transform: translateY(0); }
+@keyframes fadeIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
 
-            .container { @apply p-4 max-w-3xl mx-auto; }
-            .screen { @apply hidden; }
-            .screen.active { @apply block animate-[fadeIn_0.3s_ease-out]; }
-
-            input[type="text"], input[type="password"], select { @apply w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent; }
-            
-            button { @apply w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95; }
-            button.btn-secondary { @apply bg-black-night text-yellow-coffee; }
-            button.btn-whatsapp { @apply bg-[#25D366] text-white mb-2; }
-            
-            .bottom-nav { @apply fixed bottom-0 left-0 w-full bg-alb-cald flex justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[100] rounded-t-3xl; }
-            .nav-item { @apply flex-1 text-center py-4 text-gray-text font-bold text-[13px] cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-1; }
-            .nav-item.active { @apply text-black-night border-t-4 border-yellow-coffee rounded-t-sm; }
-
-            .sticky-top-controls { @apply sticky top-[110px] bg-cloud-dancer/95 py-3 z-40 border-b border-gray-200 backdrop-blur-md mb-2; }
-            .progress-bar-container { @apply bg-gray-300 h-2 rounded-full mt-3 overflow-hidden shadow-inner; }
-            .progress-bar { @apply bg-yellow-coffee h-full w-0 transition-all duration-500 ease-out; }
-            .progress-text { @apply text-xs font-bold text-right mt-1 text-gray-600; }
-            
-            .accordion { @apply mt-4; }
-            .accordion-header { @apply bg-alb-cald p-4 rounded-xl font-black mb-2 flex justify-between shadow-sm cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-gray-100; }
-            .accordion-content { @apply hidden px-1 pb-4; }
-            .accordion-content.open { @apply block animate-[fadeIn_0.3s_ease-out]; }
-            
-            .product-row { @apply bg-alb-cald p-3 rounded-xl mb-3 grid grid-cols-[2fr_1fr_1fr] gap-3 items-center shadow-sm border border-gray-100 transition-all hover:shadow-md; }
-            .product-name { @apply font-bold text-[14px] leading-tight; }
-            .product-row input { @apply m-0 p-2.5 text-[15px] font-bold text-center; }
-
-            .saving-indicator { @apply fixed bottom-[90px] right-4 bg-black-night text-yellow-coffee px-5 py-2.5 rounded-full text-xs font-bold opacity-0 transition-all duration-300 pointer-events-none shadow-xl transform translate-y-4; }
-            .saving-indicator.show { @apply opacity-100 translate-y-0; }
-
-            .chips { @apply flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide; }
-            .chip { @apply px-5 py-2.5 bg-alb-cald rounded-full text-sm font-bold whitespace-nowrap cursor-pointer border border-gray-200 transition-all duration-200 hover:bg-gray-100 shadow-sm; }
-            .chip.active { @apply bg-black-night text-yellow-coffee border-black-night shadow-md transform scale-105; }
-            
-            .report-section { @apply mb-6; }
-            .report-title { @apply font-black mb-3 border-b-2 border-yellow-coffee pb-2 text-lg; }
-            .report-item { @apply bg-alb-cald p-4 rounded-xl mb-3 shadow-sm border border-gray-100 transition-all hover:shadow-md; }
-            .report-item-header { @apply font-bold flex justify-between mb-3 text-[15px]; }
-            .report-loc { @apply text-[13px] flex justify-between text-gray-500 ml-3 border-l-2 border-gray-200 pl-3 py-0.5 my-1; }
-            .report-loc.has-necesar { @apply text-black-night font-bold border-yellow-coffee; }
-
-            #admin-auth { @apply text-center mt-12 bg-alb-cald p-8 rounded-2xl shadow-sm border border-gray-100; }
-            .admin-product { @apply bg-alb-cald p-5 rounded-xl mb-4 relative shadow-sm border border-gray-100 transition-all; }
-            .admin-product.inactive { @apply opacity-60 grayscale-[50%]; }
-            .admin-grid { @apply grid grid-cols-2 gap-3 mt-2; }
-            .checkbox-group { @apply flex gap-5 items-center text-sm my-4 flex-wrap bg-white/50 p-3 rounded-lg; }
-            .checkbox-group input[type="checkbox"] { @apply w-5 h-5 cursor-pointer accent-yellow-coffee rounded; }
-
-            .hidden { @apply !hidden; }
-            .loader { @apply text-center p-8 font-bold animate-pulse text-gray-text; }
-
-            /* Ascundere scrollbar pe elementele care fac scroll yatay */
-            .scrollbar-hide::-webkit-scrollbar { display: none; }
-            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        }
+        body { -webkit-tap-highlight-color: transparent; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .admin-product.inactive { opacity: 0.6; filter: grayscale(50%); }
     </style>
 
 </head>
-<body>
+<body class="bg-cloud-dancer text-black-night pb-[80px] font-sans m-0 p-0">
 
-<header>
-    <div class="header-content">
+<header class="bg-black-night text-cloud-dancer text-center p-6 sticky top-0 z-50 shadow-lg">
+    <div class="flex flex-col items-center">
         <!-- Sigla Rewind din brand manual -->
         <img src="https://rewindcafe.ro/wp-content/themes/rewind-theme/images/sigla.png" alt="Rewind" onerror="this.style.display='none'; document.getElementById('alt-logo').style.display='block';">
         <h2 id="alt-logo" style="display:none; color: var(--yellow-coffee);">REWIND</h2>
-        <div class="tagline">COFFEE • MUSIC • VIBE</div>
+        <div class="text-xs tracking-widest font-bold text-yellow-coffee">COFFEE • MUSIC • VIBE</div>
     </div>
 </header>
 
-<div class="container">
+<div class="p-4 max-w-3xl mx-auto">
     
     <!-- ECRAN 1: INVENTAR -->
     <div id="screen-inventar" class="screen active">
-        <div class="sticky-top-controls">
-            <select id="select-locatie">
+        <div class="sticky-top-controls sticky top-[110px] bg-cloud-dancer/95 py-3 z-40 border-b border-gray-200 backdrop-blur-md mb-2">
+            <select class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="select-locatie">
                 <option value="" disabled selected>Alege locația...</option>
                 <option value="Miroslava">Miroslava</option>
                 <option value="Pacurari">Kaufland Păcurari</option>
                 <option value="Alexandru">Kaufland Alexandru</option>
             </select>
-            <input type="text" id="input-operator" placeholder="Numele tău (Operator)">
-            <input type="text" id="search-inventar" placeholder="Caută produs (ex: Portocale)...">
+            <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="input-operator" placeholder="Numele tău (Operator)">
+            <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="search-inventar" placeholder="Caută produs (ex: Portocale)...">
             
-            <div class="progress-text" id="progress-text">0/0 produse completate</div>
-            <div class="progress-bar-container">
-                <div class="progress-bar" id="progress-bar"></div>
+            <div class="text-xs font-bold text-right mt-1 text-gray-600" id="progress-text">0/0 produse completate</div>
+            <div class="bg-gray-300 h-2 rounded-full mt-3 overflow-hidden shadow-inner">
+                <div class="progress-bar bg-yellow-coffee h-full w-0 transition-all duration-500 ease-out" id="progress-bar"></div>
             </div>
         </div>
 
-        <div id="inventar-loader" class="loader">Se încarcă produsele...</div>
+        <div id="inventar-loader" class="loader text-center p-8 font-bold animate-pulse text-gray-text">Se încarcă produsele...</div>
         <div id="inventar-container"></div>
         
         <br>
-        <button id="btn-finalizare" class="hidden">Finalizează Inventarul</button>
+        <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" id="btn-finalizare" class="hidden">Finalizează Inventarul</button>
     </div>
 
     
     <!-- ECRAN 2: CENTRALIZATOR -->
     <div id="screen-centralizator" class="screen">
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button id="btn-genereaza-raport" style="margin:0;">Generează Live</button>
-            <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0;">Istoric Salvate</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" id="btn-genereaza-raport" style="margin:0;">Generează Live</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" id="btn-istoric-sesiuni" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" style="margin:0;">Istoric Salvate</button>
         </div>
-        <div id="centralizator-loader" class="loader hidden">Se procesează datele...</div>
+        <div id="centralizator-loader" class="loader hidden text-center p-8 font-bold animate-pulse text-gray-text">Se procesează datele...</div>
         
         <div id="raport-content" class="hidden" style="margin-top: 15px;">
-            <div class="chips" id="raport-chips"></div>
+            <div class="chips flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide" id="raport-chips"></div>
             <div id="export-buttons" class="hidden" style="margin-bottom:15px; display:flex; flex-direction:column; gap:5px;"></div>
-            <button id="btn-salveaza-sesiune" style="margin-bottom:15px; background:var(--success); color:white;">💾 Salvează Sesiunea</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" id="btn-salveaza-sesiune" style="margin-bottom:15px; background:var(--success); color:white;">💾 Salvează Sesiunea</button>
             <div id="raport-list"></div>
         </div>
 
@@ -169,60 +114,60 @@
         </div>
 
         <div id="sesiune-view" class="hidden" style="margin-top: 15px;">
-            <button class="btn-secondary" onclick="showIstoricSesiuni()" style="margin-bottom:15px;">&larr; Înapoi la Istoric</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" onclick="showIstoricSesiuni()" style="margin-bottom:15px;">&larr; Înapoi la Istoric</button>
             <div id="sesiune-header" style="margin-bottom:15px; font-weight:bold;"></div>
-            <div class="chips" id="sesiune-chips"></div>
+            <div class="chips flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide" id="sesiune-chips"></div>
             <div id="sesiune-export-buttons" class="hidden" style="margin-bottom: 15px; display:flex; flex-direction:column; gap:5px;"></div>
-            <button id="btn-export-csv" class="btn-secondary" style="margin-bottom:15px;">📄 Descarcă CSV</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" id="btn-export-csv" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" style="margin-bottom:15px;">📄 Descarcă CSV</button>
             <div id="sesiune-linii"></div>
-            <button id="btn-finalizare-sesiune" style="margin-top:20px; background:var(--success); color:white;">✔️ Finalizează Sesiunea</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" id="btn-finalizare-sesiune" style="margin-top:20px; background:var(--success); color:white;">✔️ Finalizează Sesiunea</button>
         </div>
     </div>
 
     <!-- ECRAN 3: ADMIN -->
     <div id="screen-admin" class="screen">
-        <div id="admin-auth">
+        <div id="admin-auth" class="text-center mt-12 bg-alb-cald p-8 rounded-2xl shadow-sm border border-gray-100">
             <h3>Acces Management</h3>
-            <input type="password" id="admin-pin" placeholder="Introdu PIN-ul">
-            <button onclick="checkAdminPin()">Log in</button>
+            <input type="password" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="admin-pin" placeholder="Introdu PIN-ul">
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" onclick="checkAdminPin()">Log in</button>
         </div>
         <div id="admin-dashboard" class="hidden">
-            <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
+            <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
             
-            <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
+            <div id="admin-add-form" class="hidden admin-product bg-alb-cald p-5 rounded-xl mb-4 relative shadow-sm border border-gray-100 transition-all" style="border: 2px solid var(--yellow-coffee);">
                 <h4>Adaugă Produs</h4>
-                <input type="text" id="new-nume" placeholder="Nume Produs">
-                <input type="text" id="new-categorie" placeholder="Categorie">
-                <div class="admin-grid">
-                    <select id="new-canal">
+                <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="new-nume" placeholder="Nume Produs">
+                <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="new-categorie" placeholder="Categorie">
+                <div class="admin-grid grid grid-cols-2 gap-3 mt-2">
+                    <select class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="new-canal">
                         <option value="Metro">Metro</option>
                         <option value="Online">Online</option>
                         <option value="Dropshot">Dropshot</option>
                         <option value="Interuno">Interuno</option>
                     </select>
-                    <input type="text" id="new-unitate" placeholder="Unitate (buc/kg/etc)" value="buc">
+                    <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="new-unitate" placeholder="Unitate (buc/kg/etc)" value="buc">
                 </div>
-                <div class="checkbox-group">
+                <div class="checkbox-group flex gap-5 items-center text-sm my-4 flex-wrap bg-white/50 p-3 rounded-lg">
                     <label><input type="checkbox" class="new-loc" value="Miroslava" checked> Miroslava</label>
                     <label><input type="checkbox" class="new-loc" value="Pacurari" checked> Păcurari</label>
                     <label><input type="checkbox" class="new-loc" value="Alexandru" checked> Alexandru</label>
                 </div>
-                <button onclick="saveNewProduct()">Salvează Produs</button>
-                <button class="btn-secondary" onclick="document.getElementById('admin-add-form').classList.add('hidden')">Anulează</button>
+                <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" onclick="saveNewProduct()">Salvează Produs</button>
+                <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" onclick="document.getElementById('admin-add-form').classList.add('hidden')">Anulează</button>
             </div>
 
             
-            <div id="admin-channels" class="admin-product" style="margin-top:20px; border: 2px solid var(--black-night);">
+            <div id="admin-channels" class="admin-product bg-alb-cald p-5 rounded-xl mb-4 relative shadow-sm border border-gray-100 transition-all" style="margin-top:20px; border: 2px solid var(--black-night);">
                 <h4>Administrare Canale</h4>
                 <div style="display:flex; gap:10px; margin-bottom:10px; margin-top:10px;">
-                    <input type="text" id="new-canal-name" placeholder="Nume canal nou" style="margin:0;">
-                    <button onclick="saveNewCanal()" style="margin:0; width:auto; white-space:nowrap;">Adaugă</button>
+                    <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="new-canal-name" placeholder="Nume canal nou" style="margin:0;">
+                    <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" onclick="saveNewCanal()" style="margin:0; width:auto; white-space:nowrap;">Adaugă</button>
                 </div>
                 <div id="canale-list"></div>
             </div>
 
             <div style="margin-top: 20px;">
-                <input type="text" id="search-admin" placeholder="Caută produs pentru editare...">
+                <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" id="search-admin" placeholder="Caută produs pentru editare...">
                 <div id="admin-product-list"></div>
             </div>
         </div>
@@ -231,13 +176,13 @@
 </div>
 
 <!-- Bottom Navigation -->
-<div class="bottom-nav">
-    <div class="nav-item active" onclick="switchScreen('inventar', this)">📋<br>Stoc</div>
-    <div class="nav-item" onclick="switchScreen('centralizator', this)">📊<br>Centralizator</div>
-    <div class="nav-item" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
+<div class="fixed bottom-0 left-0 w-full bg-alb-cald flex justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[100] rounded-t-3xl">
+    <div class="nav-item active flex-1 text-center py-4 text-black-night font-bold text-[13px] cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-1 border-t-4 border-yellow-coffee rounded-t-sm" onclick="switchScreen('inventar', this)">📋<br>Stoc</div>
+    <div class="nav-item flex-1 text-center py-4 text-gray-text font-bold text-[13px] cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-1" onclick="switchScreen('centralizator', this)">📊<br>Centralizator</div>
+    <div class="nav-item flex-1 text-center py-4 text-gray-text font-bold text-[13px] cursor-pointer transition-colors duration-200 flex flex-col items-center justify-center gap-1" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
 </div>
 
-<div id="saving-indicator" class="saving-indicator">Se salvează...</div>
+<div id="saving-indicator" class="saving-indicator fixed bottom-[90px] right-4 bg-black-night text-yellow-coffee px-5 py-2.5 rounded-full text-xs font-bold opacity-0 transition-all duration-300 pointer-events-none shadow-xl transform translate-y-4">Se salvează...</div>
 
 <script>
     // Configurare Supabase v2
@@ -357,7 +302,7 @@
             adminCanaleList.innerHTML = canaleList.map(c => `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #eee;">
                     <span style="${!c.activ ? 'text-decoration:line-through; color:#999;' : ''}">${c.nume}</span>
-                    <button class="btn-secondary" style="width:auto; padding:3px 8px; margin:0; font-size:12px;" onclick="toggleCanalStatus('${c.id}', ${!c.activ})">
+                    <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" style="width:auto; padding:3px 8px; margin:0; font-size:12px;" onclick="toggleCanalStatus('${c.id}', ${!c.activ})">
                         ${c.activ ? 'Dezactivează' : 'Activează'}
                     </button>
                 </div>
@@ -387,9 +332,9 @@
         const chipsContainer = document.getElementById(containerId);
         if(!chipsContainer) return;
 
-        let chipsHTML = `<div class="chip active" data-canal="Toate">Toate</div>`;
+        let chipsHTML = `<div class="chip active px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap cursor-pointer transition-all duration-200 bg-black-night text-yellow-coffee shadow-md transform scale-105" data-canal="Toate">Toate</div>`;
         activeCanale.forEach(c => {
-            chipsHTML += `<div class="chip" data-canal="${c.nume}">${c.nume}</div>`;
+            chipsHTML += `<div class="chip px-5 py-2.5 bg-alb-cald rounded-full text-sm font-bold whitespace-nowrap cursor-pointer border border-gray-200 transition-all duration-200 hover:bg-gray-100 shadow-sm" data-canal="${c.nume}">${c.nume}</div>`;
         });
         chipsContainer.innerHTML = chipsHTML;
         
@@ -409,7 +354,7 @@
         const expCont = document.getElementById(isSesiune ? 'sesiune-export-buttons' : 'export-buttons');
         let exportHTML = '';
         activeCanale.forEach(c => {
-            exportHTML += `<button class="btn-whatsapp" style="margin-bottom:0;" onclick="${isSesiune ? 'exportWhatsAppSesiune' : 'exportWhatsApp'}('${c.nume}')">🛒 Trimite ${c.nume.toUpperCase()}</button>`;
+            exportHTML += `<button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" class="btn-whatsapp !bg-[#25D366] !text-white mb-2 w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" style="margin-bottom:0;" onclick="${isSesiune ? 'exportWhatsAppSesiune' : 'exportWhatsApp'}('${c.nume}')">🛒 Trimite ${c.nume.toUpperCase()}</button>`;
         });
         expCont.innerHTML = exportHTML;
         expCont.classList.remove('hidden');
@@ -490,9 +435,9 @@
                 const row = document.createElement('div');
                 row.className = 'product-row';
                 row.innerHTML = `
-                    <div class="product-name">${p.nume} <br><small style="color:#666">${p.unitate}</small></div>
-                    <input type="text" placeholder="Stoc real" value="${valStoc}" oninput="queueSave('${p.id}', 'stoc', this.value)">
-                    <input type="text" placeholder="Necesar" value="${valNecesar}" oninput="queueSave('${p.id}', 'necesar', this.value)">
+                    <div class="product-name font-bold text-[14px] leading-tight">${p.nume} <br><small style="color:#666">${p.unitate}</small></div>
+                    <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" placeholder="Stoc real" value="${valStoc}" oninput="queueSave('${p.id}', 'stoc', this.value)">
+                    <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" placeholder="Necesar" value="${valNecesar}" oninput="queueSave('${p.id}', 'necesar', this.value)">
                 `;
                 content.appendChild(row);
             });
@@ -833,7 +778,7 @@
         }
         
         list.innerHTML = data.map(s => `
-            <div class="report-item" style="cursor:pointer;" onclick="openSesiune('${s.id}')">
+            <div class="report-item bg-alb-cald p-4 rounded-xl mb-3 shadow-sm border border-gray-100 transition-all hover:shadow-md" style="cursor:pointer;" onclick="openSesiune('${s.id}')">
                 <div style="display:flex; justify-content:space-between;">
                     <strong>${new Date(s.creata_la).toLocaleString('ro-RO')}</strong>
                     <span style="color:${s.status==='deschisa'?'var(--success)':'var(--gray-text)'}">${s.status.toUpperCase()}</span>
@@ -889,14 +834,14 @@
             }
 
             return `
-            <div class="report-item" style="opacity: ${l.bifat ? '0.6' : '1'}; border: ${l.bifat ? '1px solid var(--success)' : 'none'};">
+            <div class="report-item bg-alb-cald p-4 rounded-xl mb-3 shadow-sm border border-gray-100 transition-all hover:shadow-md" style="opacity: ${l.bifat ? '0.6' : '1'}; border: ${l.bifat ? '1px solid var(--success)' : 'none'};">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" ${l.bifat ? 'checked' : ''} ${isFinal ? 'disabled' : ''} onchange="updateSesiuneLinie('${l.id}', 'bifat', this.checked)" style="width:20px; height:20px; margin:0;">
                     <div style="flex:1;">
                         <strong>${l.produs_nume}</strong> <small>(${l.canal})</small>
                         <div style="color:var(--error); font-weight:bold;">Total: ${l.total_necesar}</div>
                     </div>
-                    <input type="text" placeholder="Cumpărat" value="${l.cumparat || ''}" ${isFinal ? 'disabled' : ''} onblur="updateSesiuneLinie('${l.id}', 'cumparat', this.value)" style="width:80px; margin:0; padding:5px;">
+                    <input type="text" class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" placeholder="Cumpărat" value="${l.cumparat || ''}" ${isFinal ? 'disabled' : ''} onblur="updateSesiuneLinie('${l.id}', 'cumparat', this.value)" style="width:80px; margin:0; padding:5px;">
                 </div>
                 ${locHTML}
             </div>`;
@@ -1034,14 +979,14 @@
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <strong>${p.nume}</strong>
-                    <button class="btn-secondary" style="width:auto; padding:5px 10px; margin:0;" onclick="toggleProductStatus('${p.id}', ${!p.activ})">
+                    <button class="w-full p-4 bg-yellow-coffee text-black-night rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" class="btn-secondary !bg-black-night !text-yellow-coffee w-full p-4 rounded-xl text-base font-black cursor-pointer mt-2 transition-all duration-200 border-none shadow-md hover:shadow-lg active:scale-95" style="width:auto; padding:5px 10px; margin:0;" onclick="toggleProductStatus('${p.id}', ${!p.activ})">
                         ${p.activ ? 'Dezactivează' : 'Activează'}
                     </button>
                 </div>
-                <div class="admin-grid">
+                <div class="admin-grid grid grid-cols-2 gap-3 mt-2">
                     <div><small>Categorie:</small> ${p.categorie}</div>
                     <div><small>Canal:</small> 
-                        <select onchange="updateProductField('${p.id}', 'canal', this.value)" style="padding:4px; margin:0;">
+                        <select class="w-full p-3 my-2 border border-gray-300 rounded-xl bg-alb-cald text-base font-sans transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-coffee focus:border-transparent" onchange="updateProductField('${p.id}', 'canal', this.value)" style="padding:4px; margin:0;">
                             <option value="Metro" ${p.canal==='Metro'?'selected':''}>Metro</option>
                             <option value="Online" ${p.canal==='Online'?'selected':''}>Online</option>
                             <option value="Dropshot" ${p.canal==='Dropshot'?'selected':''}>Dropshot</option>
