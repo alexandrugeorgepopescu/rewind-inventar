@@ -350,7 +350,15 @@
             <button onclick="checkAdminPin()">Log in</button>
         </div>
         <div id="admin-dashboard" class="hidden">
-            <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
+            <div class="chips" style="margin-bottom: 20px; justify-content: center;">
+                <div class="chip active" onclick="switchAdminSection('produse', this)">📦 Produse</div>
+                <div class="chip" onclick="switchAdminSection('program', this)">📅 Program</div>
+                <div class="chip" onclick="switchAdminSection('salarizare', this)">💰 Salarii</div>
+            </div>
+
+            <!-- SECTIUNE: PRODUSE -->
+            <div id="admin-sec-produse">
+                <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
             <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
                 <h4>Adaugă Produs</h4>
                 <input type="text" id="new-nume" placeholder="Nume Produs">
@@ -387,6 +395,81 @@
                 <input type="text" id="search-admin" placeholder="Caută produs pentru editare...">
                 <div id="admin-product-list"></div>
             </div>
+            </div>
+
+            <!-- SECTIUNE: PROGRAM -->
+            <div id="admin-sec-program" class="hidden">
+                <h4 style="margin-bottom: 15px;">Editor Program</h4>
+                <div class="admin-grid" style="margin-bottom: 15px;">
+                    <select id="admin-prog-locatie">
+                        <option value="" disabled selected>Alege locația...</option>
+                        <option value="Miroslava">Miroslava</option>
+                        <option value="Pacurari">Kaufland Păcurari</option>
+                        <option value="Alexandru">Kaufland Alexandru</option>
+                    </select>
+                    <input type="month" id="admin-prog-luna">
+                </div>
+
+                <div class="admin-product" style="border: 2px solid var(--yellow-coffee);">
+                    <h5>Instrument Tipar Rapid</h5>
+                    <div class="admin-grid" style="margin-top: 10px;">
+                        <select id="admin-prog-angajat-tipar">
+                            <option value="">Alege angajat...</option>
+                        </select>
+                        <select id="admin-prog-regula">
+                            <option value="1/1">1 zi da / 1 nu</option>
+                            <option value="2/2">2 zile da / 2 nu</option>
+                        </select>
+                    </div>
+                    <div class="admin-grid" style="margin-top: 10px;">
+                        <input type="date" id="admin-prog-start" placeholder="Data Start">
+                        <input type="date" id="admin-prog-end" placeholder="Data End">
+                    </div>
+                    <button onclick="aplicaTiparProgram()" style="margin-top: 10px; padding: 10px;">Aplică Tipar</button>
+                    <p style="font-size: 11px; color: var(--gray-text); text-align: center; margin-top: 5px;">Atenție: suprascrie zilele libere din intervalul selectat.</p>
+                </div>
+
+                <div id="admin-prog-loader" class="loader hidden">Se încarcă...</div>
+                <div id="admin-prog-zile"></div>
+            </div>
+
+            <!-- SECTIUNE: SALARIZARE -->
+            <div id="admin-sec-salarizare" class="hidden">
+                <h4 style="margin-bottom: 15px;">Management Perioade Salarizare</h4>
+                
+                <div class="admin-product">
+                    <h5>Creare Perioadă Nouă</h5>
+                    <div class="admin-grid" style="margin-top: 10px;">
+                        <input type="date" id="admin-sal-start">
+                        <input type="date" id="admin-sal-end">
+                    </div>
+                    <input type="text" id="admin-sal-nume" placeholder="Nume (ex: 01.06 - 05.07)" style="margin-top: 10px;">
+                    <button onclick="crearePerioada()" style="margin-top: 10px; padding: 10px;">Creează Perioada</button>
+                </div>
+
+                <div id="admin-sal-perioade-list" style="margin-top: 20px;"></div>
+                
+                <div id="admin-sal-detalii" class="hidden admin-product" style="margin-top: 20px; border: 2px solid var(--black-night);">
+                    <h4 id="admin-sal-detalii-titlu" style="margin-bottom: 10px;">Calcul Perioadă</h4>
+                    <p style="font-size: 11px; color: var(--gray-text); text-align: center; margin-bottom: 15px;">Disclaimer: Calcul estimativ pentru management. Statul de plată oficial se face de contabilitate.</p>
+                    
+                    <div id="admin-sal-raport"></div>
+                    
+                    <h5 style="margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">Adaugă Bonus Manual</h5>
+                    <div class="admin-grid" style="margin-top: 10px;">
+                        <select id="admin-bonus-angajat"></select>
+                        <input type="number" id="admin-bonus-suma" placeholder="Sumă (lei)">
+                    </div>
+                    <input type="text" id="admin-bonus-motiv" placeholder="Motivul bonusului" style="margin-top: 10px;">
+                    <label style="display:flex; align-items:center; gap:10px; margin-top:10px; font-size: 14px;">
+                        <input type="checkbox" id="admin-bonus-recurent" style="width: auto;"> Bonus recurent (se va aplica și pe viitor)
+                    </label>
+                    <button onclick="adaugaBonusManual()" style="margin-top: 15px; padding: 10px; background: var(--black-night); color: var(--yellow-coffee);">Adaugă Bonus</button>
+                    
+                    <button id="btn-export-csv" class="btn-secondary" style="margin-top: 20px;" onclick="exportSalarizareCSV()">Export CSV</button>
+                    <button id="btn-inchide-perioada" style="margin-top: 10px; background: var(--error); color: white;" onclick="inchidePerioada()">Închide Perioada (Read-only)</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -417,12 +500,42 @@
         </div>
     </div>
 
+    <!-- ECRAN 5: PROGRAM -->
+    <div id="screen-program" class="screen">
+        <h3 style="text-align: center; margin-bottom: 15px;">Program de Lucru</h3>
+        <select id="program-locatie" style="margin-bottom: 15px;">
+            <option value="" disabled selected>Alege locația...</option>
+            <option value="Miroslava">Miroslava</option>
+            <option value="Pacurari">Kaufland Păcurari</option>
+            <option value="Alexandru">Kaufland Alexandru</option>
+        </select>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <button id="btn-program-prev" style="width: auto; margin: 0; padding: 10px 15px; background: var(--alb-cald); border: 1px solid rgba(0,0,0,0.1);">◀</button>
+            <div style="text-align: center;">
+                <h4 id="program-week-label" style="margin: 0; font-size: 15px;">Săptămâna curentă</h4>
+                <div style="font-size: 12px; color: var(--gray-text);" id="program-dates-label">...</div>
+            </div>
+            <button id="btn-program-next" style="width: auto; margin: 0; padding: 10px 15px; background: var(--alb-cald); border: 1px solid rgba(0,0,0,0.1);">▶</button>
+        </div>
+
+        <div id="program-list" style="margin-bottom: 20px;">
+            <p style="text-align:center; color: var(--gray-text); font-size: 14px;">Selectează locația pentru a vedea programul.</p>
+        </div>
+
+        <h4 style="margin-bottom: 10px; border-bottom: 2px solid var(--cloud-dancer); padding-bottom: 5px;">Total Ore Săptămână</h4>
+        <div id="program-totals-list">
+            <p style="text-align:center; color: var(--gray-text); font-size: 14px;">Selectează locația...</p>
+        </div>
+    </div>
+
 </div>
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
     <div class="nav-item active" onclick="switchScreen('inventar', this)">📦<br>Stoc</div>
-    <div class="nav-item" onclick="switchScreen('centralizator', this)">📋<br>Centralizator</div>
+    <div class="nav-item" onclick="switchScreen('program', this)">📅<br>Program</div>
+    <div class="nav-item" onclick="switchScreen('centralizator', this)">📋<br>Centr.</div>
     <div class="nav-item" onclick="switchScreen('facturi', this)">📸<br>Facturi</div>
     <div class="nav-item" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
 </div>
@@ -507,6 +620,17 @@
             if (savedLoc && locSelect) {
                 locSelect.value = savedLoc;
                 locSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        if (screenId === 'program') {
+            const savedLoc = localStorage.getItem('rewind_location');
+            const locSelect = document.getElementById('program-locatie');
+            if (savedLoc && locSelect && !locSelect.value) {
+                locSelect.value = savedLoc;
+            }
+            if (locSelect && locSelect.value) {
+                loadProgramData();
             }
         }
         
@@ -1496,7 +1620,739 @@
             if (currentLocation) loadInventarData();
         }
     }
+    // ==========================================
+    // ECRAN 5: PROGRAM
+    // ==========================================
+    
+    let programCurrentWeekStart = getMonday(new Date());
+    const programLocatieSelect = document.getElementById('program-locatie');
+    
+    if (programLocatieSelect) {
+        programLocatieSelect.addEventListener('change', () => {
+            localStorage.setItem('rewind_location', programLocatieSelect.value);
+            loadProgramData();
+        });
+    }
+    
+    document.getElementById('btn-program-prev').addEventListener('click', () => {
+        programCurrentWeekStart.setDate(programCurrentWeekStart.getDate() - 7);
+        loadProgramData();
+    });
+    
+    document.getElementById('btn-program-next').addEventListener('click', () => {
+        programCurrentWeekStart.setDate(programCurrentWeekStart.getDate() + 7);
+        loadProgramData();
+    });
+    
+    function getMonday(d) {
+        const nd = new Date(d);
+        const day = nd.getDay(),
+            diff = nd.getDate() - day + (day === 0 ? -6 : 1);
+        nd.setDate(diff);
+        nd.setHours(0,0,0,0);
+        return nd;
+    }
+    
+    async function loadProgramData() {
+        const loc = programLocatieSelect.value;
+        if (!loc) return;
+        
+        const weekEnd = new Date(programCurrentWeekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23,59,59,999);
+        
+        const formatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        document.getElementById('program-dates-label').innerText = 
+            `${programCurrentWeekStart.toLocaleDateString('ro-RO', formatOptions)} - ${weekEnd.toLocaleDateString('ro-RO', formatOptions)}`;
+        
+        const thisMonday = getMonday(new Date());
+        let labelStr = "Interval afișat";
+        const diffDays = Math.round((programCurrentWeekStart.getTime() - thisMonday.getTime()) / (1000 * 3600 * 24));
+        if (diffDays === 0) {
+            labelStr = "Săptămâna curentă";
+        } else if (diffDays === -7) {
+            labelStr = "Săptămâna trecută";
+        } else if (diffDays === 7) {
+            labelStr = "Săptămâna viitoare";
+        } else {
+            labelStr = `${programCurrentWeekStart.toLocaleDateString('ro-RO', {day:'2-digit',month:'2-digit'})} - ${weekEnd.toLocaleDateString('ro-RO', {day:'2-digit',month:'2-digit'})}`;
+        }
+        const lbl = document.getElementById('program-week-label');
+        if (lbl) lbl.innerText = labelStr;
+
+        
+        const startIso = programCurrentWeekStart.toISOString().split('T')[0];
+        const endIso = weekEnd.toISOString().split('T')[0];
+        
+        document.getElementById('program-list').innerHTML = `<div class="loader">Se încarcă programul...</div>`;
+        document.getElementById('program-totals-list').innerHTML = `<div class="loader">Se calculează...</div>`;
+        
+        // Criteriu confidențialitate: SELECT STRICT de elemente publice
+        const { data: progData, error: progErr } = await supabaseClient
+            .from('program_zile')
+            .select(`
+                id, data, ora_start, ora_sfarsit,
+                angajati!inner(nume)
+            `)
+            .eq('locatie', loc)
+            .gte('data', startIso)
+            .lte('data', endIso)
+            .order('data', { ascending: true })
+            .order('ora_start', { ascending: true });
+            
+        if (progErr) {
+            document.getElementById('program-list').innerHTML = `<p style="color:var(--error);text-align:center;">Eroare la încărcare program.</p>`;
+            document.getElementById('program-totals-list').innerHTML = '';
+            return;
+        }
+        
+        renderProgramWeek(progData);
+    }
+    
+    function renderProgramWeek(progData) {
+        const listEl = document.getElementById('program-list');
+        const totalsEl = document.getElementById('program-totals-list');
+        listEl.innerHTML = '';
+        
+        const days = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+        const totals = {};
+        
+        // Corectare timezone pentru a obține data locală curentă reală
+        const today = new Date();
+        const todayIso = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        
+        for (let i = 0; i < 7; i++) {
+            const currentDay = new Date(programCurrentWeekStart);
+            currentDay.setDate(currentDay.getDate() + i);
+            const dateStr = new Date(currentDay.getTime() - (currentDay.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            const isToday = dateStr === todayIso;
+            
+            const dayEntries = progData.filter(p => p.data === dateStr);
+            
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'report-item';
+            if (isToday) dayDiv.style.border = '2px solid var(--yellow-coffee)';
+            
+            let headerStyle = isToday 
+                ? 'color: var(--yellow-coffee); background: var(--black-night); padding: 8px 12px; border-radius: 8px; margin: -5px -5px 10px -5px;' 
+                : '';
+                
+            let html = `<div class="report-item-header" style="${headerStyle}">
+                <span>${days[i]} ${currentDay.toLocaleDateString('ro-RO', {day:'2-digit', month:'2-digit'})}</span>
+                ${isToday ? '<span style="font-size:12px; background:var(--yellow-coffee); color:var(--black-night); padding:2px 6px; border-radius:10px;">Azi</span>' : ''}
+            </div>`;
+            
+            if (dayEntries.length === 0) {
+                html += `<div style="color: var(--gray-text); font-size: 14px; text-align: center; padding: 10px 0;">Liber</div>`;
+            } else {
+                dayEntries.forEach(entry => {
+                    const start = entry.ora_start.substring(0, 5);
+                    const end = entry.ora_sfarsit.substring(0, 5);
+                    html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:15px; padding-left:5px; border-left:3px solid var(--cloud-dancer);">
+                        <strong>${entry.angajati.nume}</strong>
+                        <span style="background:var(--cloud-dancer); padding:3px 8px; border-radius:5px; font-family:monospace;">${start} - ${end}</span>
+                    </div>`;
+                    
+                    // Calcul ore suportand jumătăți
+                    const h1 = parseInt(start.split(':')[0]);
+                    const m1 = parseInt(start.split(':')[1]);
+                    const h2 = parseInt(end.split(':')[0]);
+                    const m2 = parseInt(end.split(':')[1]);
+                    let diff = (h2 + m2/60) - (h1 + m1/60);
+                    if (diff < 0) diff += 24;
+                    
+                    totals[entry.angajati.nume] = (totals[entry.angajati.nume] || 0) + diff;
+                });
+            }
+            
+            dayDiv.innerHTML = html;
+            listEl.appendChild(dayDiv);
+        }
+        
+        if (Object.keys(totals).length === 0) {
+            totalsEl.innerHTML = `<p style="text-align:center; color:var(--gray-text);">Nicio oră pontată.</p>`;
+        } else {
+            let tHtml = '';
+            for (const [name, hours] of Object.entries(totals)) {
+                // Formatting to keep ".5" if fractional, e.g. 50.5
+                const formattedHours = hours % 1 === 0 ? hours : hours.toFixed(1).replace('.', ',');
+                tHtml += `<div class="report-item" style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:16px;">${name}</strong>
+                    <span style="background:var(--black-night); color:var(--yellow-coffee); padding:6px 14px; border-radius:20px; font-weight:900;">${formattedHours}h</span>
+                </div>`;
+            }
+            totalsEl.innerHTML = tHtml;
+        }
+    }
+
+
+    // ==========================================
+    // ECRAN ADMIN - PROGRAM & SALARIZARE
+    // ==========================================
+
+    let angajatiList = [];
+
+    function switchAdminSection(sectionId, chipEl) {
+        document.getElementById('admin-sec-produse').classList.add('hidden');
+        document.getElementById('admin-sec-program').classList.add('hidden');
+        document.getElementById('admin-sec-salarizare').classList.add('hidden');
+        
+        document.querySelectorAll('#admin-dashboard .chip').forEach(c => c.classList.remove('active'));
+        chipEl.classList.add('active');
+        
+        document.getElementById('admin-sec-' + sectionId).classList.remove('hidden');
+        
+        if (sectionId === 'program') initAdminProgram();
+        if (sectionId === 'salarizare') initAdminSalarizare();
+    }
+
+    async function fetchAngajati() {
+        if (angajatiList.length > 0) return;
+        const { data } = await supabaseClient.from('angajati').select('*').order('nume', { ascending: true });
+        if (data) angajatiList = data;
+    }
+
+    // ------------------------------------------
+    // ADMIN PROGRAM
+    // ------------------------------------------
+
+    const orarLocatii = {
+        'Miroslava': [ {s:'08:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'08:00', e:'21:00'} ],
+        'Pacurari': [ {s:'08:00', e:'19:00'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'08:00', e:'19:00'} ],
+        'Alexandru': [ {s:'08:00', e:'17:00'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'} ]
+    };
+
+    let adminProgCurrentData = [];
+
+    async function initAdminProgram() {
+        await fetchAngajati();
+        
+        const locSelect = document.getElementById('admin-prog-locatie');
+        const lunaInput = document.getElementById('admin-prog-luna');
+        const tiparSelect = document.getElementById('admin-prog-angajat-tipar');
+        
+        if (!lunaInput.value) {
+            const today = new Date();
+            lunaInput.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2, '0')}`;
+        }
+        
+        if (tiparSelect.options.length <= 1) {
+            angajatiList.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.nume;
+                tiparSelect.appendChild(opt);
+            });
+        }
+        
+        locSelect.addEventListener('change', loadAdminProgramGrid);
+        lunaInput.addEventListener('change', loadAdminProgramGrid);
+        
+        if (locSelect.value) loadAdminProgramGrid();
+    }
+
+    async function loadAdminProgramGrid() {
+        const loc = document.getElementById('admin-prog-locatie').value;
+        const lunaStr = document.getElementById('admin-prog-luna').value; 
+        if (!loc || !lunaStr) return;
+        
+        const loader = document.getElementById('admin-prog-loader');
+        const container = document.getElementById('admin-prog-zile');
+        loader.classList.remove('hidden');
+        container.innerHTML = '';
+        
+        const [year, month] = lunaStr.split('-');
+        const startDate = `${year}-${month}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${month}-${lastDay}`;
+        
+        const { data, error } = await supabaseClient
+            .from('program_zile')
+            .select('*, angajati(nume)')
+            .eq('locatie', loc)
+            .gte('data', startDate)
+            .lte('data', endDate)
+            .order('data', { ascending: true })
+            .order('ora_start', { ascending: true });
+            
+        loader.classList.add('hidden');
+        if (error) return alert("Eroare la încărcare program: " + error.message);
+        
+        adminProgCurrentData = data;
+        renderAdminProgramGrid(year, month, loc);
+    }
+
+    function renderAdminProgramGrid(year, month, loc) {
+        const container = document.getElementById('admin-prog-zile');
+        container.innerHTML = '';
+        
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const days = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+        
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
+            const dObj = new Date(year, month - 1, i);
+            const dayOfWeek = dObj.getDay();
+            
+            const entries = adminProgCurrentData.filter(e => e.data === dateStr);
+            
+            const div = document.createElement('div');
+            div.className = 'report-item';
+            div.style.padding = '10px';
+            
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="font-size:14px;">${days[dayOfWeek]}, ${i} ${month}</strong>
+                <button onclick="deschideModificareZi('${dateStr}', '${loc}', ${dayOfWeek})" style="margin:0; padding:4px 10px; width:auto; font-size:12px; background:var(--black-night); color:var(--yellow-coffee);">+ Adaugă</button>
+            </div>`;
+            
+            if (entries.length === 0) {
+                html += `<div style="color:var(--gray-text); font-size:13px; text-align:center;">Liber</div>`;
+            } else {
+                entries.forEach(e => {
+                    const s = e.ora_start.substring(0,5);
+                    const sf = e.ora_sfarsit.substring(0,5);
+                    html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:14px; margin-bottom:5px; background:var(--cloud-dancer); padding:5px 10px; border-radius:8px;">
+                        <span><strong>${e.angajati.nume}</strong> (${s}-${sf})${e.ore_suplimentare > 0 ? ` <span style="color:red; font-size:12px; font-weight:bold;">+${e.ore_suplimentare}h</span>` : ''}</span>
+                        <button onclick="stergeIntrareProgram('${e.id}')" style="margin:0; padding:4px 8px; width:auto; font-size:11px; background:var(--error); color:white; border-radius:4px;">Șterge</button>
+                    </div>`;
+                });
+            }
+            div.innerHTML = html;
+            container.appendChild(div);
+        }
+    }
+
+    async function deschideModificareZi(dateStr, loc, dayOfWeek) {
+        const angajatId = prompt("Introdu NUMELE angajatului (ex: Ionela, Alina):\nNotă: Pentru tură parțială adaugă orele la final, ex: 'Ionela 7-12' sau 'Ionela 07:00-12:00'. Fără ore = tura completă a locației.");
+        if (!angajatId) return;
+        
+        let nume = angajatId.trim();
+        let manualStart = null;
+        let manualEnd = null;
+        
+        const match = nume.match(/(.+?)\s+([0-9]{1,2})(?::[0-9]{2})?\s*-\s*([0-9]{1,2})(?::[0-9]{2})?$/);
+        if (match) {
+            nume = match[1].trim();
+            manualStart = match[2].padStart(2, '0') + ':00';
+            manualEnd = match[3].padStart(2, '0') + ':00';
+        }
+        
+        const ang = angajatiList.find(a => a.nume.toLowerCase() === nume.toLowerCase());
+        if (!ang) return alert("Angajatul nu a fost găsit. Verifică numele exact.");
+        
+        let oraStart = manualStart || orarLocatii[loc][dayOfWeek].s;
+        let oraEnd = manualEnd || orarLocatii[loc][dayOfWeek].e;
+        
+        const supl = prompt("Ore suplimentare pentru această intrare? (Lasă gol dacă nu)", "0");
+        if (supl === null) return;
+        const oSupl = parseFloat(supl || 0);
+        
+        const insertData = {
+            angajat_id: ang.id,
+            locatie: loc,
+            data: dateStr,
+            ora_start: oraStart,
+            ora_sfarsit: oraEnd,
+            ore_suplimentare: oSupl
+        };
+        
+        const { error } = await supabaseClient.from('program_zile').insert([insertData]);
+        if (error) {
+            if (error.code === '23505') alert("Există deja o intrare la aceeași oră pentru acest angajat!");
+            else alert("Eroare: " + error.message);
+        } else {
+            loadAdminProgramGrid();
+        }
+    }
+
+    async function stergeIntrareProgram(id) {
+        if (!confirm("Sigur ștergi această intrare?")) return;
+        const { error } = await supabaseClient.from('program_zile').delete().eq('id', id);
+        if (error) alert("Eroare la ștergere.");
+        else loadAdminProgramGrid();
+    }
+
+    async function aplicaTiparProgram() {
+        const loc = document.getElementById('admin-prog-locatie').value;
+        const angId = document.getElementById('admin-prog-angajat-tipar').value;
+        const regula = document.getElementById('admin-prog-regula').value; // '1/1' sau '2/2'
+        const startStr = document.getElementById('admin-prog-start').value;
+        const endStr = document.getElementById('admin-prog-end').value;
+        
+        if (!loc || !angId || !startStr || !endStr) return alert("Completează locația, angajatul și intervalul de date!");
+        if (!confirm(`Atenție! Această acțiune va șterge toate turele existente pentru acest angajat în intervalul selectat la această locație, și va genera noul tipar. Continuăm?`)) return;
+        
+        const loader = document.getElementById('admin-prog-loader');
+        loader.classList.remove('hidden');
+        
+        await supabaseClient.from('program_zile').delete()
+            .eq('angajat_id', angId)
+            .eq('locatie', loc)
+            .gte('data', startStr)
+            .lte('data', endStr);
+            
+        const sD = new Date(startStr);
+        const eD = new Date(endStr);
+        const inserts = [];
+        
+        let cycleDays = regula === '1/1' ? 2 : 4;
+        let workDays = regula === '1/1' ? 1 : 2;
+        
+        let dayCounter = 0;
+        let current = new Date(sD);
+        
+        while (current <= eD) {
+            const dateIso = new Date(current.getTime() - (current.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            const dayOfWeek = current.getDay();
+            
+            if (dayCounter < workDays) {
+                inserts.push({
+                    angajat_id: angId,
+                    locatie: loc,
+                    data: dateIso,
+                    ora_start: orarLocatii[loc][dayOfWeek].s,
+                    ora_sfarsit: orarLocatii[loc][dayOfWeek].e
+                });
+            }
+            
+            dayCounter = (dayCounter + 1) % cycleDays;
+            current.setDate(current.getDate() + 1);
+        }
+        
+        if (inserts.length > 0) {
+            const { error } = await supabaseClient.from('program_zile').insert(inserts);
+            if (error) alert("Eroare la aplicarea tiparului: " + error.message);
+        }
+        
+        loader.classList.add('hidden');
+        loadAdminProgramGrid();
+    }
+
+    // ------------------------------------------
+    // ADMIN SALARIZARE
+    // ------------------------------------------
+
+    let perioadeSalarizare = [];
+    let perioadaCurentaData = null;
+
+    async function initAdminSalarizare() {
+        await fetchAngajati();
+        await loadPerioadeSalarizare();
+        
+        const bonusSelect = document.getElementById('admin-bonus-angajat');
+        if (bonusSelect.options.length === 0) {
+            angajatiList.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.nume;
+                bonusSelect.appendChild(opt);
+            });
+        }
+    }
+
+    async function loadPerioadeSalarizare() {
+        const listEl = document.getElementById('admin-sal-perioade-list');
+        listEl.innerHTML = '<div class="loader">Se încarcă perioadele...</div>';
+        
+        const { data, error } = await supabaseClient
+            .from('perioade_salarizare')
+            .select('*')
+            .order('data_start', { ascending: false });
+            
+        if (error) {
+            listEl.innerHTML = '<p>Eroare încărcare.</p>';
+            return;
+        }
+        
+        perioadeSalarizare = data;
+        listEl.innerHTML = '';
+        
+        if (data.length === 0) {
+            listEl.innerHTML = '<p style="text-align:center; color:var(--gray-text);">Nicio perioadă creată.</p>';
+        } else {
+            data.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'report-item';
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                div.style.cursor = 'pointer';
+                div.onclick = () => deschideRaportPerioada(p);
+                
+                div.innerHTML = `
+                    <div>
+                        <strong>${p.nume || 'Perioadă'}</strong><br>
+                        <span style="font-size:12px; color:var(--gray-text);">${p.data_start} — ${p.data_sfarsit}</span>
+                    </div>
+                    <span style="font-size:12px; font-weight:bold; color: ${p.status === 'activa' ? 'var(--success)' : 'var(--gray-text)'}">${p.status.toUpperCase()}</span>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+    }
+
+    async function crearePerioada() {
+        const start = document.getElementById('admin-sal-start').value;
+        const end = document.getElementById('admin-sal-end').value;
+        const nume = document.getElementById('admin-sal-nume').value;
+        
+        if (!start || !end) return alert("Alege datele!");
+        if (start > end) return alert("Data start trebuie să fie înainte de data sfârșit.");
+        
+        const pName = nume || `${start} - ${end}`;
+        
+        const { data: newP, error: errP } = await supabaseClient
+            .from('perioade_salarizare')
+            .insert([{ data_start: start, data_sfarsit: end, nume: pName }])
+            .select().single();
+            
+        if (errP) return alert("Eroare creare perioada: " + errP.message);
+        
+        const { data: recBonuses } = await supabaseClient
+            .from('bonusuri')
+            .select('*')
+            .is('perioada_id', null)
+            .eq('recurent', true);
+            
+        if (recBonuses && recBonuses.length > 0) {
+            const inserts = recBonuses.map(b => ({
+                angajat_id: b.angajat_id,
+                perioada_id: newP.id,
+                suma: b.suma,
+                motiv: b.motiv,
+                recurent: false 
+            }));
+            await supabaseClient.from('bonusuri').insert(inserts);
+        }
+        
+        document.getElementById('admin-sal-start').value = '';
+        document.getElementById('admin-sal-end').value = '';
+        document.getElementById('admin-sal-nume').value = '';
+        
+        loadPerioadeSalarizare();
+        deschideRaportPerioada(newP);
+    }
+
+    async function deschideRaportPerioada(p) {
+        perioadaCurentaData = p;
+        document.getElementById('admin-sal-detalii').classList.remove('hidden');
+        document.getElementById('admin-sal-detalii-titlu').innerText = `Salarizare: ${p.nume}`;
+        
+        const btnInchide = document.getElementById('btn-inchide-perioada');
+        if (p.status === 'activa') {
+            btnInchide.style.display = 'block';
+        } else {
+            btnInchide.style.display = 'none';
+        }
+        
+        const rapEl = document.getElementById('admin-sal-raport');
+        rapEl.innerHTML = '<div class="loader">Se calculează orele...</div>';
+        
+        const { data: prog } = await supabaseClient.from('program_zile')
+            .select('*')
+            .gte('data', p.data_start)
+            .lte('data', p.data_sfarsit);
+            
+        const { data: bon } = await supabaseClient.from('bonusuri')
+            .select('*')
+            .eq('perioada_id', p.id);
+            
+        let html = `
+        <table style="width:100%; border-collapse: collapse; font-size: 14px; margin-top: 10px;">
+            <tr style="background:var(--cloud-dancer); border-bottom:2px solid var(--black-night);">
+                <th style="padding:8px; text-align:left;">Nume</th>
+                <th style="padding:8px; text-align:right;">Ore</th>
+                <th style="padding:8px; text-align:right;">Sal.</th>
+                <th style="padding:8px; text-align:right;">Bon.</th>
+                <th style="padding:8px; text-align:right;">TOT</th>
+            </tr>`;
+            
+        let grandTotal = 0;
+        let totalOre = 0;
+        let totalSalariu = 0;
+        let totalBonus = 0;
+
+        let asocTotal = 0;
+        let asocTotalOre = 0;
+        let asocTotalSalariu = 0;
+        let asocTotalBonus = 0;
+
+        let rowsAngajate = '';
+        let rowsAsociati = '';
+            
+        angajatiList.forEach(a => {
+            if (!a.inclus_salarizare) return;
+            
+            let aProg = prog ? prog.filter(x => x.angajat_id === a.id) : [];
+            let aBon = bon ? bon.filter(x => x.angajat_id === a.id) : [];
+            
+            let oreLucrate = 0;
+            aProg.forEach(entry => {
+                const h1 = parseInt(entry.ora_start.split(':')[0]);
+                const m1 = parseInt(entry.ora_start.split(':')[1]);
+                const h2 = parseInt(entry.ora_sfarsit.split(':')[0]);
+                const m2 = parseInt(entry.ora_sfarsit.split(':')[1]);
+                let diff = (h2 + m2/60) - (h1 + m1/60);
+                if (diff < 0) diff += 24;
+                oreLucrate += diff;
+                oreLucrate += parseFloat(entry.ore_suplimentare || 0);
+            });
+            
+            let sumBonus = aBon.reduce((acc, curr) => acc + parseFloat(curr.suma), 0);
+            
+            let salariuBaza = 0;
+            let displayOre = oreLucrate.toFixed(1).replace('.0', '').replace('.', ',');
+            let displaySalariu = '';
+            
+            if (a.salariu_fix) {
+                salariuBaza = parseFloat(a.salariu_fix_suma || 0);
+                displayOre = `(${displayOre}h)`;
+                displaySalariu = 'fix';
+            } else {
+                salariuBaza = oreLucrate * parseFloat(a.tarif_orar || 17);
+                displaySalariu = salariuBaza.toFixed(0);
+            }
+            
+            let total = salariuBaza + sumBonus;
+            
+            if (total > 0 || oreLucrate > 0 || a.salariu_fix) {
+                const rowHtml = `
+                <tr style="border-bottom:1px solid rgba(0,0,0,0.05);">
+                    <td style="padding:8px;"><strong>${a.nume}</strong></td>
+                    <td style="padding:8px; text-align:right;">${displayOre}</td>
+                    <td style="padding:8px; text-align:right;">${displaySalariu}</td>
+                    <td style="padding:8px; text-align:right;">${sumBonus > 0 ? sumBonus : ''}</td>
+                    <td style="padding:8px; text-align:right; font-weight:bold;">${total.toFixed(0)}</td>
+                </tr>`;
+
+                if (a.nume.toLowerCase() === 'alina' || a.nume.toLowerCase() === 'alexandru') {
+                    asocTotal += total;
+                    asocTotalOre += oreLucrate;
+                    asocTotalSalariu += salariuBaza;
+                    asocTotalBonus += sumBonus;
+                    rowsAsociati += rowHtml;
+                } else {
+                    grandTotal += total;
+                    totalOre += oreLucrate;
+                    totalSalariu += salariuBaza;
+                    totalBonus += sumBonus;
+                    rowsAngajate += rowHtml;
+                }
+            }
+        });
+        
+        html += rowsAngajate;
+        html += `
+            <tr style="background:var(--yellow-coffee); color:var(--black-night); border-top:2px solid var(--black-night);">
+                <td style="padding:8px;"><strong>TOTAL DE PLATĂ</strong></td>
+                <td style="padding:8px; text-align:right;"><strong>${totalOre.toFixed(1).replace('.0','').replace('.',',')}</strong></td>
+                <td style="padding:8px; text-align:right;"><strong>${totalSalariu.toFixed(0)}</strong></td>
+                <td style="padding:8px; text-align:right;"><strong>${totalBonus}</strong></td>
+                <td style="padding:8px; text-align:right; font-weight:900;">${grandTotal.toFixed(0)}</td>
+            </tr>`;
+
+        if (rowsAsociati) {
+            html += `
+            <tr><td colspan="5" style="padding:15px 8px 5px; font-weight:bold; color:var(--gray-text); border-top:2px solid var(--cloud-dancer);">Asociați (informativ)</td></tr>
+            ${rowsAsociati}
+            <tr style="background:var(--cloud-dancer); color:var(--gray-text);">
+                <td style="padding:8px;"><strong>Valoare muncă asociați</strong></td>
+                <td style="padding:8px; text-align:right;"><strong>${asocTotalOre.toFixed(1).replace('.0','').replace('.',',')}</strong></td>
+                <td style="padding:8px; text-align:right;"><strong>${asocTotalSalariu.toFixed(0)}</strong></td>
+                <td style="padding:8px; text-align:right;"><strong>${asocTotalBonus}</strong></td>
+                <td style="padding:8px; text-align:right; font-weight:900;">${asocTotal.toFixed(0)}</td>
+            </tr>`;
+        }
+
+        html += `</table>`;
+        
+        rapEl.innerHTML = html;
+        rapEl.dataset.csvHtml = html; 
+    }
+
+    async function adaugaBonusManual() {
+        if (!perioadaCurentaData) return alert("Selectează o perioadă mai întâi!");
+        if (perioadaCurentaData.status === 'inchisa') return alert("Această perioadă este închisă, nu poți adăuga bonusuri.");
+        
+        const angId = document.getElementById('admin-bonus-angajat').value;
+        const suma = document.getElementById('admin-bonus-suma').value;
+        const motiv = document.getElementById('admin-bonus-motiv').value;
+        const recurent = document.getElementById('admin-bonus-recurent').checked;
+        
+        if (!angId || !suma) return alert("Angajatul și suma sunt obligatorii!");
+        
+        const inserts = [];
+        inserts.push({
+            angajat_id: angId,
+            perioada_id: perioadaCurentaData.id,
+            suma: suma,
+            motiv: motiv,
+            recurent: false
+        });
+        
+        if (recurent) {
+            inserts.push({
+                angajat_id: angId,
+                perioada_id: null,
+                suma: suma,
+                motiv: motiv + ' (Șablon creat din ' + perioadaCurentaData.nume + ')',
+                recurent: true
+            });
+        }
+        
+        const { error } = await supabaseClient.from('bonusuri').insert(inserts);
+        if (error) return alert("Eroare la adăugare bonus: " + error.message);
+        
+        document.getElementById('admin-bonus-suma').value = '';
+        document.getElementById('admin-bonus-motiv').value = '';
+        document.getElementById('admin-bonus-recurent').checked = false;
+        
+        deschideRaportPerioada(perioadaCurentaData);
+    }
+
+    async function inchidePerioada() {
+        if (!perioadaCurentaData) return;
+        if (!confirm("Odată închisă, nu vei mai putea adăuga bonusuri la această perioadă. Sigur?")) return;
+        
+        const { error } = await supabaseClient.from('perioade_salarizare')
+            .update({ status: 'inchisa' })
+            .eq('id', perioadaCurentaData.id);
+            
+        if (error) return alert("Eroare: " + error.message);
+        
+        perioadaCurentaData.status = 'inchisa';
+        loadPerioadeSalarizare();
+        deschideRaportPerioada(perioadaCurentaData);
+    }
+
+    function exportSalarizareCSV() {
+        const rapEl = document.getElementById('admin-sal-raport');
+        if (!rapEl.dataset.csvHtml) return alert("Fara date de exportat.");
+        
+        const rows = rapEl.querySelectorAll('tr');
+        let csvContent = "\uFEFF"; // BOM pt excel
+        
+        rows.forEach(row => {
+            const cols = row.querySelectorAll('th, td');
+            const rowData = [];
+            cols.forEach(c => {
+                let text = c.innerText.replace(/"/g, '""');
+                rowData.push(`"${text}"`);
+            });
+            csvContent += rowData.join(';') + "\r\n";
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Salarizare_${perioadaCurentaData.nume.replace(/[^a-z0-9]/gi, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
 </script>
 </body>
 </html>
+
