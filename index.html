@@ -390,12 +390,33 @@
         </div>
     </div>
 
+    <!-- ECRAN 4: FACTURI -->
+    <div id="screen-facturi" class="screen">
+        <h3 style="text-align: center; margin-bottom: 15px;">Încărcare Facturi</h3>
+        <select id="factura-furnizor" style="margin-bottom: 15px;">
+            <option value="" disabled selected>Alege furnizorul...</option>
+        </select>
+        
+        <input type="file" id="factura-file" accept="image/*" capture="environment" style="display: none;">
+        <button id="btn-adauga-factura" style="background: var(--black-night); color: var(--yellow-coffee); margin-bottom: 20px;">📷 Fă o poză facturii</button>
+        
+        <div id="facturi-loader" class="hidden" style="text-align:center; padding:20px; font-weight:bold; color:var(--black-night);">
+            Se încarcă...
+        </div>
+
+        <h4 style="margin-bottom: 10px; border-bottom: 2px solid var(--cloud-dancer); padding-bottom: 5px;">Istoric Facturi (Ultimele 30 zile)</h4>
+        <div id="facturi-list">
+            <p style="text-align:center; color: var(--gray-text); font-size: 14px;">Selectează un furnizor pentru a vedea facturile.</p>
+        </div>
+    </div>
+
 </div>
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
-    <div class="nav-item active" onclick="switchScreen('inventar', this)">📋<br>Stoc</div>
-    <div class="nav-item" onclick="switchScreen('centralizator', this)">📊<br>Centralizator</div>
+    <div class="nav-item active" onclick="switchScreen('inventar', this)">📦<br>Stoc</div>
+    <div class="nav-item" onclick="switchScreen('centralizator', this)">📋<br>Centralizator</div>
+    <div class="nav-item" onclick="switchScreen('facturi', this)">📸<br>Facturi</div>
     <div class="nav-item" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
 </div>
 
@@ -511,6 +532,15 @@
         const newCanalSelect = document.getElementById('new-canal');
         if (newCanalSelect) {
             newCanalSelect.innerHTML = activeCanale.map(c => `<option value="${c.nume}">${c.nume}</option>`).join('');
+        }
+
+        // Facturi Select
+        const facturaSelect = document.getElementById('factura-furnizor');
+        if (facturaSelect) {
+            const prev = facturaSelect.value;
+            facturaSelect.innerHTML = '<option value="" disabled selected>Alege furnizorul...</option>' + 
+                activeCanale.map(c => `<option value="${c.nume}">${c.nume}</option>`).join('');
+            if (prev && activeCanale.some(c => c.nume === prev)) facturaSelect.value = prev;
         }
 
         // Admin List
@@ -653,8 +683,8 @@
                 row.className = 'product-row';
                 row.innerHTML = `
                     <div class="product-name">${p.nume} <br><small style="color:#666">${p.unitate}</small></div>
-                    <input type="text" placeholder="Stoc real" value="${valStoc}" oninput="queueSave('${p.id}', 'stoc', this.value)">
-                    <input type="text" placeholder="Necesar" value="${valNecesar}" oninput="queueSave('${p.id}', 'necesar', this.value)">
+                    <input type="number" step="0.01" inputmode="decimal" placeholder="Stoc real" value="${valStoc}" oninput="queueSave('${p.id}', 'stoc', this.value)">
+                    <input type="number" step="0.01" inputmode="decimal" placeholder="Necesar" value="${valNecesar}" oninput="queueSave('${p.id}', 'necesar', this.value)">
                 `;
                 content.appendChild(row);
             });
@@ -1166,9 +1196,167 @@
                 }
             }
         });
-
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
+
+    // ==========================================
+    // ECRAN 4: FACTURI
+    // ==========================================
+    const facturaFurnizorSelect = document.getElementById('factura-furnizor');
+    const facturaFile = document.getElementById('factura-file');
+    const btnAdaugaFactura = document.getElementById('btn-adauga-factura');
+    const facturiLoader = document.getElementById('facturi-loader');
+    const facturiList = document.getElementById('facturi-list');
+
+    if(facturaFurnizorSelect) {
+        facturaFurnizorSelect.addEventListener('change', () => {
+            loadFacturi(facturaFurnizorSelect.value);
+        });
+    }
+
+    if(btnAdaugaFactura) {
+        btnAdaugaFactura.addEventListener('click', () => {
+            if (!facturaFurnizorSelect.value) {
+                alert('Alege întâi furnizorul!');
+                return;
+            }
+            facturaFile.click();
+        });
+    }
+
+    if(facturaFile) {
+        facturaFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            facturiLoader.classList.remove('hidden');
+            btnAdaugaFactura.disabled = true;
+
+            try {
+                const compressedBlob = await compressImage(file, 1600, 0.8);
+                
+                const furnizor = facturaFurnizorSelect.value;
+                const timestamp = new Date().getTime();
+                const ext = file.name.split('.').pop() || 'jpg';
+                const fileName = `${furnizor}/${timestamp}.${ext}`;
+
+                const { data: uploadData, error: uploadError } = await supabaseClient
+                    .storage
+                    .from('facturi_imagini')
+                    .upload(fileName, compressedBlob, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) throw uploadError;
+
+                const { error: dbError } = await supabaseClient.from('facturi').insert([{
+                    furnizor: furnizor,
+                    poza_url: uploadData.path,
+                    adaugat_de: operatorName || 'Anonim'
+                }]);
+
+                if (dbError) throw dbError;
+
+                alert('Factura a fost salvată cu succes!');
+                await loadFacturi(furnizor);
+
+            } catch (err) {
+                console.error(err);
+                alert('Eroare la încărcare: ' + err.message);
+            } finally {
+                facturiLoader.classList.add('hidden');
+                btnAdaugaFactura.disabled = false;
+                facturaFile.value = '';
+            }
+        });
+    }
+
+    async function compressImage(file, maxWidth, quality) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(blob => {
+                        resolve(blob);
+                    }, 'image/jpeg', quality);
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function loadFacturi(furnizor) {
+        facturiLoader.classList.remove('hidden');
+        facturiList.innerHTML = '';
+        
+        try {
+            const { data, error } = await supabaseClient
+                .from('facturi')
+                .select('*')
+                .eq('furnizor', furnizor)
+                .order('creat_la', { ascending: false })
+                .limit(20);
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                facturiList.innerHTML = '<p style="text-align:center; color: var(--gray-text);">Nicio factură găsită pentru acest furnizor.</p>';
+                return;
+            }
+
+            for (const f of data) {
+                const { data: urlData, error: urlError } = await supabaseClient
+                    .storage
+                    .from('facturi_imagini')
+                    .createSignedUrl(f.poza_url, 3600);
+
+                if (urlError) {
+                    console.error('Error generating signed URL:', urlError);
+                    continue;
+                }
+
+                const d = new Date(f.creat_la);
+                const dataStr = d.toLocaleDateString('ro-RO') + ' ' + d.toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'});
+
+                const div = document.createElement('div');
+                div.style.cssText = 'background: white; border-radius: 8px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:13px; color:var(--gray-text);">
+                        <span>${dataStr}</span>
+                        <span>De: <strong>${f.adaugat_de || 'Anonim'}</strong></span>
+                    </div>
+                    <img src="${urlData.signedUrl}" style="width:100%; border-radius:4px; margin-bottom:10px;" alt="Factura">
+                `;
+                facturiList.appendChild(div);
+            }
+
+        } catch (err) {
+            console.error(err);
+            facturiList.innerHTML = '<p style="color:red; text-align:center;">Eroare la încărcarea istoricului.</p>';
+        } finally {
+            facturiLoader.classList.add('hidden');
+        }
+    }
+
 
     // ECRAN 3: ADMIN
     // ==========================================
