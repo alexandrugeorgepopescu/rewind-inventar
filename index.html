@@ -716,7 +716,7 @@
         // Show nav and switch to inventar
         document.getElementById('main-bottom-nav').style.display = 'flex';
         
-        if (user.tip === 'owner') {
+        if (user.tip === 'owner' || user.nume.toLowerCase() === 'alina') {
             document.getElementById('nav-item-admin').style.display = 'block';
         } else {
             document.getElementById('nav-item-admin').style.display = 'none';
@@ -1842,8 +1842,12 @@
                 dayEntries.forEach(entry => {
                     const start = entry.ora_start.substring(0, 5);
                     const end = entry.ora_sfarsit.substring(0, 5);
-                    html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:15px; padding-left:5px; border-left:3px solid var(--cloud-dancer);">
-                        <strong>${entry.angajati.nume}</strong>
+                    const isMe = (currentUser && currentUser.nume === entry.angajati.nume);
+                    const nameStyle = isMe ? 'color: #6528F7; font-weight: 900;' : 'font-weight: bold;';
+                    const borderStyle = isMe ? 'border-left:4px solid #6528F7;' : 'border-left:3px solid var(--cloud-dancer);';
+
+                    html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:15px; padding-left:5px; ${borderStyle}">
+                        <span style="${nameStyle}">${entry.angajati.nume}</span>
                         <span style="background:var(--cloud-dancer); padding:3px 8px; border-radius:5px; font-family:monospace;">${start} - ${end}</span>
                     </div>`;
                     
@@ -2486,6 +2490,9 @@
         if (!perioadaCurentaData) return;
         if (!confirm("Redeschiderea va permite modificări pe această perioadă. Sigur vrei să continui?")) return;
         
+        // Ștergem fluturașii generați pentru această perioadă pentru a nu mai apărea în Contul Meu
+        await supabaseClient.from('fluturasi').delete().eq('perioada_id', perioadaCurentaData.id);
+
         const { error } = await supabaseClient.from('perioade_salarizare')
             .update({ status: 'activa' })
             .eq('id', perioadaCurentaData.id);
