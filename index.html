@@ -285,7 +285,17 @@
 </header>
 
 <div class="container">
-    <div id="screen-inventar" class="screen active">
+    <div id="screen-login" class="screen" style="text-align: center; margin-top: 50px;">
+        <h3 style="margin-bottom: 20px; color: var(--black-night);">Autentificare</h3>
+        <select id="login-nume" style="margin-bottom: 15px;">
+            <option value="" disabled selected>Alege numele...</option>
+        </select>
+        <input type="password" id="login-pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN 4 cifre" style="margin-bottom: 20px; text-align: center; letter-spacing: 5px; font-size: 18px;">
+        <button id="btn-login" class="btn btn-primary" style="width: 100%;">Intră în cont</button>
+        <div id="login-error" style="color: red; margin-top: 15px; display: none;">PIN incorect sau utilizator inexistent!</div>
+    </div>
+
+    <div id="screen-inventar" class="screen">
         <div class="sticky-top-controls">
             <select id="select-locatie">
                 <option value="" disabled selected>Alege locația...</option>
@@ -343,13 +353,9 @@
 
     <!-- ECRAN 3: ADMIN -->
     <div id="screen-admin" class="screen">
-        <div id="admin-auth">
-            <h3>Acces Management</h3>
-            <button id="btn-install-pwa" style="margin-bottom:20px; padding: 10px; background:var(--black-night); color:var(--yellow-coffee); width: 100%; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="installPWA()">📱 Descarcă Aplicația</button>
-            <input type="password" id="admin-pin" placeholder="Introdu PIN-ul">
-            <button onclick="checkAdminPin()">Log in</button>
-        </div>
-        <div id="admin-dashboard" class="hidden">
+        <h2 style="text-align: center; margin-bottom: 20px;">Secțiune Management</h2>
+        
+        <div id="admin-dashboard">
             <div class="chips" style="margin-bottom: 20px; justify-content: center;">
                 <div class="chip active" onclick="switchAdminSection('produse', this)">📦 Produse</div>
                 <div class="chip" onclick="switchAdminSection('program', this)">📅 Program</div>
@@ -444,13 +450,20 @@
                         <input type="date" id="admin-sal-end">
                     </div>
                     <input type="text" id="admin-sal-nume" placeholder="Nume (ex: 01.06 - 05.07)" style="margin-top: 10px;">
+                    <input type="text" id="admin-sal-data-platii" placeholder="Data Plății (ex: 15 August)" style="margin-top: 10px;">
                     <button onclick="crearePerioada()" style="margin-top: 10px; padding: 10px;">Creează Perioada</button>
                 </div>
 
                 <div id="admin-sal-perioade-list" style="margin-top: 20px;"></div>
                 
                 <div id="admin-sal-detalii" class="hidden admin-product" style="margin-top: 20px; border: 2px solid var(--black-night);">
-                    <h4 id="admin-sal-detalii-titlu" style="margin-bottom: 10px;">Calcul Perioadă</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 id="admin-sal-detalii-titlu" style="margin:0;">Calcul Perioadă</h4>
+                        <div>
+                            <button id="btn-redeschide-perioada" onclick="redeschidePerioada()" style="background:var(--cloud-dancer); color:var(--black-night); margin-right: 5px; padding: 5px 10px; font-size: 12px; width: auto; display: none;">Redeschide</button>
+                            <button id="btn-inchide-perioada" onclick="inchidePerioada()" style="background:var(--error); padding: 5px 10px; font-size: 12px; width: auto; display: none;">Închide</button>
+                        </div>
+                    </div>
                     <p style="font-size: 11px; color: var(--gray-text); text-align: center; margin-bottom: 15px;">Disclaimer: Calcul estimativ pentru management. Statul de plată oficial se face de contabilitate.</p>
                     
                     <div id="admin-sal-raport"></div>
@@ -529,15 +542,26 @@
         </div>
     </div>
 
+    <div id="screen-cont" class="screen">
+        <div class="sticky-top-controls" style="display: flex; justify-content: space-between; align-items: center; background: white; padding-bottom: 10px; border-bottom: 1px solid var(--cloud-dancer); margin-bottom: 15px;">
+            <h3 style="margin: 0;">Contul Meu (<span id="cont-nume-display"></span>)</h3>
+            <button id="btn-logout" class="btn" style="background: var(--cloud-dancer); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0;">Ieși din cont</button>
+        </div>
+        <div id="cont-fluturasi-container">
+            <p style="text-align:center; color: var(--gray-text);">Se încarcă fluturașii...</p>
+        </div>
+    </div>
+
 </div>
 
 <!-- Bottom Navigation -->
-<div class="bottom-nav">
-    <div class="nav-item active" onclick="switchScreen('inventar', this)">📦<br>Stoc</div>
+<div class="bottom-nav" id="main-bottom-nav" style="display: none;">
+    <div class="nav-item" onclick="switchScreen('inventar', this)">📦<br>Stoc</div>
     <div class="nav-item" onclick="switchScreen('program', this)">📅<br>Program</div>
+    <div class="nav-item" onclick="switchScreen('cont', this)">👤<br>Cont</div>
     <div class="nav-item" onclick="switchScreen('centralizator', this)">📋<br>Centr.</div>
     <div class="nav-item" onclick="switchScreen('facturi', this)">📸<br>Facturi</div>
-    <div class="nav-item" onclick="switchScreen('admin', this)">⚙️<br>Admin</div>
+    <div class="nav-item" id="nav-item-admin" onclick="switchScreen('admin', this)" style="display: none;">⚙️<br>Admin</div>
 </div>
 
 <div id="saving-indicator" class="saving-indicator">Se salvează...</div>
@@ -557,15 +581,21 @@
     let saveTimeout = null;
     let currentLocation = localStorage.getItem('rewind_location') || '';
     let operatorName = localStorage.getItem('rewind_operator') || '';
-    const ADMIN_PIN = '2024'; // PIN simplu conform cerintei §5 protecție simplă
+    
+    // Auth variables
+    let currentUser = null;
+    let allAngajati = [];
 
     // Inițializare
     document.addEventListener('DOMContentLoaded', async () => {
+        // Load angajati for login and global use
+        const { data: angData } = await supabaseClient.from('angajati').select('*').order('nume', { ascending: true });
+        if (angData) allAngajati = angData;
+
+        checkAuth();
+
         if (currentLocation) {
             document.getElementById('select-locatie').value = currentLocation;
-        }
-        if (operatorName) {
-            document.getElementById('input-operator').value = operatorName;
         }
 
         document.getElementById('select-locatie').addEventListener('change', async (e) => {
@@ -586,7 +616,7 @@
         await fetchCanale();
         await fetchCatalog();
 
-        if (currentLocation) {
+        if (currentLocation && currentUser) {
             await loadInventarData();
         } else {
             document.getElementById('inventar-loader').style.display = 'none';
@@ -600,7 +630,150 @@
                 renderRaportUI(e.target.dataset.canal);
             });
         });
+
+        // Setup Login
+        setupLogin();
     });
+
+    function checkAuth() {
+        const savedId = localStorage.getItem('rewind_user_id');
+        if (savedId) {
+            const found = allAngajati.find(a => a.id === savedId);
+            if (found) {
+                loginSuccess(found);
+                return;
+            } else {
+                localStorage.removeItem('rewind_user_id');
+            }
+        }
+        
+        // Not logged in -> Show login screen
+        document.getElementById('main-bottom-nav').style.display = 'none';
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-login').classList.add('active');
+
+        // Populate dropdown
+        const selectNume = document.getElementById('login-nume');
+        selectNume.innerHTML = '<option value="" disabled selected>Alege numele...</option>';
+        allAngajati.forEach(a => {
+            if (a.activ) {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.nume;
+                selectNume.appendChild(opt);
+            }
+        });
+    }
+
+    function setupLogin() {
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const id = document.getElementById('login-nume').value;
+            const pin = document.getElementById('login-pin').value;
+            const errDiv = document.getElementById('login-error');
+            errDiv.style.display = 'none';
+
+            if (!id || !pin) return;
+
+            const found = allAngajati.find(a => a.id === id && a.pin === pin);
+            if (found) {
+                loginSuccess(found);
+            } else {
+                errDiv.style.display = 'block';
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            localStorage.removeItem('rewind_user_id');
+            localStorage.removeItem('rewind_user_nume');
+            localStorage.removeItem('rewind_user_tip');
+            location.reload();
+        });
+    }
+
+    function loginSuccess(user) {
+        currentUser = user;
+        localStorage.setItem('rewind_user_id', user.id);
+        localStorage.setItem('rewind_user_nume', user.nume);
+        localStorage.setItem('rewind_user_tip', user.tip);
+        
+        // Setup operator name automatically
+        operatorName = user.nume;
+        localStorage.setItem('rewind_operator', operatorName);
+        const opInput = document.getElementById('input-operator');
+        opInput.value = operatorName;
+        opInput.readOnly = true;
+        opInput.style.backgroundColor = 'var(--cloud-dancer)';
+
+        // Pre-select location if not already set manually in this session
+        if (!currentLocation && user.locatie_implicita) {
+            currentLocation = user.locatie_implicita;
+            localStorage.setItem('rewind_location', currentLocation);
+            document.getElementById('select-locatie').value = currentLocation;
+        }
+
+        document.getElementById('cont-nume-display').textContent = user.nume;
+
+        // Show nav and switch to inventar
+        document.getElementById('main-bottom-nav').style.display = 'flex';
+        
+        if (user.tip === 'owner') {
+            document.getElementById('nav-item-admin').style.display = 'block';
+        } else {
+            document.getElementById('nav-item-admin').style.display = 'none';
+        }
+
+        const navInventar = document.querySelector('.nav-item[onclick*="inventar"]');
+        switchScreen('inventar', navInventar);
+        
+        // Load data if location is set
+        if (currentLocation) {
+            loadInventarData();
+        }
+        
+        loadFluturasi();
+    }
+
+    async function loadFluturasi() {
+        if (!currentUser) return;
+        const container = document.getElementById('cont-fluturasi-container');
+        container.innerHTML = '<p style="text-align:center; color: var(--gray-text);">Se încarcă fluturașii...</p>';
+        
+        const { data, error } = await supabaseClient
+            .from('fluturasi')
+            .select('*')
+            .eq('angajat_id', currentUser.id)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            container.innerHTML = '<p style="text-align:center; color:red;">Eroare la încărcare.</p>';
+            return;
+        }
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color: var(--gray-text); padding: 20px;">Nu ai niciun fluturaș generat încă.</p>';
+            return;
+        }
+        
+        let html = '';
+        data.forEach(f => {
+            html += `
+            <div class="report-item" style="margin-bottom: 15px; border-left: 4px solid var(--black-night);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                    <strong>Perioada: ${f.nume_perioada}</strong>
+                    <span style="font-weight:bold; color:var(--black-night); font-size: 16px;">${parseFloat(f.salariu_net).toFixed(0)} lei</span>
+                </div>
+                <div style="font-size: 13px; color: var(--gray-text); display:grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <div>Ore lucrate: <strong>${parseFloat(f.ore_lucrate).toFixed(1).replace('.0','')}h</strong></div>
+                    <div style="text-align:right;">Bonusuri: <strong>${parseFloat(f.bonusuri_total).toFixed(0)} lei</strong></div>
+                    <div style="grid-column: span 2; margin-top: 5px; color: var(--success); font-weight: 500;">
+                        🗓️ Data plății: ${f.data_platii || '15 a lunii următoare'}
+                    </div>
+                </div>
+            </div>`;
+        });
+        
+        container.innerHTML = html;
+    }
 
     function switchScreen(screenId, navEl) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -608,11 +781,6 @@
         
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         navEl.classList.add('active');
-
-        if (screenId === 'admin' && document.getElementById('admin-dashboard').classList.contains('hidden')) {
-            // reset pin state
-            document.getElementById('admin-pin').value = '';
-        }
         
         if (screenId === 'facturi') {
             const savedLoc = localStorage.getItem('rewind_location');
@@ -843,7 +1011,7 @@
         if (totalItems > 0 && document.getElementById('search-inventar').value === '') {
             document.getElementById('btn-finalizare').classList.remove('hidden');
         } else {
-            document.getElementById('btn-finalizare').classList.add('hidden');
+            document.getElementById('btn-finalizare').classList.remove('hidden');
         }
     }
 
@@ -912,70 +1080,12 @@
     
     let raportDateAgregate = [];
 
-    document.getElementById('btn-genereaza-raport').addEventListener('click', async () => {
-        document.getElementById('centralizator-loader').classList.remove('hidden');
-        document.getElementById('raport-content').classList.add('hidden');
-        
-        // Fetch all inventar
-        const { data: invData, error: invError } = await supabaseClient.from('inventar').select('produs_id, locatie, stoc, necesar, actualizat_la');
-        
-        if (invError) {
-            alert("Eroare generare raport");
-            return;
-        }
-
-        // Aggregate by product
-        const aggregate = {};
-        
-        // Ensure catalog is loaded
-        if (catalogProduse.length === 0) await fetchCatalog();
-
-        invData.forEach(row => {
-            if (!row.necesar && !row.stoc) return; // skip complet goale
-            
-            if (!aggregate[row.produs_id]) {
-                const prodInfo = catalogProduse.find(p => p.id === row.produs_id);
-                if (!prodInfo) return; // skipped inactive or deleted
-                aggregate[row.produs_id] = {
-                    id: row.produs_id,
-                    nume: prodInfo.nume,
-                    categorie: prodInfo.categorie,
-                    canal: prodInfo.canal,
-                    ordine: prodInfo.ordine,
-                    unitate: prodInfo.unitate,
-                    locatii: {}
-                };
-            }
-            aggregate[row.produs_id].locatii[row.locatie] = {
-                stoc: row.stoc || '—',
-                necesar: row.necesar || '—'
-            };
-        });
-
-        raportDateAgregate = Object.values(aggregate).filter(p => {
-            // Regula 1: produsul intra DOAR daca cel putin o locatie are necesar completat
-            return Object.values(p.locatii).some(l => l.necesar !== '—' && l.necesar !== '0' && l.necesar.trim() !== '');
-        });
-
-        // Regula 4: Sortare canal -> categorie -> ordine -> nume
-        raportDateAgregate.sort((a, b) => {
-            if (a.canal !== b.canal) return a.canal.localeCompare(b.canal);
-            if (a.categorie !== b.categorie) return a.categorie.localeCompare(b.categorie);
-            if (a.ordine !== b.ordine) return a.ordine - b.ordine;
-            return a.nume.localeCompare(b.nume);
-        });
-
-        document.getElementById('centralizator-loader').classList.add('hidden');
-        document.getElementById('raport-content').classList.remove('hidden');
-        
-        // Select 'Toate' implicitly
-        document.querySelector('.chip[data-canal="Toate"]').click();
-    });
-
     function renderRaportUI(canalFilter) {
         const container = document.getElementById('raport-list');
+        if (!container) return; // Prevent error if container is removed by new UI
         container.innerHTML = '';
-        document.getElementById('export-buttons').classList.toggle('hidden', canalFilter !== 'Toate');
+        const exportBtns = document.getElementById('export-buttons');
+        if (exportBtns) exportBtns.classList.toggle('hidden', canalFilter !== 'Toate');
 
         const dateFiltrate = canalFilter === 'Toate' 
             ? raportDateAgregate 
@@ -997,7 +1107,6 @@
                 container.appendChild(catTitle);
             }
 
-            // Calculare TOTAL necesar
             let sum = 0;
             let hasNonNumeric = false;
             let rawVals = [];
@@ -1052,7 +1161,6 @@
         let text = `*COMANDĂ ${canal.toUpperCase()}* - ${dateString}\n\n`;
 
         dateCanal.forEach(p => {
-            // calcul total
             let sum = 0;
             let rawVals = [];
             let hasNonNumeric = false;
@@ -1068,7 +1176,6 @@
 
             text += `📦 *${p.nume}* — ${total} ${p.unitate}\n`;
             
-            // Daca e Metro sau Online, pastram distributia
             if (canal === 'Metro' || canal === 'Online') {
                 for (const loc of ['Miroslava', 'Pacurari', 'Alexandru']) {
                     const dataLoc = p.locatii[loc];
@@ -1092,8 +1199,6 @@
     document.getElementById('btn-istoric-sesiuni').addEventListener('click', showIstoricSesiuni);
     
     // Înlocuim click-ul original pe btn-genereaza-raport
-    document.getElementById('btn-genereaza-raport').replaceWith(document.getElementById('btn-genereaza-raport').cloneNode(true));
-    
     document.getElementById('btn-genereaza-raport').addEventListener('click', async () => {
         document.getElementById('istoric-sesiuni').classList.add('hidden');
         document.getElementById('sesiune-view').classList.add('hidden');
@@ -1143,7 +1248,7 @@
             return a.nume.localeCompare(b.nume);
         });
 
-        document.getElementById('centralizator-loader').classList.add('hidden');
+        document.getElementById('centralizator-loader').classList.remove('hidden');
         document.getElementById('raport-content').classList.remove('hidden');
         
         renderCentralizatorChips('raport-chips', false);
@@ -1419,7 +1524,7 @@
                 console.error(err);
                 alert('Eroare la încărcare: ' + err.message);
             } finally {
-                facturiLoader.classList.add('hidden');
+                facturiLoader.classList.remove('hidden');
                 btnAdaugaFactura.disabled = false;
                 facturaFile.value = ''; 
             }
@@ -1515,22 +1620,11 @@
             console.error(err);
             facturiList.innerHTML = '<p style="color:red; text-align:center;">Eroare la încărcarea istoricului.</p>';
         } finally {
-            facturiLoader.classList.add('hidden');
+            facturiLoader.classList.remove('hidden');
         }
     }
 
     // ECRAN 3: ADMIN
-    // ==========================================
-
-    function checkAdminPin() {
-        if (document.getElementById('admin-pin').value === ADMIN_PIN) {
-            document.getElementById('admin-auth').classList.add('hidden');
-            document.getElementById('admin-dashboard').classList.remove('hidden');
-            renderAdminProducts();
-        } else {
-            alert("PIN incorect!");
-        }
-    }
 
     function renderAdminProducts() {
         const container = document.getElementById('admin-product-list');
@@ -2139,10 +2233,13 @@
         document.getElementById('admin-sal-detalii-titlu').innerText = `Salarizare: ${p.nume}`;
         
         const btnInchide = document.getElementById('btn-inchide-perioada');
+        const btnRedeschide = document.getElementById('btn-redeschide-perioada');
         if (p.status === 'activa') {
             btnInchide.style.display = 'block';
+            btnRedeschide.style.display = 'none';
         } else {
             btnInchide.style.display = 'none';
+            btnRedeschide.style.display = 'block';
         }
         
         const rapEl = document.getElementById('admin-sal-raport');
@@ -2312,15 +2409,90 @@
 
     async function inchidePerioada() {
         if (!perioadaCurentaData) return;
-        if (!confirm("Odată închisă, nu vei mai putea adăuga bonusuri la această perioadă. Sigur?")) return;
+        if (!confirm("Odată închisă, aplicația va genera fluturașii statici și nu vei mai putea adăuga bonusuri. Sigur?")) return;
         
+        document.getElementById('admin-sal-raport').innerHTML = '<div class="loader">Se generează fluturașii...</div>';
+        
+        // 1. Calculam fluturasii pentru toti angajatii inclusi
+        const { data: prog } = await supabaseClient.from('program_zile')
+            .select('*')
+            .gte('data', perioadaCurentaData.data_start)
+            .lte('data', perioadaCurentaData.data_sfarsit);
+            
+        const { data: bon } = await supabaseClient.from('bonusuri')
+            .select('*')
+            .eq('perioada_id', perioadaCurentaData.id);
+
+        const fluturasiInserts = [];
+        
+        angajatiList.forEach(a => {
+            if (!a.inclus_salarizare) return;
+            
+            let aProg = prog ? prog.filter(x => x.angajat_id === a.id) : [];
+            let aBon = bon ? bon.filter(x => x.angajat_id === a.id) : [];
+            
+            let oreLucrate = 0;
+            aProg.forEach(entry => {
+                const h1 = parseInt(entry.ora_start.split(':')[0]);
+                const m1 = parseInt(entry.ora_start.split(':')[1]);
+                const h2 = parseInt(entry.ora_sfarsit.split(':')[0]);
+                const m2 = parseInt(entry.ora_sfarsit.split(':')[1]);
+                let diff = (h2 + m2/60) - (h1 + m1/60);
+                if (diff < 0) diff += 24;
+                oreLucrate += diff;
+                oreLucrate += parseFloat(entry.ore_suplimentare || 0);
+            });
+            
+            let sumBonus = aBon.reduce((acc, curr) => acc + parseFloat(curr.suma), 0);
+            let salariuBaza = a.salariu_fix ? parseFloat(a.salariu_fix_suma || 0) : (oreLucrate * parseFloat(a.tarif_orar || 17));
+            let totalNet = salariuBaza + sumBonus;
+            
+            if (totalNet > 0 || oreLucrate > 0 || a.salariu_fix) {
+                fluturasiInserts.push({
+                    angajat_id: a.id,
+                    perioada_id: perioadaCurentaData.id,
+                    nume_perioada: perioadaCurentaData.nume,
+                    data_platii: perioadaCurentaData.data_platii || null,
+                    ore_lucrate: oreLucrate,
+                    salariu_net: totalNet,
+                    bonusuri_total: sumBonus,
+                    salariu_fix_aplicat: a.salariu_fix || false
+                });
+            }
+        });
+
+        // 2. Stergem fluturasii vechi (in caz de redeschidere) -> UPSERT nu suporta delete by query, deci facem delete explicit
+        await supabaseClient.from('fluturasi').delete().eq('perioada_id', perioadaCurentaData.id);
+        
+        // 3. Inseram fluturasii calculati
+        if (fluturasiInserts.length > 0) {
+            const { error: errFluturasi } = await supabaseClient.from('fluturasi').insert(fluturasiInserts);
+            if (errFluturasi) return alert("Eroare generare fluturasi: " + errFluturasi.message);
+        }
+
+        // 4. Marcam perioada ca inchisa
         const { error } = await supabaseClient.from('perioade_salarizare')
             .update({ status: 'inchisa' })
             .eq('id', perioadaCurentaData.id);
             
-        if (error) return alert("Eroare: " + error.message);
+        if (error) return alert("Eroare închidere: " + error.message);
         
         perioadaCurentaData.status = 'inchisa';
+        loadPerioadeSalarizare();
+        deschideRaportPerioada(perioadaCurentaData);
+    }
+
+    async function redeschidePerioada() {
+        if (!perioadaCurentaData) return;
+        if (!confirm("Redeschiderea va permite modificări pe această perioadă. Sigur vrei să continui?")) return;
+        
+        const { error } = await supabaseClient.from('perioade_salarizare')
+            .update({ status: 'activa' })
+            .eq('id', perioadaCurentaData.id);
+            
+        if (error) return alert("Eroare redeschidere: " + error.message);
+        
+        perioadaCurentaData.status = 'activa';
         loadPerioadeSalarizare();
         deschideRaportPerioada(perioadaCurentaData);
     }
