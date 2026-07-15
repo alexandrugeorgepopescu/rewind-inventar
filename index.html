@@ -449,12 +449,18 @@
                     <div class="admin-grid" style="margin-bottom:10px;">
                         <div>
                             <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Ora Start</label>
-                            <select id="modal-prog-start" style="width:100%;"></select>
+                            <select id="modal-prog-start" style="width:100%;" onchange="actualizeazaDropdownSfarsit()"></select>
                         </div>
                         <div>
                             <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Ora Sfârșit</label>
                             <select id="modal-prog-end" style="width:100%;"></select>
                         </div>
+                    </div>
+                    <div style="margin-bottom:15px; text-align:right;">
+                        <label style="font-size:11px; color:var(--gray-text); display:inline-flex; align-items:center; gap:5px;">
+                            <input type="checkbox" id="modal-prog-special" onchange="actualizeazaDropdownOre()" style="width:auto; margin:0;">
+                            Oră specială (deblochează 24h)
+                        </label>
                     </div>
                     <div style="margin-bottom:15px;">
                         <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Ore Suplimentare (Opțional)</label>
@@ -2051,10 +2057,96 @@
         }
     }
 
-    let currentModalContext = { dateStr: '', loc: '' };
+    let currentModalContext = { dateStr: '', loc: '', dayOfWeek: 0 };
+
+    function genereazaOptiuniOre(startH, startM, endH, endM) {
+        let options = '';
+        let curentM = startH * 60 + startM;
+        let limitM = endH * 60 + endM;
+        
+        while (curentM <= limitM) {
+            const h = Math.floor(curentM / 60).toString().padStart(2, '0');
+            const m = (curentM % 60).toString().padStart(2, '0');
+            options += `<option value="${h}:${m}">${h}:${m}</option>`;
+            curentM += 30;
+        }
+        return options;
+    }
+
+    function actualizeazaDropdownOre() {
+        const special = document.getElementById('modal-prog-special').checked;
+        const selectStart = document.getElementById('modal-prog-start');
+        const curentStart = selectStart.value;
+        
+        let startH = 0, startM = 0, endH = 23, endM = 30;
+        
+        if (!special) {
+            const prog = orarLocatii[currentModalContext.loc][currentModalContext.dayOfWeek];
+            if (prog) {
+                const s = prog.s.split(':');
+                const e = prog.e.split(':');
+                startH = parseInt(s[0]); startM = parseInt(s[1]);
+                endH = parseInt(e[0]); endM = parseInt(e[1]);
+            }
+        }
+        
+        selectStart.innerHTML = genereazaOptiuniOre(startH, startM, endH, endM);
+        
+        if (curentStart && selectStart.querySelector(`option[value="${curentStart}"]`)) {
+            selectStart.value = curentStart;
+        } else if (!special) {
+            const prog = orarLocatii[currentModalContext.loc][currentModalContext.dayOfWeek];
+            if (prog) selectStart.value = prog.s.substring(0,5);
+        }
+        
+        actualizeazaDropdownSfarsit();
+    }
+
+    function actualizeazaDropdownSfarsit() {
+        const special = document.getElementById('modal-prog-special').checked;
+        const selectStart = document.getElementById('modal-prog-start');
+        const selectEnd = document.getElementById('modal-prog-end');
+        const curentEnd = selectEnd.value;
+        const startVal = selectStart.value;
+        if (!startVal) return;
+        
+        const s = startVal.split(':');
+        let minM = parseInt(s[0]) * 60 + parseInt(s[1]) + 30;
+        
+        let endH = 23, endM = 30;
+        if (!special) {
+            const prog = orarLocatii[currentModalContext.loc][currentModalContext.dayOfWeek];
+            if (prog) {
+                const e = prog.e.split(':');
+                endH = parseInt(e[0]); endM = parseInt(e[1]);
+            }
+        }
+        
+        // Dacă e oră specială, permitem toate opțiunile (00:00 - 23:30) pentru a suporta și ture de noapte (ex: 22:00 - 06:00)
+        const startH = special ? 0 : Math.floor(minM / 60);
+        const startMin = special ? 0 : minM % 60;
+        
+        if (!special && minM > (endH * 60 + endM)) {
+            selectEnd.innerHTML = `<option value="${startVal}">${startVal}</option>`;
+            return;
+        }
+        
+        selectEnd.innerHTML = genereazaOptiuniOre(startH, startMin, endH, endM);
+        
+        if (curentEnd && selectEnd.querySelector(`option[value="${curentEnd}"]`)) {
+            selectEnd.value = curentEnd;
+        } else if (!special) {
+            const prog = orarLocatii[currentModalContext.loc][currentModalContext.dayOfWeek];
+            if (prog && selectEnd.querySelector(`option[value="${prog.e.substring(0,5)}"]`)) {
+                selectEnd.value = prog.e.substring(0,5);
+            }
+        }
+    }
 
     function deschideModificareZi(dateStr, loc, dayOfWeek) {
-        currentModalContext = { dateStr, loc };
+        currentModalContext = { dateStr, loc, dayOfWeek };
+        
+        document.getElementById('modal-prog-special').checked = false;
         
         // Populate angajati dropdown
         const selectAngajat = document.getElementById('modal-prog-angajat');
@@ -2066,25 +2158,7 @@
             selectAngajat.appendChild(opt);
         });
         
-        // Populate time dropdowns with 30-min steps
-        const selectStart = document.getElementById('modal-prog-start');
-        const selectEnd = document.getElementById('modal-prog-end');
-        let timeOptionsHTML = '';
-        for (let h = 0; h < 24; h++) {
-            const hh = h.toString().padStart(2, '0');
-            timeOptionsHTML += `<option value="${hh}:00">${hh}:00</option>`;
-            timeOptionsHTML += `<option value="${hh}:30">${hh}:30</option>`;
-        }
-        selectStart.innerHTML = timeOptionsHTML;
-        selectEnd.innerHTML = timeOptionsHTML;
-        
-        // Pre-fill location default hours
-        if (orarLocatii[loc] && orarLocatii[loc][dayOfWeek]) {
-            const defaultS = orarLocatii[loc][dayOfWeek].s.substring(0,5);
-            const defaultE = orarLocatii[loc][dayOfWeek].e.substring(0,5);
-            selectStart.value = defaultS;
-            selectEnd.value = defaultE;
-        }
+        actualizeazaDropdownOre();
         
         document.getElementById('modal-prog-supl').value = '';
         
