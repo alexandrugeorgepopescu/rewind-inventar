@@ -779,6 +779,62 @@
         }
         
         loadFluturasi();
+        
+        if (currentUser.nume.toLowerCase() === 'alina') {
+            checkPushSubscription();
+        }
+    }
+
+    // --- PUSH NOTIFICATIONS ---
+    const VAPID_PUBLIC_KEY = 'BPrIpJE6ECtF7l4yopjOlIVMAo1aXwUVrZOCcsnbN7SGckJEi0Pcks0CByOP9jfYT0rz0fjz2FcT0vXM-IIRg00';
+
+    async function checkPushSubscription() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            let subscription = await registration.pushManager.getSubscription();
+            
+            if (!subscription) {
+                // Dacă nu e abonată, cerem permisiunea
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                    await saveSubscription(subscription);
+                }
+            } else {
+                // Poate vrem să updatăm baza de date cu subscriptia existenta
+                await saveSubscription(subscription);
+            }
+        } catch (err) {
+            console.error("Eroare la abonare push:", err);
+        }
+    }
+
+    async function saveSubscription(subscription) {
+        const sub = JSON.parse(JSON.stringify(subscription));
+        const { error } = await supabaseClient.from('push_abonamente').upsert({
+            nume: 'Alina',
+            endpoint: sub.endpoint,
+            p256dh: sub.keys.p256dh,
+            auth: sub.keys.auth
+        }, { onConflict: 'endpoint' });
+        
+        if (error) console.error("Eroare la salvarea abonamentului push:", error);
+    }
+
+    function urlB64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
     }
 
     async function loadSemaforMonor() {
@@ -1182,7 +1238,47 @@
         document.getElementById('progress-text').textContent = `${completed}/${total} produse completate`;
     }
 
-    document.getElementById('btn-finalizare').addEventListener('click', () => {
+    document.getElementById('btn-finalizare').addEventListener('click', async () => {
+        const originalText = document.getElementById('btn-finalizare').textContent;
+        document.getElementById('btn-finalizare').textContent = 'Se finalizează...';
+        document.getElementById('btn-finalizare').disabled = true;
+
+        try {
+            // Verificare stoc vs prag
+            const { data: invData } = await supabaseClient
+                .from('inventar')
+                .select('produs_id, stoc')
+                .eq('locatie', currentLocation);
+            
+            if (invData && catalogProduse) {
+                const subPrag = [];
+                for (const item of invData) {
+                    if (item.stoc === null) continue;
+                    const prod = catalogProduse.find(p => p.id === item.produs_id);
+                    if (prod && prod.prag_minim !== null && prod.prag_minim !== undefined) {
+                        if (parseFloat(item.stoc) < parseFloat(prod.prag_minim)) {
+                            subPrag.push(`${prod.nume} (${item.stoc} < ${prod.prag_minim})`);
+                        }
+                    }
+                }
+
+                if (subPrag.length > 0) {
+                    // Call edge function
+                    await supabaseClient.functions.invoke('send-notification', {
+                        body: { 
+                            locatie: currentLocation,
+                            operator: operatorName || "operator",
+                            produse: subPrag 
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Eroare la trimiterea notificarii:", e);
+        }
+
+        document.getElementById('btn-finalizare').textContent = originalText;
+        document.getElementById('btn-finalizare').disabled = false;
         alert("Inventarul a fost salvat și sincronizat cu succes! Mulțumim, " + (operatorName || "operator") + "!");
         window.scrollTo(0,0);
     });
