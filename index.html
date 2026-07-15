@@ -438,6 +438,36 @@
 
                 <div id="admin-prog-loader" class="loader hidden">Se încarcă...</div>
                 <div id="admin-prog-zile"></div>
+
+                <!-- Modal Adaugare Program -->
+                <div id="modal-add-program" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:1000; width:90%; max-width:350px;">
+                    <h3 style="margin-top:0; margin-bottom:15px; color:var(--black-night);">Adaugă Tură</h3>
+                    <div style="margin-bottom:10px;">
+                        <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Angajat</label>
+                        <select id="modal-prog-angajat" style="width:100%;"></select>
+                    </div>
+                    <div class="admin-grid" style="margin-bottom:10px;">
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Ora Start</label>
+                            <select id="modal-prog-start" style="width:100%;"></select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Ora Sfârșit</label>
+                            <select id="modal-prog-end" style="width:100%;"></select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--gray-text);">Ore Suplimentare (Opțional)</label>
+                        <input type="number" id="modal-prog-supl" placeholder="Ex: 1 sau 0.5" step="0.5" min="0" style="width:100%;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; gap:10px;">
+                        <button onclick="document.getElementById('modal-add-program').style.display='none'" class="btn-secondary" style="flex:1;">Anulează</button>
+                        <button onclick="salveazaIntrareProgramModal()" style="flex:1; background:var(--black-night); color:var(--yellow-coffee);">Salvează</button>
+                    </div>
+                </div>
+                <!-- Overlay pentru modal -->
+                <div id="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;" onclick="document.getElementById('modal-add-program').style.display='none'; this.style.display='none';"></div>
+
             </div>
 
             <!-- SECTIUNE: SALARIZARE -->
@@ -2021,45 +2051,78 @@
         }
     }
 
-    async function deschideModificareZi(dateStr, loc, dayOfWeek) {
-        const angajatId = prompt("Introdu NUMELE angajatului (ex: Ionela, Alina):\nNotă: Pentru tură parțială adaugă orele la final, ex: 'Ionela 7-12' sau 'Ionela 07:00-12:00'. Fără ore = tura completă a locației.");
-        if (!angajatId) return;
+    let currentModalContext = { dateStr: '', loc: '' };
+
+    function deschideModificareZi(dateStr, loc, dayOfWeek) {
+        currentModalContext = { dateStr, loc };
         
-        let nume = angajatId.trim();
-        let manualStart = null;
-        let manualEnd = null;
+        // Populate angajati dropdown
+        const selectAngajat = document.getElementById('modal-prog-angajat');
+        selectAngajat.innerHTML = '<option value="" disabled selected>Alege angajat...</option>';
+        angajatiList.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = a.nume;
+            selectAngajat.appendChild(opt);
+        });
         
-        const match = nume.match(/(.+?)\s+([0-9]{1,2})(?::[0-9]{2})?\s*-\s*([0-9]{1,2})(?::[0-9]{2})?$/);
-        if (match) {
-            nume = match[1].trim();
-            manualStart = match[2].padStart(2, '0') + ':00';
-            manualEnd = match[3].padStart(2, '0') + ':00';
+        // Populate time dropdowns with 30-min steps
+        const selectStart = document.getElementById('modal-prog-start');
+        const selectEnd = document.getElementById('modal-prog-end');
+        let timeOptionsHTML = '';
+        for (let h = 0; h < 24; h++) {
+            const hh = h.toString().padStart(2, '0');
+            timeOptionsHTML += `<option value="${hh}:00">${hh}:00</option>`;
+            timeOptionsHTML += `<option value="${hh}:30">${hh}:30</option>`;
+        }
+        selectStart.innerHTML = timeOptionsHTML;
+        selectEnd.innerHTML = timeOptionsHTML;
+        
+        // Pre-fill location default hours
+        if (orarLocatii[loc] && orarLocatii[loc][dayOfWeek]) {
+            const defaultS = orarLocatii[loc][dayOfWeek].s.substring(0,5);
+            const defaultE = orarLocatii[loc][dayOfWeek].e.substring(0,5);
+            selectStart.value = defaultS;
+            selectEnd.value = defaultE;
         }
         
-        const ang = angajatiList.find(a => a.nume.toLowerCase() === nume.toLowerCase());
-        if (!ang) return alert("Angajatul nu a fost găsit. Verifică numele exact.");
+        document.getElementById('modal-prog-supl').value = '';
         
-        let oraStart = manualStart || orarLocatii[loc][dayOfWeek].s;
-        let oraEnd = manualEnd || orarLocatii[loc][dayOfWeek].e;
+        document.getElementById('modal-overlay').style.display = 'block';
+        document.getElementById('modal-add-program').style.display = 'block';
+    }
+
+    async function salveazaIntrareProgramModal() {
+        const angId = document.getElementById('modal-prog-angajat').value;
+        const start = document.getElementById('modal-prog-start').value;
+        const end = document.getElementById('modal-prog-end').value;
+        const supl = document.getElementById('modal-prog-supl').value;
         
-        const supl = prompt("Ore suplimentare pentru această intrare? (Lasă gol dacă nu)", "0");
-        if (supl === null) return;
+        if (!angId) return alert("Selectează un angajat!");
+        if (!start || !end) return alert("Selectează ora de start și ora de sfârșit!");
+        
         const oSupl = parseFloat(supl || 0);
         
         const insertData = {
-            angajat_id: ang.id,
-            locatie: loc,
-            data: dateStr,
-            ora_start: oraStart,
-            ora_sfarsit: oraEnd,
+            angajat_id: angId,
+            locatie: currentModalContext.loc,
+            data: currentModalContext.dateStr,
+            ora_start: start + ':00', 
+            ora_sfarsit: end + ':00',
             ore_suplimentare: oSupl
         };
         
+        // Asigură format corect
+        if (start.length === 5) insertData.ora_start = start + ':00';
+        if (end.length === 5) insertData.ora_sfarsit = end + ':00';
+        
         const { error } = await supabaseClient.from('program_zile').insert([insertData]);
         if (error) {
-            if (error.code === '23505') alert("Există deja o intrare la aceeași oră pentru acest angajat!");
+            if (error.code === '23505') alert("Angajatul este deja programat pe această locație/zi cu aceeași oră de start.");
             else alert("Eroare: " + error.message);
         } else {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('modal-add-program').style.display = 'none';
             loadAdminProgramGrid();
         }
     }
@@ -2067,7 +2130,7 @@
     async function stergeIntrareProgram(id) {
         if (!confirm("Sigur ștergi această intrare?")) return;
         const { error } = await supabaseClient.from('program_zile').delete().eq('id', id);
-        if (error) alert("Eroare la ștergere.");
+        if (error) alert("Eroare la ștergere: " + error.message);
         else loadAdminProgramGrid();
     }
 
