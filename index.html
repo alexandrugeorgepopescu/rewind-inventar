@@ -371,6 +371,11 @@
                 <div class="chip" onclick="switchAdminSection('program', this)">📅 Program</div>
                 <div class="chip" onclick="switchAdminSection('salarizare', this)">💰 Salarii</div>
             </div>
+            
+            <div id="admin-push-test" style="margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; text-align: center;">
+                <button onclick="testPushNotification()" class="btn-secondary" style="margin: 0;">🔔 Trimite notificare de test</button>
+                <div id="test-push-status" style="font-size: 12px; margin-top: 5px; color: var(--gray-text);"></div>
+            </div>
 
             <!-- SECTIUNE: PRODUSE -->
             <div id="admin-sec-produse">
@@ -594,6 +599,12 @@
             <h3 style="margin: 0;">Contul Meu (<span id="cont-nume-display"></span>)</h3>
             <button id="btn-logout" class="btn" style="background: var(--cloud-dancer); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0;">Ieși din cont</button>
         </div>
+        <div id="push-settings-card" class="admin-product hidden" style="border: 2px solid var(--cloud-dancer); margin-bottom: 20px; text-align: center;">
+            <h4 style="margin-bottom: 10px;">Setări Notificări</h4>
+            <div id="push-status-text" style="font-weight: bold; margin-bottom: 10px;">🔔 Stare: VERIFICARE...</div>
+            <button id="btn-enable-push" class="btn" style="background: var(--black-night); color: white; display: none; margin: 0 auto;">Activează notificările</button>
+            <div id="push-error-text" style="color: red; font-size: 12px; margin-top: 10px;"></div>
+        </div>
         
         <div id="cont-fluturasi-container">
             <p style="text-align:center; color: var(--gray-text);">Se încarcă fluturașii...</p>
@@ -789,28 +800,98 @@
     const VAPID_PUBLIC_KEY = 'BPrIpJE6ECtF7l4yopjOlIVMAo1aXwUVrZOCcsnbN7SGckJEi0Pcks0CByOP9jfYT0rz0fjz2FcT0vXM-IIRg00';
 
     async function checkPushSubscription() {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        const card = document.getElementById('push-settings-card');
+        const statusText = document.getElementById('push-status-text');
+        const btnEnable = document.getElementById('btn-enable-push');
+        const errText = document.getElementById('push-error-text');
+        
+        if (!card) return;
+        card.classList.remove('hidden');
+
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            statusText.textContent = '🔕 Notificări: NESUPORTATE de acest browser/device';
+            statusText.style.color = 'red';
+            return;
+        }
         
         try {
             const registration = await navigator.serviceWorker.ready;
             let subscription = await registration.pushManager.getSubscription();
             
             if (!subscription) {
-                // Dacă nu e abonată, cerem permisiunea
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
-                    });
-                    await saveSubscription(subscription);
-                }
+                statusText.textContent = '🔕 Notificări: INACTIVE';
+                statusText.style.color = 'var(--gray-text)';
+                btnEnable.style.display = 'block';
+                btnEnable.onclick = requestPushPermission;
             } else {
-                // Poate vrem să updatăm baza de date cu subscriptia existenta
-                await saveSubscription(subscription);
+                statusText.textContent = '🔔 Notificări: ACTIVE';
+                statusText.style.color = 'var(--green-matcha)';
+                btnEnable.style.display = 'none';
+                await saveSubscription(subscription); // silent refresh
             }
         } catch (err) {
-            console.error("Eroare la abonare push:", err);
+            console.error("Eroare la verificare push:", err);
+            errText.textContent = "Eroare citire status notificări.";
+        }
+    }
+
+    async function requestPushPermission() {
+        const statusText = document.getElementById('push-status-text');
+        const btnEnable = document.getElementById('btn-enable-push');
+        const errText = document.getElementById('push-error-text');
+        errText.textContent = '';
+        
+        try {
+            btnEnable.textContent = 'Se activează...';
+            btnEnable.disabled = true;
+            
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+                await saveSubscription(subscription);
+                
+                statusText.textContent = '🔔 Notificări: ACTIVE';
+                statusText.style.color = 'var(--green-matcha)';
+                btnEnable.style.display = 'none';
+            } else {
+                errText.textContent = 'Permisiune refuzată de utilizator.';
+                btnEnable.textContent = 'Activează notificările';
+                btnEnable.disabled = false;
+            }
+        } catch (err) {
+            console.error("Eroare la activare push:", err);
+            errText.textContent = 'Eroare tehnică la activare.';
+            btnEnable.textContent = 'Activează notificările';
+            btnEnable.disabled = false;
+        }
+    }
+
+    async function testPushNotification() {
+        const status = document.getElementById('test-push-status');
+        status.textContent = 'Se trimite...';
+        status.style.color = 'var(--black-night)';
+        
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('send-notification', {
+                body: { 
+                    isTest: true,
+                    title: '🔔 Test Notificare',
+                    body: 'Dacă vezi asta, notificările push funcționează perfect!'
+                }
+            });
+            
+            if (error) throw error;
+            
+            status.textContent = '✔ Trimis! Verifică telefonul Alinei.';
+            status.style.color = 'var(--green-matcha)';
+        } catch (e) {
+            console.error("Eroare test push:", e);
+            status.textContent = '❌ Eroare: ' + e.message;
+            status.style.color = 'red';
         }
     }
 
@@ -823,7 +904,11 @@
             auth: sub.keys.auth
         }, { onConflict: 'endpoint' });
         
-        if (error) console.error("Eroare la salvarea abonamentului push:", error);
+        if (error) {
+            console.error("Eroare la salvarea abonamentului push:", error);
+            const errText = document.getElementById('push-error-text');
+            if (errText) errText.textContent = 'Eroare salvare DB: ' + error.message;
+        }
     }
 
     function urlB64ToUint8Array(base64String) {
@@ -1178,10 +1263,10 @@
         document.getElementById('progress-bar').style.width = `${progressPercent}%`;
         document.getElementById('progress-text').textContent = `${completedItems}/${totalItems} produse completate`;
 
-        if (totalItems > 0 && document.getElementById('search-inventar').value === '') {
+        if (totalItems > 0) {
             document.getElementById('btn-finalizare').classList.remove('hidden');
         } else {
-            document.getElementById('btn-finalizare').classList.remove('hidden');
+            document.getElementById('btn-finalizare').classList.add('hidden');
         }
     }
 
@@ -1240,31 +1325,71 @@
     }
 
     document.getElementById('btn-finalizare').addEventListener('click', async () => {
-        const originalText = document.getElementById('btn-finalizare').textContent;
-        document.getElementById('btn-finalizare').textContent = 'Se finalizează...';
-        document.getElementById('btn-finalizare').disabled = true;
+        const btn = document.getElementById('btn-finalizare');
+        const originalText = btn.textContent;
+        btn.textContent = 'Se verifică stocul...';
+        btn.disabled = true;
+        let notificareTrimisa = false;
 
         try {
             // Verificare stoc vs prag
             const { data: invData } = await supabaseClient
                 .from('inventar')
-                .select('produs_id, stoc')
+                .select('produs_id, stoc, necesar')
                 .eq('locatie', currentLocation);
             
             if (invData && catalogProduse) {
+                // BUG 2: MONOR SEPARAT
+                const idMonor = 'ce7ec325-980f-4ddd-937b-be6a0d9fe124';
+                const itemMonor = invData.find(i => i.produs_id === idMonor);
+                const monorRosu = itemMonor && itemMonor.stoc !== null && parseFloat(itemMonor.stoc) < 20;
+
+                if (monorRosu) {
+                    await supabaseClient.functions.invoke('send-notification', {
+                        body: { 
+                            isTest: true, // we use the payload override
+                            title: `🔴 LAPTE Monor — ${currentLocation}`,
+                            body: `${itemMonor.stoc} buc (sub 20). Comandă la Monor!`
+                        }
+                    });
+                    notificareTrimisa = true;
+                }
+
+                // Restul produselor
                 const subPrag = [];
+                const cuNecesar = [];
+
                 for (const item of invData) {
-                    if (item.stoc === null) continue;
                     const prod = catalogProduse.find(p => p.id === item.produs_id);
-                    if (prod && prod.prag_minim !== null && prod.prag_minim !== undefined) {
-                        if (parseFloat(item.stoc) < parseFloat(prod.prag_minim)) {
-                            subPrag.push(`${prod.nume} (${item.stoc} < ${prod.prag_minim})`);
+                    if (!prod) continue;
+                    
+                    // Verificare Necesar
+                    if (item.necesar !== null && parseFloat(item.necesar) > 0) {
+                        cuNecesar.push(`${prod.nume} (${item.necesar} ${prod.unitate})`);
+                    }
+
+                    // Verificare Prag Minim
+                    if (item.stoc !== null && item.produs_id !== idMonor) {
+                        if (prod.prag_minim !== null && prod.prag_minim !== undefined) {
+                            if (parseFloat(item.stoc) < parseFloat(prod.prag_minim)) {
+                                subPrag.push(`${prod.nume} (${item.stoc} < ${prod.prag_minim})`);
+                            }
                         }
                     }
                 }
 
+                if (cuNecesar.length > 0) {
+                    await supabaseClient.functions.invoke('send-notification', {
+                        body: { 
+                            isTest: true,
+                            title: `📝 Necesar manual: ${currentLocation}`,
+                            body: `${operatorName || "operator"} a cerut:\n${cuNecesar.join('\n')}`
+                        }
+                    });
+                    notificareTrimisa = true;
+                }
+
                 if (subPrag.length > 0) {
-                    // Call edge function
                     await supabaseClient.functions.invoke('send-notification', {
                         body: { 
                             locatie: currentLocation,
@@ -1272,16 +1397,28 @@
                             produse: subPrag 
                         }
                     });
+                    notificareTrimisa = true;
                 }
             }
         } catch (e) {
             console.error("Eroare la trimiterea notificarii:", e);
         }
 
-        document.getElementById('btn-finalizare').textContent = originalText;
-        document.getElementById('btn-finalizare').disabled = false;
-        alert("Inventarul a fost salvat și sincronizat cu succes! Mulțumim, " + (operatorName || "operator") + "!");
-        window.scrollTo(0,0);
+        btn.disabled = false;
+        if (notificareTrimisa) {
+            btn.textContent = "✔ Trimis — Alina a fost anunțată";
+            btn.style.background = "var(--success)";
+            btn.style.color = "white";
+        } else {
+            btn.textContent = "✔ Inventar salvat și sincronizat";
+        }
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = "";
+            btn.style.color = "";
+            window.scrollTo(0,0);
+        }, 3000);
     });
 
 
@@ -1727,6 +1864,15 @@
                 }]);
 
                 if (dbError) throw dbError;
+
+                // Send push notification for new invoice
+                await supabaseClient.functions.invoke('send-notification', {
+                    body: {
+                        isTest: true, // override payload logic
+                        title: `📸 Factură nouă: ${furnizor}`,
+                        body: `${operatorName || 'Anonim'} a adăugat o factură nouă la ${locatie}.`
+                    }
+                }).catch(e => console.error("Push factura error:", e));
 
                 alert('Factura a fost salvată cu succes!');
                 await fetchAndRenderFacturi();
