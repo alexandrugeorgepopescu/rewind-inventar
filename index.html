@@ -335,7 +335,27 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed:', err));
+          navigator.serviceWorker.register('sw.js?v=5.1')
+            .then(reg => {
+                // Forțăm browserul să caute imediat actualizări
+                reg.update();
+                
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    if (installingWorker) {
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
+                                    console.log('Noua versiune v5.1 detectată. Se reîncarcă pagina...');
+                                    window.location.reload();
+                                }
+                            }
+                        };
+                    }
+                };
+            })
+            .catch(err => console.warn('SW registration failed:', err));
         });
       }
       
