@@ -1345,13 +1345,14 @@
                 const monorRosu = itemMonor && itemMonor.stoc !== null && parseFloat(itemMonor.stoc) < 20;
 
                 if (monorRosu) {
-                    await supabaseClient.functions.invoke('send-notification', {
+                    const { error: errMonor } = await supabaseClient.functions.invoke('send-notification', {
                         body: { 
                             isTest: true, // we use the payload override
                             title: `🔴 LAPTE Monor — ${currentLocation}`,
                             body: `${itemMonor.stoc} buc (sub 20). Comandă la Monor!`
                         }
                     });
+                    if (errMonor) throw errMonor;
                     notificareTrimisa = true;
                 }
 
@@ -1379,29 +1380,33 @@
                 }
 
                 if (cuNecesar.length > 0) {
-                    await supabaseClient.functions.invoke('send-notification', {
+                    const { error: errNecesar } = await supabaseClient.functions.invoke('send-notification', {
                         body: { 
                             isTest: true,
                             title: `📝 Necesar manual: ${currentLocation}`,
                             body: `${operatorName || "operator"} a cerut:\n${cuNecesar.join('\n')}`
                         }
                     });
+                    if (errNecesar) throw errNecesar;
                     notificareTrimisa = true;
                 }
 
                 if (subPrag.length > 0) {
-                    await supabaseClient.functions.invoke('send-notification', {
+                    const { error: errPrag } = await supabaseClient.functions.invoke('send-notification', {
                         body: { 
                             locatie: currentLocation,
                             operator: operatorName || "operator",
                             produse: subPrag 
                         }
                     });
+                    if (errPrag) throw errPrag;
                     notificareTrimisa = true;
                 }
             }
         } catch (e) {
             console.error("Eroare la trimiterea notificarii:", e);
+            alert("Eroare la trimiterea notificărilor: " + (e.message || JSON.stringify(e)));
+            notificareTrimisa = false; // nu afisam verde daca a picat
         }
 
         btn.disabled = false;
