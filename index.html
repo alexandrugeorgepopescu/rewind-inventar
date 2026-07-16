@@ -1216,7 +1216,8 @@
             locatie: currentLocation,
             stoc: data.stoc,
             necesar: data.necesar,
-            actualizat_de: operatorName
+            actualizat_de: operatorName,
+            actualizat_la: new Date().toISOString()
         }, { onConflict: 'produs_id, locatie' });
 
         if (error) console.error("Save error", error);
