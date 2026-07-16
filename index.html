@@ -19,6 +19,98 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* Ghid / Accordion & Video Embed Styling */
+        .ghid-accordion {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            overflow: hidden;
+            border: 1px solid var(--cloud-dancer);
+            transition: all 0.3s ease;
+        }
+        .ghid-accordion-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 700;
+            background: var(--alb-cald);
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .ghid-accordion-header:hover {
+            background: rgba(240, 238, 233, 0.5);
+        }
+        .ghid-accordion-content {
+            display: none;
+            padding: 16px;
+            border-top: 1px solid var(--cloud-dancer);
+        }
+        .ghid-accordion.open .ghid-accordion-content {
+            display: block;
+        }
+        .ghid-item-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 14px;
+        }
+        .ghid-item-row:last-child {
+            border-bottom: none;
+        }
+        .ghid-item-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: var(--black-night);
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            margin-top: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .recipe-card {
+            border: 1px solid var(--cloud-dancer);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: var(--alb-cald);
+        }
+        .recipe-meta {
+            font-size: 12px;
+            color: var(--gray-text);
+            margin-bottom: 8px;
+        }
+        .highlighted-period {
+            border: 2px solid var(--yellow-coffee) !important;
+            box-shadow: 0 0 15px rgba(251, 228, 133, 0.4) !important;
+        }
+        .badge-completed {
+            background-color: var(--success);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
         body {
             font-family: 'Lato', sans-serif;
             background-color: var(--cloud-dancer);
@@ -333,8 +425,9 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button id="btn-genereaza-raport" style="margin:0;">Generează Live</button>
-            <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0;">Istoric Salvate</button>
+            <button id="btn-genereaza-raport" style="margin:0; flex:1;">Generează Live</button>
+            <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0; flex:1;">Istoric Salvate</button>
+            <button id="btn-centralizator-facturi" style="margin:0; flex:1; background:#7332e6; color:white; font-weight:bold;">📸 Facturi</button>
         </div>
         <div id="centralizator-loader" class="loader hidden">Se procesează datele...</div>
         
@@ -359,6 +452,38 @@
             <div id="sesiune-linii"></div>
             <button id="btn-finalizare-sesiune" style="margin-top:20px; background:var(--success); color:white;">✔️ Finalizează Sesiunea</button>
         </div>
+
+        <!-- SUB-ECRAN FACTURI (Mutat în Centralizator) -->
+        <div id="centralizator-facturi-container" class="hidden" style="margin-top: 15px;">
+            <h3 style="text-align: center; margin-bottom: 15px;">Încărcare Facturi</h3>
+            <select id="factura-furnizor" style="margin-bottom: 10px;">
+                <option value="" disabled selected>Alege furnizorul...</option>
+                <option value="Metro">Metro</option>
+                <option value="Dropshot">Dropshot</option>
+                <option value="Interuno">Interuno</option>
+                <option value="Lactate Monor">Lactate Monor</option>
+                <option value="Alții">Alții</option>
+            </select>
+            <select id="factura-locatie" style="margin-bottom: 15px;">
+                <option value="Miroslava">Kaufland Miroslava</option>
+                <option value="Pacurari">Kaufland Păcurari</option>
+                <option value="Alexandru">Kaufland Alexandru</option>
+            </select>
+            
+            <input type="file" id="factura-file" accept="image/*" capture="environment" style="display: none;">
+            <button id="btn-adauga-factura" style="background: var(--black-night); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
+                📸 Fă o poză facturii
+            </button>
+            
+            <div id="facturi-loader" class="loader hidden">Se încarcă factura...</div>
+
+            <div id="istoric-facturi" style="margin-top:20px;">
+                <h4 style="margin-bottom: 10px; border-bottom: 2px solid var(--cloud-dancer); padding-bottom: 5px;">Istoric Facturi (Ultimele 30 zile)</h4>
+                <div id="facturi-list">
+                    <p style="text-align:center; color: var(--gray-text); font-size: 14px;">Selectează un furnizor pentru a vedea facturile.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ECRAN 3: ADMIN -->
@@ -370,6 +495,7 @@
                 <div class="chip active" onclick="switchAdminSection('produse', this)">📦 Produse</div>
                 <div class="chip" onclick="switchAdminSection('program', this)">📅 Program</div>
                 <div class="chip" onclick="switchAdminSection('salarizare', this)">💰 Salarii</div>
+                <div class="chip" onclick="switchAdminSection('proceduri', this)">📋 Ghid & Proceduri</div>
             </div>
             
             <div id="admin-push-test" style="margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; text-align: center;">
@@ -536,35 +662,69 @@
                     <button id="btn-inchide-perioada" style="margin-top: 10px; background: var(--error); color: white;" onclick="inchidePerioada()">Închide Perioada (Read-only)</button>
                 </div>
             </div>
+            
+            <!-- SECTIUNE: GHID & PROCEDURI (ADMIN) -->
+            <div id="admin-sec-proceduri" class="hidden">
+                <div class="chips" style="margin-bottom: 15px; justify-content: center;">
+                    <div class="chip active" id="admin-ghid-chip-monitor" onclick="switchAdminGhidSub('monitor', this)">📊 Progres Azi</div>
+                    <div class="chip" id="admin-ghid-chip-checklists" onclick="switchAdminGhidSub('checklists', this)">📋 Editează Checklist-uri</div>
+                    <div class="chip" id="admin-ghid-chip-retete" onclick="switchAdminGhidSub('retete', this)">📖 Editează Rețete</div>
+                </div>
+
+                <!-- SUB-SECTIUNE 1: MONITORIZARE ZI -->
+                <div id="admin-ghid-sub-monitor">
+                    <h4>Progres Proceduri Azi</h4>
+                    <div id="admin-ghid-monitor-list"></div>
+                </div>
+
+                <!-- SUB-SECTIUNE 2: CRUD CHECKLISTS & ITENI -->
+                <div id="admin-ghid-sub-checklists" class="hidden">
+                    <button class="btn-secondary" onclick="openAddChecklist()">+ Adaugă Checklist Nou</button>
+                    <!-- Formular Checklist Nou -->
+                    <div id="admin-checklist-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee); margin-top:10px;">
+                        <h4>Adaugă Checklist</h4>
+                        <input type="text" id="new-chk-nume" placeholder="Nume (ex. MID-SHIFT)">
+                        <input type="text" id="new-chk-subtitlu" placeholder="Subtitlu (ex. Ora 13:00)">
+                        <input type="number" id="new-chk-ordine" placeholder="Ordine" value="1">
+                        <div class="checkbox-group" style="margin-top:10px; margin-bottom:10px;">
+                            <label><input type="checkbox" class="new-chk-loc" value="Miroslava" checked> Miroslava</label>
+                            <label><input type="checkbox" class="new-chk-loc" value="Pacurari" checked> Păcurari</label>
+                            <label><input type="checkbox" class="new-chk-loc" value="Alexandru" checked> Alexandru</label>
+                        </div>
+                        <button onclick="saveNewChecklist()">Salvează Checklist</button>
+                        <button class="btn-secondary" onclick="document.getElementById('admin-checklist-add-form').classList.add('hidden')">Anulează</button>
+                    </div>
+
+                    <div id="admin-checklists-list" style="margin-top:20px;"></div>
+                </div>
+
+                <!-- SUB-SECTIUNE 3: CRUD REȚETE -->
+                <div id="admin-ghid-sub-retete" class="hidden">
+                    <button class="btn-secondary" onclick="openAddReteta()">+ Adaugă Rețetă / Material</button>
+                    <!-- Formular Rețetă Nouă -->
+                    <div id="admin-reteta-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee); margin-top:10px;">
+                        <h4>Adaugă Rețetă / Training</h4>
+                        <input type="text" id="new-ret-titlu" placeholder="Titlu (ex. Cappuccino)">
+                        <select id="new-ret-cat" style="width:100%; padding:8px; margin-bottom:10px;">
+                            <option value="Rețete bar">Rețete bar</option>
+                            <option value="Tehnici & Training">Tehnici & Training</option>
+                            <option value="Fișe & Alergeni">Fișe & Alergeni</option>
+                        </select>
+                        <textarea id="new-ret-continut" placeholder="Conținut / Pași de preparare" rows="5" style="width:100%; padding:8px; margin-bottom:10px; border-radius:4px; border:1px solid #ccc; font-family:sans-serif;"></textarea>
+                        <input type="text" id="new-ret-video" placeholder="Link Video YouTube (unlisted)">
+                        <input type="text" id="new-ret-imagine" placeholder="URL Imagine (optional)">
+                        <input type="number" id="new-ret-ordine" placeholder="Ordine" value="1">
+                        <button onclick="saveNewReteta()">Salvează</button>
+                        <button class="btn-secondary" onclick="document.getElementById('admin-reteta-add-form').classList.add('hidden')">Anulează</button>
+                    </div>
+
+                    <div id="admin-retete-list" style="margin-top:20px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
 
-    <!-- ECRAN 4: FACTURI -->
-    <div id="screen-facturi" class="screen">
-        <h3 style="text-align: center; margin-bottom: 15px;">Încărcare Facturi</h3>
-        <select id="factura-furnizor" style="margin-bottom: 10px;">
-            <option value="" disabled selected>Alege furnizorul...</option>
-        </select>
-        <select id="factura-locatie" style="margin-bottom: 15px;">
-            <option value="" disabled selected>Alege locația...</option>
-            <option value="Miroslava">Miroslava</option>
-            <option value="Pacurari">Kaufland Păcurari</option>
-            <option value="Alexandru">Kaufland Alexandru</option>
-        </select>
-        
-        <input type="file" id="factura-file" accept="image/*" capture="environment" style="display: none;">
-        <button id="btn-adauga-factura" style="background: var(--black-night); color: var(--yellow-coffee); margin-bottom: 20px;">📷 Fă o poză facturii</button>
-        
-        <div id="facturi-loader" class="hidden" style="text-align:center; padding:20px; font-weight:bold; color:var(--black-night);">
-            Se încarcă...
-        </div>
-
-        <h4 style="margin-bottom: 10px; border-bottom: 2px solid var(--cloud-dancer); padding-bottom: 5px;">Istoric Facturi (Ultimele 30 zile)</h4>
-        <div id="facturi-list">
-            <p style="text-align:center; color: var(--gray-text); font-size: 14px;">Selectează un furnizor pentru a vedea facturile.</p>
-        </div>
-    </div>
 
     <!-- ECRAN 5: PROGRAM -->
     <div id="screen-program" class="screen">
@@ -598,7 +758,10 @@
     <div id="screen-cont" class="screen">
         <div class="sticky-top-controls" style="display: flex; justify-content: space-between; align-items: center; background: white; padding-bottom: 10px; border-bottom: 1px solid var(--cloud-dancer); margin-bottom: 15px;">
             <h3 style="margin: 0;">Contul Meu (<span id="cont-nume-display"></span>)</h3>
-            <button id="btn-logout" class="btn" style="background: var(--cloud-dancer); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0;">Ieși din cont</button>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-goto-admin" class="btn" style="background: var(--yellow-coffee); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0; display: none;">⚙️ Admin</button>
+                <button id="btn-logout" class="btn" style="background: var(--cloud-dancer); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0;">Ieși din cont</button>
+            </div>
         </div>
         <div id="push-settings-card" class="admin-product hidden" style="border: 2px solid var(--cloud-dancer); margin-bottom: 20px; text-align: center;">
             <h4 style="margin-bottom: 10px;">Setări Notificări</h4>
@@ -612,16 +775,41 @@
         </div>
     </div>
 
+    <!-- ECRAN GHID -->
+    <div id="screen-ghid" class="screen">
+        <div class="sticky-top-controls" style="display: flex; justify-content: space-between; align-items: center; background: white; padding-bottom: 10px; border-bottom: 1px solid var(--cloud-dancer); margin-bottom: 15px;">
+            <h3 style="margin: 0;">Ghid & Training</h3>
+        </div>
+        
+        <!-- Toggle Chips: Proceduri / Rețetar -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button id="chip-proceduri" class="btn" style="flex: 1; margin: 0; background: var(--black-night); color: white;">☑️ Proceduri</button>
+            <button id="chip-retetar" class="btn" style="flex: 1; margin: 0; background: var(--cloud-dancer); color: var(--black-night);">📖 Rețetar</button>
+        </div>
+
+        <!-- Sectiunea 1: Proceduri -->
+        <div id="ghid-sec-proceduri">
+            <p id="proceduri-loader" style="text-align:center; color: var(--gray-text);">Se încarcă procedurile...</p>
+            <div id="proceduri-container"></div>
+        </div>
+
+        <!-- Sectiunea 2: Rețetar -->
+        <div id="ghid-sec-retetar" class="hidden">
+            <input type="text" id="search-retetar" placeholder="Caută rețetă sau tehnică..." style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--cloud-dancer);">
+            <p id="retete-loader" style="text-align:center; color: var(--gray-text);">Se încarcă rețetarul...</p>
+            <div id="retete-container"></div>
+        </div>
+    </div>
+
 </div>
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav" id="main-bottom-nav" style="display: none;">
     <div class="nav-item" onclick="switchScreen('inventar', this)">📦<br>Stoc</div>
     <div class="nav-item" onclick="switchScreen('program', this)">📅<br>Program</div>
-    <div class="nav-item" onclick="switchScreen('cont', this)">👤<br>Cont</div>
+    <div class="nav-item" onclick="switchScreen('ghid', this)">📖<br>Ghid</div>
     <div class="nav-item" onclick="switchScreen('centralizator', this)">📋<br>Centr.</div>
-    <div class="nav-item" onclick="switchScreen('facturi', this)">📸<br>Facturi</div>
-    <div class="nav-item" id="nav-item-admin" onclick="switchScreen('admin', this)" style="display: none;">⚙️<br>Admin</div>
+    <div class="nav-item" onclick="switchScreen('cont', this)">👤<br>Cont</div>
 </div>
 
 <div id="saving-indicator" class="saving-indicator">Se salvează...</div>
@@ -749,6 +937,10 @@
             localStorage.removeItem('rewind_user_tip');
             location.reload();
         });
+
+        document.getElementById('btn-goto-admin').addEventListener('click', () => {
+            switchScreen('admin', document.createElement('div'));
+        });
     }
 
     function loginSuccess(user) {
@@ -778,9 +970,9 @@
         document.getElementById('main-bottom-nav').style.display = 'flex';
         
         if (user.tip === 'owner' || user.nume.toLowerCase() === 'alina') {
-            document.getElementById('nav-item-admin').style.display = 'block';
+            document.getElementById('btn-goto-admin').style.display = 'block';
         } else {
-            document.getElementById('nav-item-admin').style.display = 'none';
+            document.getElementById('btn-goto-admin').style.display = 'none';
         }
 
         const navInventar = document.querySelector('.nav-item[onclick*="inventar"]');
@@ -1037,7 +1229,7 @@
         document.getElementById('screen-' + screenId).classList.add('active');
         
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        navEl.classList.add('active');
+        if (navEl && navEl.classList) navEl.classList.add('active');
         
         if (screenId === 'facturi') {
             const savedLoc = localStorage.getItem('rewind_location');
@@ -1061,6 +1253,10 @@
         
         if (screenId === 'centralizator') {
             loadSemaforMonor();
+        }
+        
+        if (screenId === 'ghid') {
+            loadGhidData();
         }
         
         window.scrollTo(0, 0);
@@ -1578,10 +1774,59 @@
     // SESIUNI APROVIZIONARE
     // ==========================================
 
-    document.getElementById('btn-istoric-sesiuni').addEventListener('click', showIstoricSesiuni);
+    function selectCentralizatorSub(activeBtnId) {
+        const btnGen = document.getElementById('btn-genereaza-raport');
+        const btnIst = document.getElementById('btn-istoric-sesiuni');
+        const btnFac = document.getElementById('btn-centralizator-facturi');
+
+        btnGen.className = 'btn-secondary';
+        btnGen.style.background = '';
+        btnGen.style.color = '';
+
+        btnIst.className = 'btn-secondary';
+        btnIst.style.background = '';
+        btnIst.style.color = '';
+
+        btnFac.className = 'btn-secondary';
+        btnFac.style.background = '';
+        btnFac.style.color = '';
+
+        const activeBtn = document.getElementById(activeBtnId);
+        if (activeBtnId === 'btn-centralizator-facturi') {
+            activeBtn.className = '';
+            activeBtn.style.background = '#7332e6';
+            activeBtn.style.color = 'white';
+        } else {
+            activeBtn.className = '';
+        }
+    }
+
+    document.getElementById('btn-istoric-sesiuni').addEventListener('click', () => {
+        selectCentralizatorSub('btn-istoric-sesiuni');
+        document.getElementById('centralizator-facturi-container').classList.add('hidden');
+        showIstoricSesiuni();
+    });
+
+    document.getElementById('btn-centralizator-facturi').addEventListener('click', () => {
+        selectCentralizatorSub('btn-centralizator-facturi');
+        document.getElementById('raport-content').classList.add('hidden');
+        document.getElementById('istoric-sesiuni').classList.add('hidden');
+        document.getElementById('sesiune-view').classList.add('hidden');
+        document.getElementById('centralizator-facturi-container').classList.remove('hidden');
+
+        // Sincronizam locatia pe dropdown
+        const savedLoc = localStorage.getItem('rewind_location');
+        const locSelect = document.getElementById('factura-locatie');
+        if (savedLoc && locSelect) {
+            locSelect.value = savedLoc;
+            locSelect.dispatchEvent(new Event('change'));
+        }
+    });
     
     // Înlocuim click-ul original pe btn-genereaza-raport
     document.getElementById('btn-genereaza-raport').addEventListener('click', async () => {
+        selectCentralizatorSub('btn-genereaza-raport');
+        document.getElementById('centralizator-facturi-container').classList.add('hidden');
         document.getElementById('istoric-sesiuni').classList.add('hidden');
         document.getElementById('sesiune-view').classList.add('hidden');
         document.getElementById('raport-content').classList.add('hidden');
@@ -2295,6 +2540,7 @@
         document.getElementById('admin-sec-produse').classList.add('hidden');
         document.getElementById('admin-sec-program').classList.add('hidden');
         document.getElementById('admin-sec-salarizare').classList.add('hidden');
+        document.getElementById('admin-sec-proceduri').classList.add('hidden');
         
         document.querySelectorAll('#admin-dashboard .chip').forEach(c => c.classList.remove('active'));
         chipEl.classList.add('active');
@@ -2303,6 +2549,7 @@
         
         if (sectionId === 'program') initAdminProgram();
         if (sectionId === 'salarizare') initAdminSalarizare();
+        if (sectionId === 'proceduri') initAdminProceduri();
     }
 
     async function fetchAngajati() {
@@ -3032,6 +3279,691 @@
         link.click();
         document.body.removeChild(link);
     }
+
+    // ==========================================
+    // GHID, PROCEDURI & REȚETAR - LOGICĂ JS
+    // ==========================================
+
+    let cachedChecklists = [];
+    let cachedItemi = [];
+    let cachedBifariAzi = [];
+    let cachedRetete = [];
+
+    // Chip toggling în Ecranul Ghid
+    document.getElementById('chip-proceduri').addEventListener('click', function() {
+        this.style.background = 'var(--black-night)';
+        this.style.color = 'white';
+        document.getElementById('chip-retetar').style.background = 'var(--cloud-dancer)';
+        document.getElementById('chip-retetar').style.color = 'var(--black-night)';
+        document.getElementById('ghid-sec-proceduri').classList.remove('hidden');
+        document.getElementById('ghid-sec-retetar').classList.add('hidden');
+    });
+
+    document.getElementById('chip-retetar').addEventListener('click', function() {
+        this.style.background = 'var(--black-night)';
+        this.style.color = 'white';
+        document.getElementById('chip-proceduri').style.background = 'var(--cloud-dancer)';
+        document.getElementById('chip-proceduri').style.color = 'var(--black-night)';
+        document.getElementById('ghid-sec-retetar').classList.remove('hidden');
+        document.getElementById('ghid-sec-proceduri').classList.add('hidden');
+    });
+
+    // Căutare rețete
+    document.getElementById('search-retetar').addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        document.querySelectorAll('.recipe-card').forEach(card => {
+            const searchField = card.dataset.search.toLowerCase();
+            if (searchField.includes(query)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    async function loadGhidData() {
+        const procLoader = document.getElementById('proceduri-loader');
+        const reteteLoader = document.getElementById('retete-loader');
+        
+        procLoader.style.display = 'block';
+        reteteLoader.style.display = 'block';
+        
+        try {
+            // 1. Preluare checklist-uri active
+            const { data: checklists, error: errChk } = await supabaseClient
+                .from('proceduri_checklists')
+                .select('*')
+                .eq('activ', true)
+                .order('ordine', { ascending: true })
+                .order('nume', { ascending: true });
+            
+            if (errChk) throw errChk;
+            cachedChecklists = checklists;
+
+            // 2. Preluare itemi activi
+            const { data: itemi, error: errIt } = await supabaseClient
+                .from('proceduri_itemi')
+                .select('*')
+                .eq('activ', true)
+                .order('ordine', { ascending: true })
+                .order('text', { ascending: true });
+                
+            if (errIt) throw errIt;
+            cachedItemi = itemi;
+
+            // 3. Preluare bifări pentru azi (pe fusul orar local)
+            const localDate = new Date().toLocaleDateString('sv'); // format YYYY-MM-DD local
+            const { data: bifari, error: errBif } = await supabaseClient
+                .from('proceduri_bifari')
+                .select('*')
+                .eq('locatie', currentLocation)
+                .eq('data', localDate);
+                
+            if (errBif) throw errBif;
+            cachedBifariAzi = bifari;
+
+            // Render Itemi/Checklists
+            renderChecklistsUI();
+            procLoader.style.display = 'none';
+
+            // 4. Preluare rețete
+            const { data: retete, error: errRet } = await supabaseClient
+                .from('retete')
+                .select('*')
+                .eq('activ', true)
+                .order('ordine', { ascending: true })
+                .order('titlu', { ascending: true });
+                
+            if (errRet) throw errRet;
+            cachedRetete = retete;
+
+            // Render Rețetar
+            renderRetetarUI();
+            reteteLoader.style.display = 'none';
+
+        } catch (e) {
+            console.error("Eroare la încărcarea ghidului:", e);
+            alert("Eroare la încărcarea procedurilor sau a rețetarului.");
+        }
+    }
+
+    function renderChecklistsUI() {
+        const container = document.getElementById('proceduri-container');
+        container.innerHTML = '';
+
+        // Filtrăm checklist-urile care aparțin locației curente
+        const checklistsLocatie = cachedChecklists.filter(c => c.locatii.includes(currentLocation));
+        
+        if (checklistsLocatie.length === 0) {
+            container.innerHTML = `<p style="text-align:center; color:var(--gray-text); padding:20px;">Nicio procedură setată pentru locația ${currentLocation}.</p>`;
+            return;
+        }
+
+        const hour = new Date().getHours();
+
+        checklistsLocatie.forEach(chk => {
+            const chkItems = cachedItemi.filter(i => i.checklist_id === chk.id);
+            const totalItems = chkItems.length;
+            
+            // Calculăm câte sunt bifate azi
+            const checkedTodayIds = cachedBifariAzi.map(b => b.item_id);
+            const completedCount = chkItems.filter(i => checkedTodayIds.includes(i.id)).length;
+
+            // Verificăm dacă perioada este relevantă acum
+            let isCurrentPeriod = false;
+            const numeChk = chk.nume.toUpperCase();
+            if (numeChk.includes('DESCHIDERE') && hour >= 6 && hour < 10) isCurrentPeriod = true;
+            else if (numeChk.includes('INTENS') && hour >= 10 && hour < 13) isCurrentPeriod = true;
+            else if (numeChk.includes('MID') && hour >= 13 && hour < 17) isCurrentPeriod = true;
+            else if (numeChk.includes('ÎNCHIDERE') && (hour >= 17 || hour < 6)) isCurrentPeriod = true;
+            else if (numeChk.includes('INCHIDERE') && (hour >= 17 || hour < 6)) isCurrentPeriod = true;
+
+            const div = document.createElement('div');
+            div.className = `ghid-accordion ${isCurrentPeriod ? 'highlighted-period' : ''}`;
+            div.id = `chk-accordion-${chk.id}`;
+            
+            let itemsHtml = '';
+            chkItems.forEach(item => {
+                const isChecked = checkedTodayIds.includes(item.id);
+                itemsHtml += `
+                    <div class="ghid-item-row">
+                        <input type="checkbox" id="chk-item-${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleBifa('${item.id}', this)">
+                        <label for="chk-item-${item.id}" style="cursor:pointer; flex: 1;">${item.text}</label>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div class="ghid-accordion-header" onclick="toggleAccordion(this)">
+                    <div>
+                        <span style="font-size:16px;">${chk.nume}</span>
+                        <div style="font-size:11px; font-weight:normal; color:var(--gray-text);">${chk.subtitlu || ''}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="progress-badge" id="badge-count-${chk.id}" style="font-size:12px; font-weight:bold;">${completedCount}/${totalItems}</span>
+                        <span style="transition: transform 0.2s;" class="arrow">▼</span>
+                    </div>
+                </div>
+                <div class="ghid-accordion-content">
+                    ${totalItems === 0 ? '<p style="color:var(--gray-text); font-size:13px;">Nu există itemi adăugați în acest checklist.</p>' : itemsHtml}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function toggleAccordion(header) {
+        const parent = header.parentElement;
+        const arrow = header.querySelector('.arrow');
+        const isOpen = parent.classList.contains('open');
+        
+        // Închidem celelalte
+        document.querySelectorAll('.ghid-accordion').forEach(a => {
+            a.classList.remove('open');
+            const ar = a.querySelector('.arrow');
+            if (ar) ar.style.transform = 'rotate(0deg)';
+        });
+
+        if (!isOpen) {
+            parent.classList.add('open');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    async function toggleBifa(itemId, isChecked) {
+        if (!currentUser) return alert("Trebuie să fii conectat!");
+        const localDate = new Date().toLocaleDateString('sv'); // YYYY-MM-DD
+        
+        try {
+            if (isChecked) {
+                // Upsert cu ignore conflict (ON CONFLICT DO UPDATE)
+                const { error } = await supabaseClient
+                    .from('proceduri_bifari')
+                    .upsert({
+                        item_id: itemId,
+                        locatie: currentLocation,
+                        data: localDate,
+                        angajat_id: currentUser.id,
+                        bifat_la: new Date().toISOString()
+                    }, { onConflict: 'item_id, locatie, data' });
+
+                if (error) throw error;
+                // Adăugăm local
+                if (!cachedBifariAzi.find(b => b.item_id === itemId)) {
+                    cachedBifariAzi.push({ item_id: itemId, locatie: currentLocation, data: localDate });
+                }
+            } else {
+                // Ștergerea bifei
+                const { error } = await supabaseClient
+                    .from('proceduri_bifari')
+                    .delete()
+                    .eq('item_id', itemId)
+                    .eq('locatie', currentLocation)
+                    .eq('data', localDate);
+
+                if (error) throw error;
+                // Ștergem local
+                cachedBifariAzi = cachedBifariAzi.filter(b => b.item_id !== itemId);
+            }
+
+            // Actualizare badge progres instant fără a reîncărca tot ecranul
+            updateChecklistBadges();
+
+        } catch (e) {
+            console.error("Eroare la bifare:", e);
+            alert("Eroare la salvarea bifei. Te rugăm să reîncerci.");
+            // Resetare stare checkbox în UI în caz de eroare
+            const chkBox = document.getElementById(`chk-item-${itemId}`);
+            if (chkBox) chkBox.checked = !isChecked;
+        }
+    }
+
+    function updateChecklistBadges() {
+        cachedChecklists.forEach(chk => {
+            const chkItems = cachedItemi.filter(i => i.checklist_id === chk.id);
+            const totalItems = chkItems.length;
+            const checkedTodayIds = cachedBifariAzi.map(b => b.item_id);
+            const completedCount = chkItems.filter(i => checkedTodayIds.includes(i.id)).length;
+            
+            const badge = document.getElementById(`badge-count-${chk.id}`);
+            if (badge) {
+                badge.textContent = `${completedCount}/${totalItems}`;
+                if (completedCount === totalItems && totalItems > 0) {
+                    badge.className = 'badge-completed';
+                    badge.innerHTML = `✔ ${completedCount}/${totalItems}`;
+                } else {
+                    badge.className = '';
+                    badge.textContent = `${completedCount}/${totalItems}`;
+                }
+            }
+        });
+    }
+
+    function renderRetetarUI() {
+        const container = document.getElementById('retete-container');
+        container.innerHTML = '';
+
+        const categorii = ['Rețete bar', 'Tehnici & Training', 'Fișe & Alergeni'];
+
+        categorii.forEach(cat => {
+            const catRetete = cachedRetete.filter(r => r.categorie === cat);
+            if (catRetete.length === 0) return;
+
+            const div = document.createElement('div');
+            div.className = 'ghid-accordion';
+            
+            let listHtml = '';
+            catRetete.forEach(ret => {
+                const embedUrl = getYouTubeEmbedUrl(ret.video_url);
+                const videoHtml = embedUrl ? `
+                    <div class="video-container">
+                        <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                ` : '';
+
+                const imgHtml = ret.imagine_url ? `
+                    <img src="${ret.imagine_url}" style="width:100%; border-radius:8px; margin-top:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);" alt="${ret.titlu}">
+                ` : '';
+
+                listHtml += `
+                    <div class="recipe-card" data-search="${ret.titlu} ${ret.continut || ''}">
+                        <div style="font-weight:bold; font-size:15px; margin-bottom:8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom:5px;">${ret.titlu}</div>
+                        <div style="font-size:13px; white-space:pre-wrap; line-height:1.5;">${ret.continut || ''}</div>
+                        ${videoHtml}
+                        ${imgHtml}
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div class="ghid-accordion-header" onclick="toggleAccordion(this)">
+                    <span>${cat}</span>
+                    <span style="transition: transform 0.2s;" class="arrow">▼</span>
+                </div>
+                <div class="ghid-accordion-content">
+                    ${listHtml}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function getYouTubeEmbedUrl(url) {
+        if (!url) return null;
+        let videoId = '';
+        try {
+            if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split(/[?#]/)[0];
+            } else if (url.includes('youtube.com/watch')) {
+                const urlParams = new URLSearchParams(new URL(url).search);
+                videoId = urlParams.get('v');
+            } else if (url.includes('youtube.com/shorts/')) {
+                videoId = url.split('youtube.com/shorts/')[1].split(/[?#]/)[0];
+            } else if (url.includes('youtube.com/embed/')) {
+                videoId = url.split('youtube.com/embed/')[1].split(/[?#]/)[0];
+            }
+        } catch (e) {
+            console.error("Error parsing YouTube URL", e);
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    // ==========================================
+    // GHID & PROCEDURI - SECTIUNE ADMIN
+    // ==========================================
+
+    let adminChecklists = [];
+    let adminItemi = [];
+    let adminRetete = [];
+
+    function switchAdminGhidSub(subId, chip) {
+        document.getElementById('admin-ghid-sub-monitor').classList.add('hidden');
+        document.getElementById('admin-ghid-sub-checklists').classList.add('hidden');
+        document.getElementById('admin-ghid-sub-retete').classList.add('hidden');
+
+        document.querySelectorAll('#admin-sec-proceduri .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        document.getElementById('admin-ghid-sub-' + subId).classList.remove('hidden');
+    }
+
+    async function initAdminProceduri() {
+        await loadAdminGhidData();
+    }
+
+    async function loadAdminGhidData() {
+        try {
+            // 1. Preluare checklists
+            const { data: checklists, error: errChk } = await supabaseClient.from('proceduri_checklists').select('*').order('ordine', { ascending: true });
+            if (errChk) throw errChk;
+            adminChecklists = checklists;
+
+            // 2. Preluare itemi
+            const { data: itemi, error: errIt } = await supabaseClient.from('proceduri_itemi').select('*').order('ordine', { ascending: true });
+            if (errIt) throw errIt;
+            adminItemi = itemi;
+
+            // 3. Preluare retete
+            const { data: retete, error: errRet } = await supabaseClient.from('retete').select('*').order('ordine', { ascending: true });
+            if (errRet) throw errRet;
+            adminRetete = retete;
+
+            // Randează tot
+            loadAdminMonitorUI();
+            loadAdminChecklistsUI();
+            loadAdminReteteUI();
+
+        } catch (e) {
+            console.error("Eroare incarcare admin ghid", e);
+            alert("Eroare la incarcarea datelor de administrare.");
+        }
+    }
+
+    async function loadAdminMonitorUI() {
+        const container = document.getElementById('admin-ghid-monitor-list');
+        container.innerHTML = '<p style="text-align:center; color:var(--gray-text);">Se calculează progresul...</p>';
+
+        const locatii = ['Miroslava', 'Pacurari', 'Alexandru'];
+        const localDate = new Date().toLocaleDateString('sv');
+
+        try {
+            // Preluăm toate bifările de azi cu detaliile angajaților
+            const { data: bifari, error } = await supabaseClient
+                .from('proceduri_bifari')
+                .select('*, angajati(nume)')
+                .eq('data', localDate);
+
+            if (error) throw error;
+
+            let html = '';
+            locatii.forEach(loc => {
+                const locChecklists = adminChecklists.filter(c => c.activ && c.locatii.includes(loc));
+                
+                let locHtml = `<div class="admin-product" style="margin-bottom:15px; border-left: 4px solid var(--black-night);">
+                    <h4 style="margin-bottom:10px; text-transform: uppercase;">📍 Locație: ${loc}</h4>
+                `;
+
+                if (locChecklists.length === 0) {
+                    locHtml += `<p style="font-size:12px; color:var(--gray-text);">Niciun checklist activ pentru această locație.</p>`;
+                } else {
+                    locChecklists.forEach(chk => {
+                        const chkItems = adminItemi.filter(i => i.checklist_id === chk.id && i.activ);
+                        const total = chkItems.length;
+
+                        // Filtrare bife pentru acest checklist la aceasta locatie
+                        const itemIds = chkItems.map(i => i.id);
+                        const chkBifari = bifari.filter(b => b.locatie === loc && itemIds.includes(b.item_id));
+                        const completed = chkBifari.length;
+
+                        // Cine a bifat cel mai recent
+                        let completionDetails = '';
+                        if (chkBifari.length > 0) {
+                            // Sortam dupa timp descrescator
+                            chkBifari.sort((a,b) => new Date(b.bifat_la) - new Date(a.bifat_la));
+                            const lastBifa = chkBifari[0];
+                            const operator = lastBifa.angajati ? lastBifa.angajati.nume : 'Anonim';
+                            const ora = new Date(lastBifa.bifat_la).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+                            completionDetails = ` <span style="font-size:11px; color:var(--gray-text);">(${operator}, ${ora})</span>`;
+                        }
+
+                        const statusSymbol = (completed === total && total > 0) ? '🟢' : '🟡';
+
+                        locHtml += `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:13px;">
+                                <div><strong>${chk.nume}</strong> ${completionDetails}</div>
+                                <div style="font-weight:bold;">${statusSymbol} ${completed}/${total}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                locHtml += `</div>`;
+                html += locHtml;
+            });
+
+            container.innerHTML = html;
+
+        } catch (e) {
+            console.error("Error generating admin dashboard progress:", e);
+            container.innerHTML = '<p style="color:red; text-align:center;">Eroare la calcularea progresului.</p>';
+        }
+    }
+
+    function loadAdminChecklistsUI() {
+        const container = document.getElementById('admin-checklists-list');
+        container.innerHTML = '';
+
+        adminChecklists.forEach(chk => {
+            const chkItems = adminItemi.filter(i => i.checklist_id === chk.id);
+            
+            const div = document.createElement('div');
+            div.className = 'admin-product';
+            div.style.marginBottom = '20px';
+            div.style.border = '2px solid var(--cloud-dancer)';
+
+            let itemsHtml = '';
+            chkItems.forEach(it => {
+                itemsHtml += `
+                    <div style="display:flex; gap:10px; margin-bottom:8px; align-items:center;">
+                        <input type="text" value="${it.text}" onchange="updateItemField('${it.id}', 'text', this.value)" style="flex:1; margin:0; padding:5px;">
+                        <input type="number" value="${it.ordine}" onchange="updateItemField('${it.id}', 'ordine', parseInt(this.value))" style="width:50px; margin:0; padding:5px; text-align:center;">
+                        <button onclick="toggleItemActiv('${it.id}', ${!it.activ})" style="width:auto; padding:5px 8px; margin:0; background:${it.activ ? 'var(--black-night)' : '#ccc'}; color:white;">
+                            ${it.activ ? 'Activ' : 'Inactiv'}
+                        </button>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div style="background:var(--alb-cald); padding:10px; margin:-10px -10px 10px -10px; border-bottom:1px solid var(--cloud-dancer); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <input type="text" value="${chk.nume}" onchange="updateChecklistField('${chk.id}', 'nume', this.value)" style="font-weight:bold; font-size:15px; margin:0; width:150px; background:transparent; border:none; border-bottom:1px dashed #666;">
+                        <input type="text" value="${chk.subtitlu || ''}" onchange="updateChecklistField('${chk.id}', 'subtitlu', this.value)" placeholder="Subtitlu" style="font-size:12px; margin:0; width:100px; background:transparent; border:none; border-bottom:1px dashed #666; margin-left:10px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; margin-right:10px;">Ordine: 
+                            <input type="number" value="${chk.ordine}" onchange="updateChecklistField('${chk.id}', 'ordine', parseInt(this.value))" style="width:40px; margin:0; padding:2px; text-align:center;">
+                        </label>
+                        <button onclick="toggleChecklistActiv('${chk.id}', ${!chk.activ})" style="width:auto; padding:3px 8px; margin:0; background:${chk.activ ? 'var(--black-night)' : '#ccc'}; color:white; font-size:12px;">
+                            ${chk.activ ? 'Dezactivează' : 'Activează'}
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:10px; font-size:12px;">
+                    <strong>Locații:</strong> 
+                    <label style="margin-left:8px;"><input type="checkbox" ${chk.locatii.includes('Miroslava')?'checked':''} onchange="toggleChecklistLocatie('${chk.id}', 'Miroslava', this.checked)"> Miroslava</label>
+                    <label style="margin-left:8px;"><input type="checkbox" ${chk.locatii.includes('Pacurari')?'checked':''} onchange="toggleChecklistLocatie('${chk.id}', 'Pacurari', this.checked)"> Păcurari</label>
+                    <label style="margin-left:8px;"><input type="checkbox" ${chk.locatii.includes('Alexandru')?'checked':''} onchange="toggleChecklistLocatie('${chk.id}', 'Alexandru', this.checked)"> Alexandru</label>
+                </div>
+
+                <div style="margin-top:10px; border-top:1px solid var(--cloud-dancer); padding-top:10px;">
+                    <div style="font-weight:bold; font-size:13px; margin-bottom:8px;">Itemi procedură:</div>
+                    ${itemsHtml}
+                    <!-- Adăugare item nou -->
+                    <div style="display:flex; gap:10px; margin-top:10px; border-top: 1px dashed var(--cloud-dancer); padding-top:8px;">
+                        <input type="text" id="new-item-text-${chk.id}" placeholder="Adaugă procedură nouă..." style="flex:1; margin:0; padding:6px;">
+                        <button onclick="addNewItem('${chk.id}')" style="width:auto; margin:0; padding:6px 12px; background:var(--success); color:white;">+ Adaugă</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function loadAdminReteteUI() {
+        const container = document.getElementById('admin-retete-list');
+        container.innerHTML = '';
+
+        adminRetete.forEach(ret => {
+            const div = document.createElement('div');
+            div.className = 'admin-product';
+            div.style.marginBottom = '15px';
+            div.style.border = '2px solid var(--cloud-dancer)';
+
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <input type="text" value="${ret.titlu}" onchange="updateRetetaField('${ret.id}', 'titlu', this.value)" style="font-weight:bold; font-size:15px; flex:1; margin:0; padding:5px;">
+                    <select onchange="updateRetetaField('${ret.id}', 'categorie', this.value)" style="width:130px; margin:0; padding:5px; margin-left:10px;">
+                        <option value="Rețete bar" ${ret.categorie==='Rețete bar'?'selected':''}>Rețete bar</option>
+                        <option value="Tehnici & Training" ${ret.categorie==='Tehnici & Training'?'selected':''}>Tehnici & Training</option>
+                        <option value="Fișe & Alergeni" ${ret.categorie==='Fișe & Alergeni'?'selected':''}>Fișe & Alergeni</option>
+                    </select>
+                </div>
+                <textarea onchange="updateRetetaField('${ret.id}', 'continut', this.value)" rows="3" style="width:100%; padding:5px; margin-bottom:10px; font-family:sans-serif; border:1px solid #ccc; border-radius:4px;">${ret.continut || ''}</textarea>
+                <div class="admin-grid">
+                    <input type="text" value="${ret.video_url || ''}" onchange="updateRetetaField('${ret.id}', 'video_url', this.value)" placeholder="URL Video YouTube" style="margin:0; padding:5px;">
+                    <input type="text" value="${ret.imagine_url || ''}" onchange="updateRetetaField('${ret.id}', 'imagine_url', this.value)" placeholder="URL Imagine" style="margin:0; padding:5px;">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <label style="font-size:13px;">Ordine: 
+                        <input type="number" value="${ret.ordine}" onchange="updateRetetaField('${ret.id}', 'ordine', parseInt(this.value))" style="width:45px; text-align:center; padding:2px; margin:0;">
+                    </label>
+                    <button onclick="toggleRetetaActiv('${ret.id}', ${!ret.activ})" style="width:auto; padding:4px 10px; margin:0; background:${ret.activ ? 'var(--black-night)' : '#ccc'}; color:white;">
+                        ${ret.activ ? 'Dezactivează' : 'Activează'}
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // --- CRUD CALLBACKS ADMINISTRATOR ---
+
+    function openAddChecklist() {
+        document.getElementById('admin-checklist-add-form').classList.remove('hidden');
+    }
+
+    async function saveNewChecklist() {
+        const nume = document.getElementById('new-chk-nume').value.trim();
+        const subtitlu = document.getElementById('new-chk-subtitlu').value.trim();
+        const ordine = parseInt(document.getElementById('new-chk-ordine').value) || 1;
+        
+        const locChecks = document.querySelectorAll('.new-chk-loc:checked');
+        const locatii = Array.from(locChecks).map(cb => cb.value);
+
+        if (!nume) return alert("Numele checklist-ului este obligatoriu!");
+
+        const { error } = await supabaseClient.from('proceduri_checklists').insert([{
+            nume, subtitlu, ordine, locatii
+        }]);
+
+        if (error) {
+            alert("Eroare la adăugare: " + error.message);
+        } else {
+            document.getElementById('admin-checklist-add-form').classList.add('hidden');
+            await loadAdminGhidData();
+        }
+    }
+
+    async function updateChecklistField(id, field, value) {
+        const { error } = await supabaseClient.from('proceduri_checklists').update({ [field]: value }).eq('id', id);
+        if (error) alert("Eroare la actualizare checklist: " + error.message);
+        else await loadAdminGhidData();
+    }
+
+    async function toggleChecklistActiv(id, state) {
+        const { error } = await supabaseClient.from('proceduri_checklists').update({ activ: state }).eq('id', id);
+        if (error) alert("Eroare la actualizare status: " + error.message);
+        else await loadAdminGhidData();
+    }
+
+    async function toggleChecklistLocatie(id, loc, isChecked) {
+        const chk = adminChecklists.find(c => c.id === id);
+        if (!chk) return;
+        
+        let noiLocatii = [...chk.locatii];
+        if (isChecked) {
+            if (!noiLocatii.includes(loc)) noiLocatii.push(loc);
+        } else {
+            noiLocatii = noiLocatii.filter(l => l !== loc);
+        }
+
+        const { error } = await supabaseClient.from('proceduri_checklists').update({ locatii: noiLocatii }).eq('id', id);
+        if (error) alert("Eroare la actualizare locații: " + error.message);
+        else await loadAdminGhidData();
+    }
+
+    async function addNewItem(checklistId) {
+        const input = document.getElementById(`new-item-text-${checklistId}`);
+        const text = input.value.trim();
+        if (!text) return alert("Textul procedurii este obligatoriu!");
+
+        // Calculam urmatoarea ordine
+        const chkItems = adminItemi.filter(i => i.checklist_id === checklistId);
+        const maxOrdine = chkItems.reduce((max, item) => item.ordine > max ? item.ordine : max, 0);
+
+        const { error } = await supabaseClient.from('proceduri_itemi').insert([{
+            checklist_id: checklistId,
+            text: text,
+            ordine: maxOrdine + 1
+        }]);
+
+        if (error) {
+            alert("Eroare la adăugare item: " + error.message);
+        } else {
+            input.value = '';
+            await loadAdminGhidData();
+        }
+    }
+
+    async function updateItemField(id, field, value) {
+        const { error } = await supabaseClient.from('proceduri_itemi').update({ [field]: value }).eq('id', id);
+        if (error) alert("Eroare la actualizare item: " + error.message);
+        else await loadAdminGhidData();
+    }
+
+    async function toggleItemActiv(id, state) {
+        const { error } = await supabaseClient.from('proceduri_itemi').update({ activ: state }).eq('id', id);
+        if (error) alert("Eroare la actualizare status: " + error.message);
+        else await loadAdminGhidData();
+    }
+
+    // CRUD Rețetar
+    function openAddReteta() {
+        document.getElementById('admin-reteta-add-form').classList.remove('hidden');
+    }
+
+    async function saveNewReteta() {
+        const titlu = document.getElementById('new-ret-titlu').value.trim();
+        const categorie = document.getElementById('new-ret-cat').value;
+        const continut = document.getElementById('new-ret-continut').value.trim();
+        const video_url = document.getElementById('new-ret-video').value.trim() || null;
+        const imagine_url = document.getElementById('new-ret-imagine').value.trim() || null;
+        const ordine = parseInt(document.getElementById('new-ret-ordine').value) || 1;
+
+        if (!titlu) return alert("Titlul este obligatoriu!");
+
+        const { error } = await supabaseClient.from('retete').insert([{
+            titlu, categorie, continut, video_url, imagine_url, ordine
+        }]);
+
+        if (error) {
+            alert("Eroare la salvare rețetă: " + error.message);
+        } else {
+            document.getElementById('admin-reteta-add-form').classList.add('hidden');
+            document.getElementById('new-ret-titlu').value = '';
+            document.getElementById('new-ret-continut').value = '';
+            document.getElementById('new-ret-video').value = '';
+            document.getElementById('new-ret-imagine').value = '';
+            await loadAdminGhidData();
+        }
+    }
+
+    async function updateRetetaField(id, field, value) {
+        const { error } = await supabaseClient.from('retete').update({ [field]: value }).eq('id', id);
+        if (error) alert("Eroare la actualizare rețetă: " + error.message);
+        else await loadAdminGhidData();
+    }
+
+    async function toggleRetetaActiv(id, state) {
+        const { error } = await supabaseClient.from('retete').update({ activ: state }).eq('id', id);
+        if (error) alert("Eroare la actualizare status rețetă: " + error.message);
+        else await loadAdminGhidData();
+    }
+
 
 </script>
 </body>
