@@ -403,7 +403,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=5.2')
+          navigator.serviceWorker.register('sw.js?v=5.5')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -415,7 +415,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v5.2 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v5.5 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -505,7 +505,7 @@
     <div id="screen-centralizator" class="screen">
         <div id="centralizator-monor-container" class="admin-product hidden" style="border: 2px solid var(--cloud-dancer); margin-bottom: 20px;">
             <h4 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                🥛 Stoc Lapte Monor 
+                Stoc Lapte Monor 
                 <span style="font-size: 12px; font-weight: normal; color: var(--gray-text);">(actualizat la ultimul inventar)</span>
             </h4>
             <div id="monor-loader" style="font-size: 12px; color: var(--gray-text);">Se încarcă stocul...</div>
@@ -522,7 +522,7 @@
         <div id="raport-content" class="hidden" style="margin-top: 15px;">
             <div class="chips" id="raport-chips"></div>
             <div id="export-buttons" class="hidden" style="margin-bottom:15px; display:flex; flex-direction:column; gap:5px;"></div>
-            <button id="btn-salveaza-sesiune" style="margin-bottom:15px; background:var(--success); color:white;">💾 Salvează Sesiunea</button>
+            <button id="btn-salveaza-sesiune" style="margin-bottom:15px; background:var(--success); color:white;">Salvează Sesiunea</button>
             <div id="raport-list"></div>
         </div>
 
@@ -536,9 +536,9 @@
             <div id="sesiune-header" style="margin-bottom:15px; font-weight:bold;"></div>
             <div class="chips" id="sesiune-chips"></div>
             <div id="sesiune-export-buttons" class="hidden" style="margin-bottom: 15px; display:flex; flex-direction:column; gap:5px;"></div>
-            <button id="btn-export-csv" class="btn-secondary" style="margin-bottom:15px;">📄 Descarcă CSV</button>
+            <button id="btn-export-csv" class="btn-secondary" style="margin-bottom:15px;">Descarcă CSV</button>
             <div id="sesiune-linii"></div>
-            <button id="btn-finalizare-sesiune" style="margin-top:20px; background:var(--success); color:white;">✔️ Finalizează Sesiunea</button>
+            <button id="btn-finalizare-sesiune" style="margin-top:20px; background:var(--success); color:white;">Finalizează Sesiunea</button>
         </div>
 
         <!-- SUB-ECRAN FACTURI (Mutat în Centralizator) -->
@@ -560,7 +560,7 @@
             
             <input type="file" id="factura-file" accept="image/*" capture="environment" style="display: none;">
             <button id="btn-adauga-factura" style="background: var(--black-night); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
-                📸 Fă o poză facturii
+                Scanează Factura
             </button>
             
             <div id="facturi-loader" class="loader hidden">Se încarcă factura...</div>
@@ -586,10 +586,6 @@
                 <div class="admin-menu-btn" onclick="switchAdminSection('proceduri', this)">Ghid & Proceduri</div>
             </div>
             
-            <div id="admin-push-test" style="margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; text-align: center;">
-                <button onclick="testPushNotification()" class="btn-secondary" style="margin: 0;">🔔 Trimite notificare de test</button>
-                <div id="test-push-status" style="font-size: 12px; margin-top: 5px; color: var(--gray-text);"></div>
-            </div>
 
             <!-- SECTIUNE: PRODUSE -->
             <div id="admin-sec-produse">
@@ -1470,7 +1466,7 @@
         const expCont = document.getElementById(isSesiune ? 'sesiune-export-buttons' : 'export-buttons');
         let exportHTML = '';
         activeCanale.forEach(c => {
-            exportHTML += `<button class="btn-whatsapp" style="margin-bottom:0;" onclick="${isSesiune ? 'exportWhatsAppSesiune' : 'exportWhatsApp'}('${c.nume}')">🛒 Trimite ${c.nume.toUpperCase()}</button>`;
+            exportHTML += `<button class="btn-whatsapp" style="margin-bottom:0;" onclick="${isSesiune ? 'exportWhatsAppSesiune' : 'exportWhatsApp'}('${c.nume}')">Trimite ${c.nume.toUpperCase()}</button>`;
         });
         expCont.innerHTML = exportHTML;
         expCont.classList.remove('hidden');
@@ -1766,7 +1762,17 @@
         if (!container) return; // Prevent error if container is removed by new UI
         container.innerHTML = '';
         const exportBtns = document.getElementById('export-buttons');
-        if (exportBtns) exportBtns.classList.toggle('hidden', canalFilter !== 'Toate');
+        if (exportBtns) {
+            if (canalFilter === 'Toate') {
+                exportBtns.classList.add('hidden');
+            } else {
+                exportBtns.classList.remove('hidden');
+                exportBtns.querySelectorAll('button').forEach(btn => {
+                    const isMatch = btn.getAttribute('onclick').includes(`'${canalFilter}'`);
+                    btn.style.display = isMatch ? 'block' : 'none';
+                });
+            }
+        }
 
         const dateFiltrate = canalFilter === 'Toate' 
             ? raportDateAgregate 
@@ -2035,7 +2041,19 @@
     function renderSesiuneLinii(canalFilter) {
         const container = document.getElementById('sesiune-linii');
         const isFinal = currentSesiune.status === 'finalizata';
-        document.getElementById('sesiune-export-buttons').classList.toggle('hidden', canalFilter === 'Toate');
+        
+        const sesiuneExportBtns = document.getElementById('sesiune-export-buttons');
+        if (sesiuneExportBtns) {
+            if (canalFilter === 'Toate') {
+                sesiuneExportBtns.classList.add('hidden');
+            } else {
+                sesiuneExportBtns.classList.remove('hidden');
+                sesiuneExportBtns.querySelectorAll('button').forEach(btn => {
+                    const isMatch = btn.getAttribute('onclick').includes(`'${canalFilter}'`);
+                    btn.style.display = isMatch ? 'block' : 'none';
+                });
+            }
+        }
 
         const filtrate = canalFilter === 'Toate' ? currentSesiuneLinii : currentSesiuneLinii.filter(l => l.canal === canalFilter);
         
