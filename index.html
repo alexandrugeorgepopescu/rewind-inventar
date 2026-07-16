@@ -111,6 +111,69 @@
             font-size: 11px;
             font-weight: 700;
         }
+
+        /* Modern Admin Grid Menu (Nordic style, branding violet & black) */
+        .admin-grid-menu {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .admin-menu-btn {
+            background: white;
+            border: 1px solid var(--cloud-dancer);
+            color: var(--black-night);
+            padding: 14px 10px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .admin-menu-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .admin-menu-btn.active {
+            background: #7332e6; /* ultraviolet */
+            color: white;
+            border-color: #7332e6;
+            box-shadow: 0 4px 15px rgba(115, 50, 230, 0.25);
+        }
+        
+        .admin-sub-menu {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .admin-sub-btn {
+            background: white;
+            border: 1px solid var(--cloud-dancer);
+            color: var(--gray-text);
+            padding: 10px 5px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.01);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .admin-sub-btn.active {
+            background: var(--black-night);
+            color: white;
+            border-color: var(--black-night);
+        }
         body {
             font-family: 'Lato', sans-serif;
             background-color: var(--cloud-dancer);
@@ -190,31 +253,36 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: var(--alb-cald);
+            background: white;
             display: flex;
             justify-content: space-around;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.04);
             z-index: 100;
-            border-radius: 20px 20px 0 0;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            border-radius: 24px 24px 0 0;
+            padding: 8px 0 env(safe-area-inset-bottom, 8px) 0;
+            border-top: 1px solid rgba(0,0,0,0.03);
         }
         .nav-item {
             flex: 1;
             text-align: center;
-            padding: 16px 0;
-            color: var(--gray-text);
+            color: #8c9096;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 11px;
             cursor: pointer;
-            transition: color 0.2s;
+            transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 5px;
+        }
+        .nav-item svg {
+            transition: stroke 0.2s ease;
         }
         .nav-item.active { 
-            color: var(--black-night); 
-            border-top: 4px solid var(--yellow-coffee);
-            border-radius: 4px 4px 0 0;
+            color: #7332e6; /* ultraviolet */
+        }
+        .nav-item.active svg {
+            stroke: #7332e6;
         }
 
         .sticky-top-controls {
@@ -335,7 +403,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=5.1')
+          navigator.serviceWorker.register('sw.js?v=5.2')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -347,7 +415,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v5.1 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v5.2 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -447,7 +515,7 @@
         <div style="display:flex; gap:10px; margin-bottom:15px;">
             <button id="btn-genereaza-raport" style="margin:0; flex:1;">Generează Live</button>
             <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0; flex:1;">Istoric Salvate</button>
-            <button id="btn-centralizator-facturi" style="margin:0; flex:1; background:#7332e6; color:white; font-weight:bold;">📸 Facturi</button>
+            <button id="btn-centralizator-facturi" class="btn-secondary" style="margin:0; flex:1;">Facturi</button>
         </div>
         <div id="centralizator-loader" class="loader hidden">Se procesează datele...</div>
         
@@ -511,11 +579,11 @@
         <h2 style="text-align: center; margin-bottom: 20px;">Secțiune Management</h2>
         
         <div id="admin-dashboard">
-            <div class="chips" style="margin-bottom: 20px; justify-content: center;">
-                <div class="chip active" onclick="switchAdminSection('produse', this)">📦 Produse</div>
-                <div class="chip" onclick="switchAdminSection('program', this)">📅 Program</div>
-                <div class="chip" onclick="switchAdminSection('salarizare', this)">💰 Salarii</div>
-                <div class="chip" onclick="switchAdminSection('proceduri', this)">📋 Ghid & Proceduri</div>
+            <div class="admin-grid-menu">
+                <div class="admin-menu-btn active" onclick="switchAdminSection('produse', this)">Produse</div>
+                <div class="admin-menu-btn" onclick="switchAdminSection('program', this)">Program</div>
+                <div class="admin-menu-btn" onclick="switchAdminSection('salarizare', this)">Salarii</div>
+                <div class="admin-menu-btn" onclick="switchAdminSection('proceduri', this)">Ghid & Proceduri</div>
             </div>
             
             <div id="admin-push-test" style="margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; text-align: center;">
@@ -685,10 +753,10 @@
             
             <!-- SECTIUNE: GHID & PROCEDURI (ADMIN) -->
             <div id="admin-sec-proceduri" class="hidden">
-                <div class="chips" style="margin-bottom: 15px; justify-content: center;">
-                    <div class="chip active" id="admin-ghid-chip-monitor" onclick="switchAdminGhidSub('monitor', this)">📊 Progres Azi</div>
-                    <div class="chip" id="admin-ghid-chip-checklists" onclick="switchAdminGhidSub('checklists', this)">📋 Editează Checklist-uri</div>
-                    <div class="chip" id="admin-ghid-chip-retete" onclick="switchAdminGhidSub('retete', this)">📖 Editează Rețete</div>
+                <div class="admin-sub-menu">
+                    <div class="admin-sub-btn active" id="admin-ghid-chip-monitor" onclick="switchAdminGhidSub('monitor', this)">Progres Azi</div>
+                    <div class="admin-sub-btn" id="admin-ghid-chip-checklists" onclick="switchAdminGhidSub('checklists', this)">Checklist-uri</div>
+                    <div class="admin-sub-btn" id="admin-ghid-chip-retete" onclick="switchAdminGhidSub('retete', this)">Rețete</div>
                 </div>
 
                 <!-- SUB-SECTIUNE 1: MONITORIZARE ZI -->
@@ -825,11 +893,26 @@
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav" id="main-bottom-nav" style="display: none;">
-    <div class="nav-item" onclick="switchScreen('inventar', this)">📦<br>Stoc</div>
-    <div class="nav-item" onclick="switchScreen('program', this)">📅<br>Program</div>
-    <div class="nav-item" onclick="switchScreen('ghid', this)">📖<br>Ghid</div>
-    <div class="nav-item" onclick="switchScreen('centralizator', this)">📋<br>Centr.</div>
-    <div class="nav-item" onclick="switchScreen('cont', this)">👤<br>Cont</div>
+    <div class="nav-item" onclick="switchScreen('inventar', this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <span>Stoc</span>
+    </div>
+    <div class="nav-item" onclick="switchScreen('program', this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <span>Program</span>
+    </div>
+    <div class="nav-item" onclick="switchScreen('ghid', this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5v-15z"></path></svg>
+        <span>Ghid</span>
+    </div>
+    <div class="nav-item" onclick="switchScreen('centralizator', this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>Raport</span>
+    </div>
+    <div class="nav-item" onclick="switchScreen('cont', this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>Cont</span>
+    </div>
 </div>
 
 <div id="saving-indicator" class="saving-indicator">Se salvează...</div>
@@ -1812,11 +1895,7 @@
         btnFac.style.color = '';
 
         const activeBtn = document.getElementById(activeBtnId);
-        if (activeBtnId === 'btn-centralizator-facturi') {
-            activeBtn.className = '';
-            activeBtn.style.background = '#7332e6';
-            activeBtn.style.color = 'white';
-        } else {
+        if (activeBtn) {
             activeBtn.className = '';
         }
     }
@@ -2562,7 +2641,7 @@
         document.getElementById('admin-sec-salarizare').classList.add('hidden');
         document.getElementById('admin-sec-proceduri').classList.add('hidden');
         
-        document.querySelectorAll('#admin-dashboard .chip').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#admin-dashboard .admin-menu-btn').forEach(c => c.classList.remove('active'));
         chipEl.classList.add('active');
         
         document.getElementById('admin-sec-' + sectionId).classList.remove('hidden');
@@ -3643,7 +3722,7 @@
         document.getElementById('admin-ghid-sub-checklists').classList.add('hidden');
         document.getElementById('admin-ghid-sub-retete').classList.add('hidden');
 
-        document.querySelectorAll('#admin-sec-proceduri .chip').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#admin-sec-proceduri .admin-sub-btn').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
 
         document.getElementById('admin-ghid-sub-' + subId).classList.remove('hidden');
