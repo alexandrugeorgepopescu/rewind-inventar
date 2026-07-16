@@ -392,7 +392,8 @@
                         <option value="Interuno">Interuno</option>
                     </select>
                     <input type="text" id="new-unitate" placeholder="Unitate (buc/kg/etc)" value="buc">
-                    <input type="number" step="0.01" id="new-prag" placeholder="Prag Minim (opțional, ex. 3)">
+                    <input type="number" step="0.01" id="new-prag" placeholder="Prag Min Roșu (ex. 3)">
+                    <input type="number" step="0.01" id="new-prag-galben" placeholder="Prag Galben (ex. 6)">
                 </div>
                 <div class="checkbox-group">
                     <label><input type="checkbox" class="new-loc" value="Miroslava" checked> Miroslava</label>
@@ -637,6 +638,7 @@
     let currentSesiune = null;
     let currentSesiuneLinii = [];
     let stateInventar = {}; // { produs_id: { stoc, necesar } }
+    let modificariSesiune = new Set(); // { produs_id }
     let saveTimeout = null;
     let currentLocation = localStorage.getItem('rewind_location') || '';
     let operatorName = localStorage.getItem('rewind_operator') || '';
@@ -954,12 +956,16 @@
                 let stoc = (data && data.length > 0 && data[0].stoc !== null) ? parseFloat(data[0].stoc) : 0;
                 let dataInv = data && data.length > 0 ? new Date(data[0].actualizat_la).toLocaleDateString('ro-RO') : 'Niciodată';
                 
+                const prodMonor = catalogProduse ? catalogProduse.find(p => p.id === idMonor) : null;
+                const pRosu = prodMonor && prodMonor.prag_minim !== null ? parseFloat(prodMonor.prag_minim) : 20;
+                const pGalben = prodMonor && prodMonor.prag_galben !== null ? parseFloat(prodMonor.prag_galben) : 35;
+
                 let culoare = 'var(--green-matcha)';
                 let bg = 'rgba(164, 198, 57, 0.1)';
-                if (stoc < 20) {
+                if (stoc < pRosu) {
                     culoare = 'red';
                     bg = 'rgba(255, 0, 0, 0.1)';
-                } else if (stoc <= 35) {
+                } else if (stoc < pGalben) {
                     culoare = '#e6a800'; // dark yellow/orange for better visibility
                     bg = 'rgba(255, 193, 7, 0.1)';
                 }
@@ -1187,6 +1193,7 @@
             alert("Eroare la citirea inventarului.");
         } else {
             stateInventar = {};
+            modificariSesiune.clear();
             data.forEach(item => {
                 stateInventar[item.produs_id] = { stoc: item.stoc || '', necesar: item.necesar || '' };
             });
@@ -1273,6 +1280,7 @@
     function queueSave(produsId, field, value) {
         if (!stateInventar[produsId]) stateInventar[produsId] = { stoc: '', necesar: '' };
         stateInventar[produsId][field] = value;
+        modificariSesiune.add(produsId);
         
         // Debounce salvare in Supabase
         clearTimeout(saveTimeout);
@@ -1338,70 +1346,91 @@
                 .select('produs_id, stoc, necesar')
                 .eq('locatie', currentLocation);
             
-            if (invData && catalogProduse) {
-                // BUG 2: MONOR SEPARAT
+            if (invData && catalogProduse && modificariSesiune.size > 0) {
                 const idMonor = 'ce7ec325-980f-4ddd-937b-be6a0d9fe124';
-                const itemMonor = invData.find(i => i.produs_id === idMonor);
+                
+                let areLapteModificat = false;
+                let areAlteleModificate = false;
+                
+                const itemMonor = invData.find(i => i.produs_id === idMonor && modificariSesiune.has(i.produs_id));
                 const monorRosu = itemMonor && itemMonor.stoc !== null && parseFloat(itemMonor.stoc) < 20;
 
-                if (monorRosu) {
-                    const { error: errMonor } = await supabaseClient.functions.invoke('send-notification', {
-                        body: { 
-                            isTest: true, // we use the payload override
-                            title: `🔴 LAPTE Monor — ${currentLocation}`,
-                            body: `${itemMonor.stoc} buc (sub 20). Comandă la Monor!`
-                        }
-                    });
-                    if (errMonor) throw errMonor;
-                    notificareTrimisa = true;
-                }
-
-                // Restul produselor
-                const subPrag = [];
-                const cuNecesar = [];
+                const redItems = [];
+                const yellowItems = [];
+                const necesarItems = [];
 
                 for (const item of invData) {
+                    if (!modificariSesiune.has(item.produs_id)) continue;
+                    
                     const prod = catalogProduse.find(p => p.id === item.produs_id);
                     if (!prod) continue;
                     
+                    const esteLapte = prod.categorie && prod.categorie.toLowerCase().includes('lapte');
+                    if (esteLapte) areLapteModificat = true;
+                    else areAlteleModificate = true;
+
                     // Verificare Necesar
                     if (item.necesar !== null && parseFloat(item.necesar) > 0) {
-                        cuNecesar.push(`${prod.nume} (${item.necesar} ${prod.unitate})`);
+                        necesarItems.push(`${prod.nume} (${item.necesar} ${prod.unitate || 'buc'})`);
                     }
 
-                    // Verificare Prag Minim
+                    // Verificare Prag Minim (Roșu) și Galben
                     if (item.stoc !== null && item.produs_id !== idMonor) {
-                        if (prod.prag_minim !== null && prod.prag_minim !== undefined) {
-                            if (parseFloat(item.stoc) < parseFloat(prod.prag_minim)) {
-                                subPrag.push(`${prod.nume} (${item.stoc} < ${prod.prag_minim})`);
-                            }
+                        const stoc = parseFloat(item.stoc);
+                        const pragRosu = prod.prag_minim !== null ? parseFloat(prod.prag_minim) : null;
+                        const pragGalben = prod.prag_galben !== null ? parseFloat(prod.prag_galben) : null;
+
+                        if (pragRosu !== null && stoc < pragRosu) {
+                            redItems.push(`${prod.nume} (${stoc} < ${pragRosu})`);
+                        } else if (pragGalben !== null && stoc < pragGalben) {
+                            yellowItems.push(`${prod.nume} (${stoc} < ${pragGalben})`);
                         }
                     }
                 }
 
-                if (cuNecesar.length > 0) {
-                    const { error: errNecesar } = await supabaseClient.functions.invoke('send-notification', {
-                        body: { 
-                            isTest: true,
-                            title: `📝 Necesar manual: ${currentLocation}`,
-                            body: `${operatorName || "operator"} a cerut:\n${cuNecesar.join('\n')}`
-                        }
-                    });
-                    if (errNecesar) throw errNecesar;
-                    notificareTrimisa = true;
+                // Construire mesaj
+                let bodyParts = [];
+                if (monorRosu) bodyParts.push(`🔴 Monor: ${itemMonor.stoc} buc (critic)`);
+                
+                if (redItems.length > 0) {
+                    const shown = redItems.slice(0, 5);
+                    const extras = redItems.length > 5 ? `\n...și încă ${redItems.length - 5}` : '';
+                    bodyParts.push(`🔴 Critic:\n- ${shown.join('\n- ')}${extras}`);
+                }
+                
+                if (yellowItems.length > 0) {
+                    const shown = yellowItems.slice(0, 5);
+                    const extras = yellowItems.length > 5 ? `\n...și încă ${yellowItems.length - 5}` : '';
+                    bodyParts.push(`🟡 Atenție:\n- ${shown.join('\n- ')}${extras}`);
                 }
 
-                if (subPrag.length > 0) {
-                    const { error: errPrag } = await supabaseClient.functions.invoke('send-notification', {
+                if (necesarItems.length > 0) {
+                    bodyParts.push(`📝 Necesar:\n- ${necesarItems.join('\n- ')}`);
+                }
+
+                if (bodyParts.length > 0) {
+                    // Titlu dinamic
+                    let title = `📋 Inventar: ${currentLocation}`;
+                    if (areLapteModificat && !areAlteleModificate) title = `🥛 Inventar Lapte: ${currentLocation}`;
+                    else title = `📋 Inventar: ${currentLocation} (${operatorName || 'Anonim'})`;
+
+                    const finalBody = bodyParts.join('\n\n');
+
+                    const { error: errPush } = await supabaseClient.functions.invoke('send-notification', {
                         body: { 
-                            locatie: currentLocation,
-                            operator: operatorName || "operator",
-                            produse: subPrag 
+                            isTest: true, // Bypass la logica veche din edge function, trimitem direct titlu+body
+                            title: title,
+                            body: finalBody 
                         }
                     });
-                    if (errPrag) throw errPrag;
+                    
+                    if (errPush) throw errPush;
+                    
                     notificareTrimisa = true;
                 }
+                
+                // DACA A AJUNS AICI FARA EROARE -> GOLIM COSUL
+                modificariSesiune.clear();
             }
         } catch (e) {
             console.error("Eroare la trimiterea notificarii:", e);
@@ -2015,8 +2044,11 @@
                             <option value="Interuno" ${p.canal==='Interuno'?'selected':''}>Interuno</option>
                         </select>
                     </div>
-                    <div><small>Prag Min:</small> 
-                        <input type="number" step="0.01" style="width:70px; padding:4px; margin:0;" value="${p.prag_minim !== null && p.prag_minim !== undefined ? p.prag_minim : ''}" onchange="updateProductField('${p.id}', 'prag_minim', this.value ? parseFloat(this.value) : null)">
+                    <div><small>Roșu:</small> 
+                        <input type="number" step="0.01" style="width:60px; padding:4px; margin:0;" value="${p.prag_minim !== null && p.prag_minim !== undefined ? p.prag_minim : ''}" onchange="updateProductField('${p.id}', 'prag_minim', this.value ? parseFloat(this.value) : null)">
+                    </div>
+                    <div><small>Galben:</small> 
+                        <input type="number" step="0.01" style="width:60px; padding:4px; margin:0;" value="${p.prag_galben !== null && p.prag_galben !== undefined ? p.prag_galben : ''}" onchange="updateProductField('${p.id}', 'prag_galben', this.value ? parseFloat(this.value) : null)">
                     </div>
                 </div>
             `;
@@ -2039,6 +2071,8 @@
         const unitate = document.getElementById('new-unitate').value.trim();
         const prag_str = document.getElementById('new-prag').value.trim();
         const prag_minim = prag_str ? parseFloat(prag_str) : null;
+        const prag_galben_str = document.getElementById('new-prag-galben').value.trim();
+        const prag_galben = prag_galben_str ? parseFloat(prag_galben_str) : null;
         
         const locatiiChecks = document.querySelectorAll('.new-loc:checked');
         const locatii = Array.from(locatiiChecks).map(cb => cb.value);
@@ -2049,7 +2083,7 @@
         }
 
         const { data, error } = await supabaseClient.from('produse').insert([{
-            nume, categorie, canal, unitate, locatii, ordine: 999, prag_minim
+            nume, categorie, canal, unitate, locatii, ordine: 999, prag_minim, prag_galben
         }]).select();
 
         if (error) {
