@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rewind-stoc-v5.5';
+const CACHE_NAME = 'rewind-stoc-v5.7';
 const urlsToCache = [
   './',
   './index.html',

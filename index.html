@@ -403,7 +403,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=5.5')
+          navigator.serviceWorker.register('sw.js?v=5.7')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -415,7 +415,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v5.5 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v5.7 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -592,8 +592,11 @@
                 <button class="btn-secondary" onclick="openAddProduct()">+ Adaugă Produs Nou</button>
             <div id="admin-add-form" class="hidden admin-product" style="border: 2px solid var(--yellow-coffee);">
                 <h4>Adaugă Produs</h4>
-                <input type="text" id="new-nume" placeholder="Nume Produs">
-                <input type="text" id="new-categorie" placeholder="Categorie">
+                <input type="text" id="new-nume" placeholder="Nume Produs" style="margin-bottom: 10px;">
+                <select id="new-categorie-select" onchange="onCategorySelectChange('new-categorie-select', 'new-categorie-custom-container', 'new-categorie-custom')" style="width:100%; margin-bottom: 10px;"></select>
+                <div id="new-categorie-custom-container" class="hidden" style="margin-bottom: 10px;">
+                    <input type="text" id="new-categorie-custom" placeholder="Scrie categoria nouă..." style="margin-bottom: 0;">
+                </div>
                 <div class="admin-grid">
                     <select id="new-canal">
                         <option value="Metro">Metro</option>
@@ -641,25 +644,6 @@
                         <option value="Alexandru">Kaufland Alexandru</option>
                     </select>
                     <input type="month" id="admin-prog-luna">
-                </div>
-
-                <div class="admin-product" style="border: 2px solid var(--yellow-coffee);">
-                    <h5>Instrument Tipar Rapid</h5>
-                    <div class="admin-grid" style="margin-top: 10px;">
-                        <select id="admin-prog-angajat-tipar">
-                            <option value="">Alege angajat...</option>
-                        </select>
-                        <select id="admin-prog-regula">
-                            <option value="1/1">1 zi da / 1 nu</option>
-                            <option value="2/2">2 zile da / 2 nu</option>
-                        </select>
-                    </div>
-                    <div class="admin-grid" style="margin-top: 10px;">
-                        <input type="date" id="admin-prog-start" placeholder="Data Start">
-                        <input type="date" id="admin-prog-end" placeholder="Data End">
-                    </div>
-                    <button onclick="aplicaTiparProgram()" style="margin-top: 10px; padding: 10px;">Aplică Tipar</button>
-                    <p style="font-size: 11px; color: var(--gray-text); text-align: center; margin-top: 5px;">Atenție: suprascrie zilele libere din intervalul selectat.</p>
                 </div>
 
                 <div id="admin-prog-loader" class="loader hidden">Se încarcă...</div>
@@ -2379,16 +2363,33 @@
 
     // ECRAN 3: ADMIN
 
+    function onCategorySelectChange(selectId, containerId, inputId) {
+        const select = document.getElementById(selectId);
+        const container = document.getElementById(containerId);
+        if (select && select.value === '__NEW_CATEGORY__') {
+            container.classList.remove('hidden');
+            document.getElementById(inputId).focus();
+        } else if (container) {
+            container.classList.add('hidden');
+            document.getElementById(inputId).value = '';
+        }
+    }
+
     function renderAdminProducts() {
         const container = document.getElementById('admin-product-list');
         const searchTerm = document.getElementById('search-admin')?.value.toLowerCase() || '';
         
         container.innerHTML = '';
         const filtru = catalogProduse.filter(p => p.nume.toLowerCase().includes(searchTerm));
+        const uniqueCategories = [...new Set(catalogProduse.map(p => p.categorie))].sort();
         
         filtru.forEach(p => {
             const div = document.createElement('div');
             div.className = `admin-product ${p.activ ? '' : 'inactive'}`;
+            
+            let catOptions = uniqueCategories.map(cat => `<option value="${cat}" ${p.categorie === cat ? 'selected' : ''}>${cat}</option>`).join('');
+            catOptions += `<option value="__NEW_CATEGORY__">+ Categorie nouă...</option>`;
+            
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <strong>${p.nume}</strong>
@@ -2397,9 +2398,18 @@
                     </button>
                 </div>
                 <div class="admin-grid">
-                    <div><small>Categorie:</small> ${p.categorie}</div>
+                    <div>
+                        <small>Categorie:</small>
+                        <select onchange="onEditCategorySelectChange('${p.id}', this)" style="padding:4px; margin:0; width:100%; font-size:12px;">
+                            ${catOptions}
+                        </select>
+                        <div id="edit-cat-custom-container-${p.id}" class="hidden" style="margin-top:5px; display:flex; gap:5px;">
+                            <input type="text" id="edit-cat-custom-input-${p.id}" placeholder="Categorie nouă..." style="padding:4px; margin:0; font-size:12px; flex:1;">
+                            <button onclick="saveCustomCategoryInline('${p.id}')" style="width:auto; padding:2px 8px; margin:0; font-size:11px; height:auto; background:var(--black-night); color:var(--yellow-coffee);">OK</button>
+                        </div>
+                    </div>
                     <div><small>Canal:</small> 
-                        <select onchange="updateProductField('${p.id}', 'canal', this.value)" style="padding:4px; margin:0;">
+                        <select onchange="updateProductField('${p.id}', 'canal', this.value)" style="padding:4px; margin:0; width:100%; font-size:12px;">
                             <option value="Metro" ${p.canal==='Metro'?'selected':''}>Metro</option>
                             <option value="Online" ${p.canal==='Online'?'selected':''}>Online</option>
                             <option value="Dropshot" ${p.canal==='Dropshot'?'selected':''}>Dropshot</option>
@@ -2407,10 +2417,10 @@
                         </select>
                     </div>
                     <div><small>Roșu:</small> 
-                        <input type="number" step="0.01" style="width:60px; padding:4px; margin:0;" value="${p.prag_minim !== null && p.prag_minim !== undefined ? p.prag_minim : ''}" onchange="updateProductField('${p.id}', 'prag_minim', this.value ? parseFloat(this.value) : null)">
+                        <input type="number" step="0.01" style="width:100%; padding:4px; margin:0; font-size:12px;" value="${p.prag_minim !== null && p.prag_minim !== undefined ? p.prag_minim : ''}" onchange="updateProductField('${p.id}', 'prag_minim', this.value ? parseFloat(this.value) : null)">
                     </div>
                     <div><small>Galben:</small> 
-                        <input type="number" step="0.01" style="width:60px; padding:4px; margin:0;" value="${p.prag_galben !== null && p.prag_galben !== undefined ? p.prag_galben : ''}" onchange="updateProductField('${p.id}', 'prag_galben', this.value ? parseFloat(this.value) : null)">
+                        <input type="number" step="0.01" style="width:100%; padding:4px; margin:0; font-size:12px;" value="${p.prag_galben !== null && p.prag_galben !== undefined ? p.prag_galben : ''}" onchange="updateProductField('${p.id}', 'prag_galben', this.value ? parseFloat(this.value) : null)">
                     </div>
                 </div>
             `;
@@ -2423,12 +2433,31 @@
     function openAddProduct() {
         document.getElementById('admin-add-form').classList.remove('hidden');
         document.getElementById('new-nume').value = '';
-        document.getElementById('new-categorie').value = '';
+        
+        const select = document.getElementById('new-categorie-select');
+        select.innerHTML = '';
+        const uniqueCategories = [...new Set(catalogProduse.map(p => p.categorie))].sort();
+        uniqueCategories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            select.appendChild(opt);
+        });
+        const newOpt = document.createElement('option');
+        newOpt.value = '__NEW_CATEGORY__';
+        newOpt.textContent = '+ Adaugă categorie nouă';
+        select.appendChild(newOpt);
+        
+        document.getElementById('new-categorie-custom-container').classList.add('hidden');
+        document.getElementById('new-categorie-custom').value = '';
     }
 
     async function saveNewProduct() {
         const nume = document.getElementById('new-nume').value.trim();
-        const categorie = document.getElementById('new-categorie').value.trim();
+        const selectVal = document.getElementById('new-categorie-select').value;
+        const customVal = document.getElementById('new-categorie-custom').value.trim();
+        const categorie = selectVal === '__NEW_CATEGORY__' ? customVal : selectVal;
+        
         const canal = document.getElementById('new-canal').value;
         const unitate = document.getElementById('new-unitate').value.trim();
         const prag_str = document.getElementById('new-prag').value.trim();
@@ -2457,6 +2486,28 @@
             renderAdminProducts();
             if (currentLocation) loadInventarData(); // refresh on inv screen
         }
+    }
+
+    function onEditCategorySelectChange(prodId, selectEl) {
+        const customContainer = document.getElementById(`edit-cat-custom-container-${prodId}`);
+        if (selectEl.value === '__NEW_CATEGORY__') {
+            customContainer.classList.remove('hidden');
+            document.getElementById(`edit-cat-custom-input-${prodId}`).focus();
+        } else {
+            customContainer.classList.add('hidden');
+            updateProductField(prodId, 'categorie', selectEl.value).then(() => {
+                renderAdminProducts();
+            });
+        }
+    }
+
+    async function saveCustomCategoryInline(prodId) {
+        const customInput = document.getElementById(`edit-cat-custom-input-${prodId}`);
+        const val = customInput.value.trim();
+        if (!val) return alert("Scrie o categorie validă!");
+        await updateProductField(prodId, 'categorie', val).then(() => {
+            renderAdminProducts();
+        });
     }
 
     async function updateProductField(id, field, value) {
@@ -2681,7 +2732,7 @@
 
     const orarLocatii = {
         'Miroslava': [ {s:'08:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'07:00', e:'21:00'}, {s:'08:00', e:'21:00'} ],
-        'Pacurari': [ {s:'08:00', e:'19:00'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'08:00', e:'19:00'} ],
+        'Pacurari': [ {s:'08:00', e:'19:00'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'}, {s:'07:00', e:'18:30'} ],
         'Alexandru': [ {s:'08:00', e:'17:00'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'}, {s:'07:30', e:'16:30'} ]
     };
 
@@ -2692,20 +2743,10 @@
         
         const locSelect = document.getElementById('admin-prog-locatie');
         const lunaInput = document.getElementById('admin-prog-luna');
-        const tiparSelect = document.getElementById('admin-prog-angajat-tipar');
         
         if (!lunaInput.value) {
             const today = new Date();
             lunaInput.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2, '0')}`;
-        }
-        
-        if (tiparSelect.options.length <= 1) {
-            angajatiList.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.nume;
-                tiparSelect.appendChild(opt);
-            });
         }
         
         locSelect.addEventListener('change', loadAdminProgramGrid);
@@ -2745,44 +2786,152 @@
         renderAdminProgramGrid(year, month, loc);
     }
 
+    function getWeeksOfMonth(year, month) {
+        const weeks = [];
+        const daysInMonth = new Date(year, parseInt(month), 0).getDate();
+        let currentWeek = [];
+        
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const dObj = new Date(year, parseInt(month) - 1, i);
+            const dayOfWeek = dObj.getDay(); // 0 is Sunday, 1 is Monday
+            
+            currentWeek.push({ day: i, dateStr, dayOfWeek });
+            
+            if (dayOfWeek === 0 || i === daysInMonth) {
+                weeks.push(currentWeek);
+                currentWeek = [];
+            }
+        }
+        return weeks;
+    }
+
     function renderAdminProgramGrid(year, month, loc) {
         const container = document.getElementById('admin-prog-zile');
         container.innerHTML = '';
         
-        const daysInMonth = new Date(year, month, 0).getDate();
+        const weeks = getWeeksOfMonth(year, month);
         const days = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+        const luniRo = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+        const numeLuna = luniRo[parseInt(month) - 1];
         
-        for (let i = 1; i <= daysInMonth; i++) {
-            const dateStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
-            const dObj = new Date(year, month - 1, i);
-            const dayOfWeek = dObj.getDay();
+        const baristas = angajatiList.filter(a => a.activ && a.inclus_salarizare);
+        const baristaOptions = baristas.map(b => `<option value="${b.id}">${b.nume}</option>`).join('');
+
+        weeks.forEach((week, weekIdx) => {
+            // Week Header
+            const weekDiv = document.createElement('div');
+            weekDiv.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#eee; padding:8px 12px; margin: 15px 0 10px 0; border-radius:10px; font-weight:bold; font-size:13px; border-left:4px solid #7332e6;';
+            weekDiv.innerHTML = `
+                <span>Săptămâna ${weekIdx + 1} (${week[0].day} - ${week[week.length - 1].day} ${numeLuna})</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <select id="week-assign-${weekIdx}" style="padding:2px; font-size:11px; margin:0; width:115px; height:24px;">
+                        <option value="">Trimite toată...</option>
+                        ${baristaOptions}
+                    </select>
+                    <button class="btn" style="padding:2px 8px; margin:0; font-size:11px; width:auto; height:24px; display:flex; align-items:center; background:var(--black-night); color:var(--yellow-coffee);" onclick="asigneazaToataSaptamana('${week[0].dateStr}', '${week[week.length - 1].dateStr}', ${weekIdx})">Aplică</button>
+                </div>
+            `;
+            container.appendChild(weekDiv);
+
+            // Week Days
+            week.forEach(day => {
+                const dateStr = day.dateStr;
+                const i = day.day;
+                const dayOfWeek = day.dayOfWeek;
+                
+                const entries = adminProgCurrentData.filter(e => e.data === dateStr);
+                
+                const div = document.createElement('div');
+                div.className = 'report-item';
+                div.style.padding = '10px';
+                
+                let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="font-size:14px;">${days[dayOfWeek]}, ${i} ${numeLuna}</strong>
+                    <button onclick="deschideModificareZi('${dateStr}', '${loc}', ${dayOfWeek})" style="margin:0; padding:4px 10px; width:auto; font-size:12px; background:var(--black-night); color:var(--yellow-coffee);">+ Adaugă</button>
+                </div>`;
+                
+                if (entries.length === 0) {
+                    html += `<div style="color:var(--gray-text); font-size:13px; text-align:center;">Liber</div>`;
+                } else {
+                    entries.forEach(e => {
+                        const s = e.ora_start.substring(0,5);
+                        const sf = e.ora_sfarsit.substring(0,5);
+                        html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:14px; margin-bottom:5px; background:var(--cloud-dancer); padding:5px 10px; border-radius:8px;">
+                            <span><strong>${e.angajati.nume}</strong> (${s}-${sf})${e.ore_suplimentare > 0 ? ` <span style="color:red; font-size:12px; font-weight:bold;">+${e.ore_suplimentare}h</span>` : ''}</span>
+                            <button onclick="stergeIntrareProgram('${e.id}')" style="margin:0; padding:4px 8px; width:auto; font-size:11px; background:var(--error); color:white; border-radius:4px;">Șterge</button>
+                        </div>`;
+                    });
+                }
+                div.innerHTML = html;
+                container.appendChild(div);
+            });
+        });
+    }
+
+    async function asigneazaToataSaptamana(startStr, endStr, selectIdx) {
+        const select = document.getElementById(`week-assign-${selectIdx}`);
+        const angId = select ? select.value : '';
+        if (!angId) return alert("Selectează un angajat!");
+        
+        const loc = document.getElementById('admin-prog-locatie').value;
+        if (!loc) return alert("Selectează locația!");
+        
+        const angName = select.options[select.selectedIndex].text;
+        if (!confirm(`Sigur dorești să asignezi pe ${angName} la ${loc} pentru toată săptămâna (${startStr} — ${endStr})? (Zilele în care este deja programat cineva vor fi protejate)`)) {
+            select.value = '';
+            return;
+        }
+        
+        const loader = document.getElementById('admin-prog-loader');
+        loader.classList.remove('hidden');
+        
+        const { data: existing, error: errFetch } = await supabaseClient
+            .from('program_zile')
+            .select('data')
+            .eq('locatie', loc)
+            .gte('data', startStr)
+            .lte('data', endStr);
             
-            const entries = adminProgCurrentData.filter(e => e.data === dateStr);
+        if (errFetch) {
+            loader.classList.add('hidden');
+            return alert("Eroare la verificare: " + errFetch.message);
+        }
+        
+        const existingDates = new Set(existing.map(e => e.data));
+        const inserts = [];
+        
+        let current = new Date(startStr);
+        const endD = new Date(endStr);
+        
+        while (current <= endD) {
+            const dateIso = new Date(current.getTime() - (current.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            const dayOfWeek = current.getDay();
             
-            const div = document.createElement('div');
-            div.className = 'report-item';
-            div.style.padding = '10px';
-            
-            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <strong style="font-size:14px;">${days[dayOfWeek]}, ${i} ${month}</strong>
-                <button onclick="deschideModificareZi('${dateStr}', '${loc}', ${dayOfWeek})" style="margin:0; padding:4px 10px; width:auto; font-size:12px; background:var(--black-night); color:var(--yellow-coffee);">+ Adaugă</button>
-            </div>`;
-            
-            if (entries.length === 0) {
-                html += `<div style="color:var(--gray-text); font-size:13px; text-align:center;">Liber</div>`;
-            } else {
-                entries.forEach(e => {
-                    const s = e.ora_start.substring(0,5);
-                    const sf = e.ora_sfarsit.substring(0,5);
-                    html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:14px; margin-bottom:5px; background:var(--cloud-dancer); padding:5px 10px; border-radius:8px;">
-                        <span><strong>${e.angajati.nume}</strong> (${s}-${sf})${e.ore_suplimentare > 0 ? ` <span style="color:red; font-size:12px; font-weight:bold;">+${e.ore_suplimentare}h</span>` : ''}</span>
-                        <button onclick="stergeIntrareProgram('${e.id}')" style="margin:0; padding:4px 8px; width:auto; font-size:11px; background:var(--error); color:white; border-radius:4px;">Șterge</button>
-                    </div>`;
+            if (!existingDates.has(dateIso)) {
+                inserts.push({
+                    angajat_id: angId,
+                    locatie: loc,
+                    data: dateIso,
+                    ora_start: orarLocatii[loc][dayOfWeek].s,
+                    ora_sfarsit: orarLocatii[loc][dayOfWeek].e
                 });
             }
-            div.innerHTML = html;
-            container.appendChild(div);
+            current.setDate(current.getDate() + 1);
         }
+        if (inserts.length > 0) {
+            const { error: errInsert } = await supabaseClient.from('program_zile').insert(inserts);
+            if (errInsert) alert("Eroare la inserare: " + errInsert.message);
+            else {
+                alert(`S-au programat ${inserts.length} zile libere.`);
+                loadAdminProgramGrid();
+            }
+        } else {
+            alert("Toate zilele din această săptămână sunt deja programate!");
+        }
+        
+        loader.classList.add('hidden');
+        if (select) select.value = '';
     }
 
     let currentModalContext = { dateStr: '', loc: '', dayOfWeek: 0 };
@@ -2936,62 +3085,6 @@
         else loadAdminProgramGrid();
     }
 
-    async function aplicaTiparProgram() {
-        const loc = document.getElementById('admin-prog-locatie').value;
-        const angId = document.getElementById('admin-prog-angajat-tipar').value;
-        const regula = document.getElementById('admin-prog-regula').value; // '1/1' sau '2/2'
-        const startStr = document.getElementById('admin-prog-start').value;
-        const endStr = document.getElementById('admin-prog-end').value;
-        
-        if (!loc || !angId || !startStr || !endStr) return alert("Completează locația, angajatul și intervalul de date!");
-        if (!confirm(`Atenție! Această acțiune va șterge toate turele existente pentru acest angajat în intervalul selectat la această locație, și va genera noul tipar. Continuăm?`)) return;
-        
-        const loader = document.getElementById('admin-prog-loader');
-        loader.classList.remove('hidden');
-        
-        await supabaseClient.from('program_zile').delete()
-            .eq('angajat_id', angId)
-            .eq('locatie', loc)
-            .gte('data', startStr)
-            .lte('data', endStr);
-            
-        const sD = new Date(startStr);
-        const eD = new Date(endStr);
-        const inserts = [];
-        
-        let cycleDays = regula === '1/1' ? 2 : 4;
-        let workDays = regula === '1/1' ? 1 : 2;
-        
-        let dayCounter = 0;
-        let current = new Date(sD);
-        
-        while (current <= eD) {
-            const dateIso = new Date(current.getTime() - (current.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            const dayOfWeek = current.getDay();
-            
-            if (dayCounter < workDays) {
-                inserts.push({
-                    angajat_id: angId,
-                    locatie: loc,
-                    data: dateIso,
-                    ora_start: orarLocatii[loc][dayOfWeek].s,
-                    ora_sfarsit: orarLocatii[loc][dayOfWeek].e
-                });
-            }
-            
-            dayCounter = (dayCounter + 1) % cycleDays;
-            current.setDate(current.getDate() + 1);
-        }
-        
-        if (inserts.length > 0) {
-            const { error } = await supabaseClient.from('program_zile').insert(inserts);
-            if (error) alert("Eroare la aplicarea tiparului: " + error.message);
-        }
-        
-        loader.classList.add('hidden');
-        loadAdminProgramGrid();
-    }
-
     // ------------------------------------------
     // ADMIN SALARIZARE
     // ------------------------------------------
@@ -3034,6 +3127,10 @@
         if (data.length === 0) {
             listEl.innerHTML = '<p style="text-align:center; color:var(--gray-text);">Nicio perioadă creată.</p>';
         } else {
+            const monthsRo = [
+                'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 
+                'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'
+            ];
             data.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'report-item';
@@ -3043,10 +3140,15 @@
                 div.style.cursor = 'pointer';
                 div.onclick = () => deschideRaportPerioada(p);
                 
+                const startD = new Date(p.data_start);
+                const nextMonthIdx = (startD.getMonth() + 1) % 12;
+                const paymentInfo = `Plată: 15 ${monthsRo[nextMonthIdx]}`;
+                
                 div.innerHTML = `
                     <div>
                         <strong>${p.nume || 'Perioadă'}</strong><br>
-                        <span style="font-size:12px; color:var(--gray-text);">${p.data_start} — ${p.data_sfarsit}</span>
+                        <span style="font-size:12px; color:var(--gray-text);">${p.data_start} — ${p.data_sfarsit}</span><br>
+                        <span style="font-size:11px; color:#7332e6; font-weight:bold;">📅 ${paymentInfo}</span>
                     </div>
                     <span style="font-size:12px; font-weight:bold; color: ${p.status === 'activa' ? 'var(--success)' : 'var(--gray-text)'}">${p.status.toUpperCase()}</span>
                 `;
