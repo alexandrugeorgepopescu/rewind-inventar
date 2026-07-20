@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=7.0')
+          navigator.serviceWorker.register('sw.js?v=7.6')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v7.0 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v7.6 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -596,16 +596,38 @@
         <div id="centralizator-consum-container" class="hidden" style="margin-top: 15px;">
             <h3 style="text-align: center; margin-bottom: 15px; color: var(--black-night);"> Raport Consum Zilnic</h3>
             
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-                <select id="consum-locatie" style="flex: 1; min-width: 130px; margin:0;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+                <select id="consum-locatie" style="flex: 1; min-width: 120px; margin:0;">
                     <option value="Toate">Toate locațiile</option>
                     <option value="Miroslava">Miroslava</option>
                     <option value="Pacurari">Kaufland Păcurari</option>
                     <option value="Alexandru">Kaufland Alexandru</option>
                 </select>
-                <input type="date" id="consum-data" style="flex: 1; min-width: 130px; margin:0;">
+                <select id="consum-categorie" style="flex: 1; min-width: 130px; margin:0;">
+                    <option value="Toate">Toate categoriile</option>
+                </select>
+                <select id="consum-tip-perioada" onchange="toggleConsumPeriodControls()" style="flex: 1; min-width: 110px; margin:0; font-weight:bold; background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;">
+                    <option value="zi">Zi unică</option>
+                    <option value="perioada">Perioadă (De la - Până la)</option>
+                </select>
             </div>
-            
+
+            <!-- CONTROALE DATA -->
+            <div id="consum-control-zi" style="margin-bottom: 12px;">
+                <input type="date" id="consum-data" style="width: 100%; margin:0;">
+            </div>
+
+            <div id="consum-control-perioada" class="hidden" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div style="flex: 1; min-width: 130px;">
+                    <label style="font-size: 11px; font-weight: bold; color: var(--gray-text);">De la (Dată start):</label>
+                    <input type="date" id="consum-data-start" style="margin:0;">
+                </div>
+                <div style="flex: 1; min-width: 130px;">
+                    <label style="font-size: 11px; font-weight: bold; color: var(--gray-text);">Până la (Dată sfârșit):</label>
+                    <input type="date" id="consum-data-end" style="margin:0;">
+                </div>
+            </div>
+
             <input type="text" id="consum-search" placeholder="Caută produs (ex: Pahare, Lapte)..." style="margin-bottom: 12px;">
 
             <div id="consum-loader" class="loader hidden">Se calculează consumul...</div>
@@ -910,21 +932,47 @@
                     </div>
                 </div>
 
-                <!-- 3. RADAR (ALERTE ÎN TIMP REAL) -->
+                <!-- 3. SĂPTĂMÂNA ÎN MIȘCARE (2 GRAFICE INLINE CSS/SVG) -->
                 <div style="margin-bottom: 22px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">3. Radar Alerte</h4>
-                    <div id="puls-radar-container" class="admin-product" style="border: 2px solid #fecdd3; background: #fff5f5; padding: 14px;">
-                        <div class="loader">Se verifică alertele...</div>
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">3. Săptămâna în mișcare</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                        
+                        <!-- GRAFIC 1: TREND CONSUM 7 ZILE -->
+                        <div class="admin-product" style="border: 2px solid #cbd5e1; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
+                                <h5 style="margin: 0; font-size: 13px; color: var(--black-night); font-weight: bold;">Trend Consum 7 Zile</h5>
+                                <select id="puls-chart-prod-select" onchange="renderPulsChartConsum()" style="margin: 0; font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-weight: bold;">
+                                </select>
+                            </div>
+                            <div id="puls-chart-consum-container" style="min-height: 150px; display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; padding-top: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+                                <div class="loader">Se generează graficul...</div>
+                            </div>
+                        </div>
+
+                        <!-- GRAFIC 2: VIZUAL ORE LUCRATE (BARE ORIZONTALE) -->
+                        <div class="admin-product" style="border: 2px solid #cbd5e1; background: white;">
+                            <h5 style="margin: 0 0 12px 0; font-size: 13px; color: var(--black-night); font-weight: bold;">Grafic Ore Lucrate (până azi)</h5>
+                            <div id="puls-chart-ore-container" style="min-height: 150px;">
+                                <div class="loader">Se generează graficul...</div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- 4. ORE LUCRATE LUNA CURENTĂ (PÂNĂ AZI STRICT) -->
-                <div class="admin-product" style="border: 2px solid #cbd5e1; margin-bottom: 20px; background: white;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                        <h4 style="margin: 0; color: var(--black-night);">Ore Lucrate Luna Curentă (până azi inclusiv)</h4>
+                <!-- 4. RADAR (ALERTE ÎN TIMP REAL) -->
+                <div style="margin-bottom: 22px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                        <h4 style="margin: 0; font-size: 13px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">4. Radar Alerte</h4>
+                        <select id="puls-radar-loc-filter" onchange="loadPulsRadar()" style="margin: 0; font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-weight: bold;">
+                            <option value="Toate">Toate locațiile</option>
+                            <option value="Miroslava">Miroslava</option>
+                            <option value="Pacurari">Kaufland Păcurari</option>
+                            <option value="Alexandru">Kaufland Alexandru</option>
+                        </select>
                     </div>
-                    <div id="dash-ore-list" style="font-size: 13px;">
-                        <div class="loader">Se calculează orele...</div>
+                    <div id="puls-radar-container" class="admin-product" style="border: 2px solid #fecdd3; background: #fff5f5; padding: 14px;">
+                        <div class="loader">Se verifică alertele...</div>
                     </div>
                 </div>
             </div>
@@ -2161,23 +2209,73 @@
             dataInput.value = yesterday.toISOString().split('T')[0];
         }
 
+        populateConsumCategories();
         incarcaRaportConsum();
     });
 
+    function getStockCategoriesOrder() {
+        const order = [];
+        catalogProduse.forEach(p => {
+            const cat = p.categorie || 'General';
+            if (!order.includes(cat)) {
+                order.push(cat);
+            }
+        });
+        return order;
+    }
+
+    function populateConsumCategories() {
+        const catSelect = document.getElementById('consum-categorie');
+        if (!catSelect) return;
+
+        const categories = getStockCategoriesOrder();
+        let html = '<option value="Toate">Toate categoriile</option>';
+        categories.forEach(cat => {
+            html += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+        });
+        catSelect.innerHTML = html;
+    }
+
+    function toggleConsumPeriodControls() {
+        const mode = document.getElementById('consum-tip-perioada')?.value || 'zi';
+        const ziCtrl = document.getElementById('consum-control-zi');
+        const perCtrl = document.getElementById('consum-control-perioada');
+
+        if (mode === 'zi') {
+            if (ziCtrl) ziCtrl.classList.remove('hidden');
+            if (perCtrl) perCtrl.classList.add('hidden');
+        } else {
+            if (ziCtrl) ziCtrl.classList.add('hidden');
+            if (perCtrl) perCtrl.classList.remove('hidden');
+
+            const startEl = document.getElementById('consum-data-start');
+            const endEl = document.getElementById('consum-data-end');
+            if (startEl && !startEl.value) {
+                const d7 = new Date();
+                d7.setDate(d7.getDate() - 7);
+                startEl.value = d7.toISOString().split('T')[0];
+            }
+            if (endEl && !endEl.value) {
+                endEl.value = new Date().toISOString().split('T')[0];
+            }
+        }
+        incarcaRaportConsum();
+    }
+
     document.getElementById('consum-locatie').addEventListener('change', incarcaRaportConsum);
+    document.getElementById('consum-categorie').addEventListener('change', renderTabelConsum);
     document.getElementById('consum-data').addEventListener('change', incarcaRaportConsum);
+    document.getElementById('consum-data-start').addEventListener('change', incarcaRaportConsum);
+    document.getElementById('consum-data-end').addEventListener('change', incarcaRaportConsum);
     document.getElementById('consum-search').addEventListener('input', renderTabelConsum);
 
     let dateConsumCache = [];
 
     async function incarcaRaportConsum() {
+        populateConsumCategories();
+
         const loc = document.getElementById('consum-locatie').value;
-        const dataInput = document.getElementById('consum-data');
-        if (!dataInput.value) {
-            const yesterday = new Date();
-            dataInput.value = yesterday.toISOString().split('T')[0];
-        }
-        const selectedDateStr = dataInput.value;
+        const mode = document.getElementById('consum-tip-perioada')?.value || 'zi';
 
         const loader = document.getElementById('consum-loader');
         const summaryBar = document.getElementById('consum-summary-bar');
@@ -2187,82 +2285,181 @@
         summaryBar.classList.add('hidden');
         container.innerHTML = '';
 
-        const selDateObj = new Date(selectedDateStr);
-        const prevDateObj = new Date(selDateObj);
-        prevDateObj.setDate(prevDateObj.getDate() - 1);
-        const prevDateStr = prevDateObj.toISOString().split('T')[0];
-
-        let querySel = supabaseClient.from('inventar_log').select('*').eq('data', selectedDateStr);
-        let queryPrev = supabaseClient.from('inventar_log').select('*').eq('data', prevDateStr);
-
-        if (loc !== 'Toate') {
-            querySel = querySel.eq('locatie', loc);
-            queryPrev = queryPrev.eq('locatie', loc);
-        }
-
-        const [{ data: logsSel, error: errSel }, { data: logsPrev, error: errPrev }] = await Promise.all([
-            querySel,
-            queryPrev
-        ]);
-
-        if (errSel || errPrev) {
-            loader.classList.add('hidden');
-            container.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea datelor de consum. Asigură-te că tabelul inventar_log există.</p>';
-            return;
-        }
-
-        const prevMap = {};
-        if (logsPrev) {
-            logsPrev.forEach(l => {
-                const key = loc === 'Toate' ? `${l.produs_id}_${l.locatie}` : l.produs_id;
-                prevMap[key] = parseFloat(l.stoc);
-            });
-        }
-
-        const selMap = {};
-        if (logsSel) {
-            logsSel.forEach(l => {
-                const key = loc === 'Toate' ? `${l.produs_id}_${l.locatie}` : l.produs_id;
-                selMap[key] = parseFloat(l.stoc);
-            });
-        }
-
         dateConsumCache = [];
 
-        catalogProduse.forEach(p => {
-            if (loc !== 'Toate' && !p.locatii.includes(loc)) return;
+        if (mode === 'zi') {
+            const dataInput = document.getElementById('consum-data');
+            if (!dataInput.value) {
+                const yesterday = new Date();
+                dataInput.value = yesterday.toISOString().split('T')[0];
+            }
+            const selectedDateStr = dataInput.value;
 
-            const targetLocs = loc === 'Toate' ? p.locatii : [loc];
+            const selDateObj = new Date(selectedDateStr);
+            const prevDateObj = new Date(selDateObj);
+            prevDateObj.setDate(prevDateObj.getDate() - 1);
+            const prevDateStr = prevDateObj.toISOString().split('T')[0];
 
-            targetLocs.forEach(l => {
-                const key = loc === 'Toate' ? `${p.id}_${l}` : p.id;
-                const stocPrev = prevMap[key] !== undefined ? prevMap[key] : null;
-                const stocSel = selMap[key] !== undefined ? selMap[key] : null;
+            let querySel = supabaseClient.from('inventar_log').select('*').eq('data', selectedDateStr);
+            let queryPrev = supabaseClient.from('inventar_log').select('*').eq('data', prevDateStr);
 
-                if (stocPrev !== null || stocSel !== null) {
-                    let diff = null;
-                    let isRestock = false;
+            if (loc !== 'Toate') {
+                querySel = querySel.eq('locatie', loc);
+                queryPrev = queryPrev.eq('locatie', loc);
+            }
 
-                    if (stocPrev !== null && stocSel !== null) {
-                        diff = stocPrev - stocSel;
-                        if (diff < 0) {
-                            isRestock = true;
+            const [{ data: logsSel, error: errSel }, { data: logsPrev, error: errPrev }] = await Promise.all([
+                querySel,
+                queryPrev
+            ]);
+
+            if (errSel || errPrev) {
+                loader.classList.add('hidden');
+                container.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea datelor de consum. Asigură-te că tabelul inventar_log există.</p>';
+                return;
+            }
+
+            const prevMap = {};
+            if (logsPrev) {
+                logsPrev.forEach(l => {
+                    const key = loc === 'Toate' ? `${l.produs_id}_${l.locatie}` : l.produs_id;
+                    prevMap[key] = parseFloat(l.stoc);
+                });
+            }
+
+            const selMap = {};
+            if (logsSel) {
+                logsSel.forEach(l => {
+                    const key = loc === 'Toate' ? `${l.produs_id}_${l.locatie}` : l.produs_id;
+                    selMap[key] = parseFloat(l.stoc);
+                });
+            }
+
+            catalogProduse.forEach(p => {
+                if (loc !== 'Toate' && !p.locatii.includes(loc)) return;
+                const targetLocs = loc === 'Toate' ? p.locatii : [loc];
+
+                targetLocs.forEach(l => {
+                    const key = loc === 'Toate' ? `${p.id}_${l}` : p.id;
+                    const stocPrev = prevMap[key] !== undefined ? prevMap[key] : null;
+                    const stocSel = selMap[key] !== undefined ? selMap[key] : null;
+
+                    if (stocPrev !== null || stocSel !== null) {
+                        let diff = null;
+                        let isRestock = false;
+
+                        if (stocPrev !== null && stocSel !== null) {
+                            diff = stocPrev - stocSel;
+                            if (diff < 0) {
+                                isRestock = true;
+                            }
                         }
-                    }
 
-                    dateConsumCache.push({
-                        produsId: p.id,
-                        nume: p.nume,
-                        unitate: p.unitate || 'buc',
-                        locatie: l,
-                        stocPrev: stocPrev,
-                        stocSel: stocSel,
-                        diff: diff,
-                        isRestock: isRestock
-                    });
-                }
+                        dateConsumCache.push({
+                            produsId: p.id,
+                            nume: p.nume,
+                            categorie: p.categorie || 'General',
+                            unitate: p.unitate || 'buc',
+                            locatie: l,
+                            stocPrev: stocPrev,
+                            stocSel: stocSel,
+                            totalRestock: isRestock ? Math.abs(diff) : 0,
+                            diff: diff !== null ? Math.round(diff * 100) / 100 : null,
+                            isRestock: isRestock
+                        });
+                    }
+                });
             });
-        });
+
+        } else {
+            // Mod: Perioadă (De la - Până la)
+            const startInput = document.getElementById('consum-data-start');
+            const endInput = document.getElementById('consum-data-end');
+
+            if (!startInput.value) {
+                const d7 = new Date();
+                d7.setDate(d7.getDate() - 7);
+                startInput.value = d7.toISOString().split('T')[0];
+            }
+            if (!endInput.value) {
+                endInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            const startDateStr = startInput.value;
+            const endDateStr = endInput.value;
+
+            const prevStartDateObj = new Date(startDateStr);
+            prevStartDateObj.setDate(prevStartDateObj.getDate() - 1);
+            const prevStartDateStr = prevStartDateObj.toISOString().split('T')[0];
+
+            let query = supabaseClient.from('inventar_log')
+                .select('*')
+                .gte('data', prevStartDateStr)
+                .lte('data', endDateStr)
+                .order('data', { ascending: true });
+
+            if (loc !== 'Toate') {
+                query = query.eq('locatie', loc);
+            }
+
+            const { data: periodLogs, error: errPeriod } = await query;
+
+            if (errPeriod) {
+                loader.classList.add('hidden');
+                container.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea datelor pe perioadă.</p>';
+                return;
+            }
+
+            const logsMap = {};
+            (periodLogs || []).forEach(l => {
+                const locNorm = normalizeLocatieCode(l.locatie);
+                const key = `${l.produs_id}_${locNorm}`;
+                if (!logsMap[key]) logsMap[key] = [];
+                logsMap[key].push({
+                    data: l.data,
+                    stoc: parseFloat(String(l.stoc).replace(',', '.')) || 0
+                });
+            });
+
+            catalogProduse.forEach(p => {
+                if (loc !== 'Toate' && !p.locatii.includes(loc)) return;
+                const targetLocs = loc === 'Toate' ? p.locatii : [loc];
+
+                targetLocs.forEach(l => {
+                    const key = `${p.id}_${l}`;
+                    const prodLogs = logsMap[key] || [];
+
+                    if (prodLogs.length > 0) {
+                        const stocStart = prodLogs[0].stoc;
+                        const stocEnd = prodLogs[prodLogs.length - 1].stoc;
+
+                        let totalRestock = 0;
+                        for (let i = 1; i < prodLogs.length; i++) {
+                            const diffVal = prodLogs[i].stoc - prodLogs[i - 1].stoc;
+                            if (diffVal > 0) {
+                                totalRestock += Math.round(diffVal * 100) / 100;
+                            }
+                        }
+
+                        let totalConsum = (stocStart + totalRestock) - stocEnd;
+                        totalConsum = Math.round(totalConsum * 100) / 100;
+
+                        dateConsumCache.push({
+                            produsId: p.id,
+                            nume: p.nume,
+                            categorie: p.categorie || 'General',
+                            unitate: p.unitate || 'buc',
+                            locatie: l,
+                            stocPrev: stocStart,
+                            stocSel: stocEnd,
+                            totalRestock: totalRestock,
+                            diff: totalConsum,
+                            isRestock: false
+                        });
+                    }
+                });
+            });
+        }
 
         loader.classList.add('hidden');
         renderTabelConsum();
@@ -2273,22 +2470,44 @@
         const summaryBar = document.getElementById('consum-summary-bar');
         const infoText = document.getElementById('consum-info-text');
         const filter = (document.getElementById('consum-search').value || '').toLowerCase().trim();
-        const selectedDateStr = document.getElementById('consum-data').value;
+        const selectedCat = document.getElementById('consum-categorie') ? document.getElementById('consum-categorie').value : 'Toate';
+        const mode = document.getElementById('consum-tip-perioada')?.value || 'zi';
         const loc = document.getElementById('consum-locatie').value;
 
+        let dateInfoStr = '';
+        if (mode === 'zi') {
+            const dateVal = document.getElementById('consum-data')?.value || '';
+            dateInfoStr = `data ${dateVal}`;
+        } else {
+            const sVal = document.getElementById('consum-data-start')?.value || '';
+            const eVal = document.getElementById('consum-data-end')?.value || '';
+            dateInfoStr = `perioada ${sVal} ➔ ${eVal}`;
+        }
+
         let items = dateConsumCache.filter(item => {
+            if (selectedCat !== 'Toate' && item.categorie !== selectedCat) return false;
             if (!filter) return true;
-            return item.nume.toLowerCase().includes(filter) || item.locatie.toLowerCase().includes(filter);
+            return item.nume.toLowerCase().includes(filter) || 
+                   item.locatie.toLowerCase().includes(filter) ||
+                   item.categorie.toLowerCase().includes(filter);
         });
 
         if (items.length === 0) {
             summaryBar.classList.add('hidden');
-            container.innerHTML = `<p style="text-align:center; color:var(--gray-text); padding:20px;">Nu există date de inventar înregistrate pentru data de ${selectedDateStr}.</p>`;
+            container.innerHTML = `<p style="text-align:center; color:var(--gray-text); padding:20px;">Nu există date de inventar înregistrate pentru filtrul selectat (${dateInfoStr}).</p>`;
             return;
         }
 
         summaryBar.classList.remove('hidden');
-        infoText.textContent = ` ${items.length} produse procesate (${loc} - ${selectedDateStr})`;
+        infoText.textContent = ` ${items.length} produse procesate (${loc} - ${dateInfoStr})`;
+
+        // Grupare pe categorii
+        const grouped = {};
+        items.forEach(item => {
+            const cat = item.categorie || 'General';
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(item);
+        });
 
         let html = `
             <div style="overflow-x:auto;">
@@ -2297,36 +2516,55 @@
                         <tr style="background:var(--cloud-dancer); text-align:left; border-bottom:2px solid #e2e8f0;">
                             <th style="padding:10px;">Produs</th>
                             ${loc === 'Toate' ? '<th style="padding:10px;">Locație</th>' : ''}
-                            <th style="padding:10px; text-align:center;">Stoc Ieri</th>
-                            <th style="padding:10px; text-align:center;">Stoc Azi</th>
+                            <th style="padding:10px; text-align:center;">${mode === 'zi' ? 'Stoc Ieri' : 'Stoc Start'}</th>
+                            <th style="padding:10px; text-align:center;">${mode === 'zi' ? 'Stoc Azi' : 'Stoc Sfârșit'}</th>
                             <th style="padding:10px; text-align:center;">Consum / Status</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
 
-        items.forEach(item => {
-            let statusCell = '';
-            if (item.diff === null) {
-                statusCell = `<span style="color:var(--gray-text); font-style:italic;">Fără istoric</span>`;
-            } else if (item.isRestock) {
-                const adaugat = Math.abs(item.diff);
-                statusCell = `<span style="font-weight:bold; color:#137333; background:#e6f4ea; padding:4px 8px; border-radius:12px; font-size:11px;">Aprovizionat +${adaugat} ${item.unitate}</span>`;
-            } else if (item.diff > 0) {
-                statusCell = `<span style="font-weight:bold; color:var(--black-night); background:#fef08a; padding:4px 8px; border-radius:12px; font-size:12px;">${item.diff} ${item.unitate}</span>`;
-            } else {
-                statusCell = `<span style="color:var(--gray-text);">0 ${item.unitate}</span>`;
-            }
+        const stockCatOrder = getStockCategoriesOrder();
+        const sortedCatKeys = Object.keys(grouped).sort((a, b) => {
+            const idxA = stockCatOrder.indexOf(a);
+            const idxB = stockCatOrder.indexOf(b);
+            return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+        });
 
+        sortedCatKeys.forEach(cat => {
+            const catItems = grouped[cat];
             html += `
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px; font-weight:bold;">${item.nume}</td>
-                    ${loc === 'Toate' ? `<td style="padding:10px; color:var(--gray-text);">${item.locatie}</td>` : ''}
-                    <td style="padding:10px; text-align:center;">${item.stocPrev !== null ? item.stocPrev + ' ' + item.unitate : '—'}</td>
-                    <td style="padding:10px; text-align:center;">${item.stocSel !== null ? item.stocSel + ' ' + item.unitate : '—'}</td>
-                    <td style="padding:10px; text-align:center;">${statusCell}</td>
+                <tr style="background:#f3e8ff; border-top:2px solid #d8b4fe; border-bottom:1px solid #d8b4fe;">
+                    <td colspan="${loc === 'Toate' ? 5 : 4}" style="padding:8px 12px; font-weight:bold; color:#7332e6; font-size:12px; letter-spacing:0.5px;">
+                        📂 ${escapeHtml(cat.toUpperCase())} (${catItems.length})
+                    </td>
                 </tr>
             `;
+
+            catItems.forEach(item => {
+                let statusCell = '';
+                if (item.diff === null) {
+                    statusCell = `<span style="color:var(--gray-text); font-style:italic;">Fără istoric</span>`;
+                } else if (item.isRestock) {
+                    const adaugat = Math.abs(item.diff);
+                    statusCell = `<span style="font-weight:bold; color:#137333; background:#e6f4ea; padding:4px 8px; border-radius:12px; font-size:11px;">Aprovizionat +${adaugat} ${item.unitate}</span>`;
+                } else if (item.diff > 0) {
+                    const restockInfo = item.totalRestock > 0 ? ` <span style="font-size:10px; color:#137333;">(+${item.totalRestock} aprov.)</span>` : '';
+                    statusCell = `<span style="font-weight:bold; color:var(--black-night); background:#fef08a; padding:4px 8px; border-radius:12px; font-size:12px;">${item.diff} ${item.unitate}${restockInfo}</span>`;
+                } else {
+                    statusCell = `<span style="color:var(--gray-text);">0 ${item.unitate}</span>`;
+                }
+
+                html += `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:10px; font-weight:bold;">${escapeHtml(item.nume)}</td>
+                        ${loc === 'Toate' ? `<td style="padding:10px; color:var(--gray-text);">${escapeHtml(item.locatie)}</td>` : ''}
+                        <td style="padding:10px; text-align:center;">${item.stocPrev !== null ? item.stocPrev + ' ' + item.unitate : '—'}</td>
+                        <td style="padding:10px; text-align:center;">${item.stocSel !== null ? item.stocSel + ' ' + item.unitate : '—'}</td>
+                        <td style="padding:10px; text-align:center;">${statusCell}</td>
+                    </tr>
+                `;
+            });
         });
 
         html += `
@@ -2339,24 +2577,35 @@
     }
 
     document.getElementById('btn-whatsapp-consum').addEventListener('click', () => {
-        const selectedDateStr = document.getElementById('consum-data').value;
+        const mode = document.getElementById('consum-tip-perioada')?.value || 'zi';
         const loc = document.getElementById('consum-locatie').value;
         if (dateConsumCache.length === 0) return alert("Nu există date de trimis.");
 
-        let text = ` *RAPORT CONSUM ZILNIC REWIND*\n📍 Locație: ${loc}\n Dată: ${selectedDateStr}\n-----------------------------------\n`;
+        let dateHeader = '';
+        if (mode === 'zi') {
+            const dateVal = document.getElementById('consum-data')?.value || '';
+            dateHeader = ` Dată: ${dateVal}`;
+        } else {
+            const sVal = document.getElementById('consum-data-start')?.value || '';
+            const eVal = document.getElementById('consum-data-end')?.value || '';
+            dateHeader = ` Perioadă: ${sVal} ➔ ${eVal}`;
+        }
+
+        let text = ` *RAPORT CONSUM REWIND*\n📍 Locație: ${loc}\n${dateHeader}\n-----------------------------------\n`;
         
         let count = 0;
         dateConsumCache.forEach(item => {
             if (item.diff !== null && item.diff > 0) {
                 count++;
-                text += `• *${item.nume}*: ${item.diff} ${item.unitate}${loc === 'Toate' ? ` (${item.locatie})` : ''}\n`;
-            } else if (item.isRestock) {
-                text += `• *${item.nume}*:  Aprovizionat +${Math.abs(item.diff)} ${item.unitate}${loc === 'Toate' ? ` (${item.locatie})` : ''}\n`;
+                const restockTxt = item.totalRestock > 0 ? ` (+${item.totalRestock} aprov.)` : '';
+                text += `• *${item.nume}*: ${item.diff} ${item.unitate}${restockTxt}${loc === 'Toate' ? ` (${item.locatie})` : ''}\n`;
+            } else if (item.isRestock || item.totalRestock > 0) {
+                text += `• *${item.nume}*:  Aprovizionat +${item.totalRestock || Math.abs(item.diff)} ${item.unitate}${loc === 'Toate' ? ` (${item.locatie})` : ''}\n`;
             }
         });
 
         if (count === 0 && !text.includes('Aprovizionat')) {
-            text += `Nu s-a înregistrat consum în această zi.\n`;
+            text += `Nu s-a înregistrat consum în această perioadă.\n`;
         }
 
         const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -2637,8 +2886,10 @@
     document.getElementById('btn-salveaza-notita').addEventListener('click', adaugaNotitaTura);
 
     // ==========================================
-    // DASHBOARD OWNER (PULS REWIND v7.0 — ETAPA 1)
+    // DASHBOARD OWNER (PULS REWIND v7.0 — ETAPA 1 + ETAPA 2)
     // ==========================================
+
+    let puls7DaysLogs = [];
 
     async function loadOwnerDashboard() {
         const now = new Date();
@@ -2649,20 +2900,186 @@
         await Promise.allSettled([
             loadPulsHero(),
             loadPulsKpi(),
+            loadPulsCharts(),
             loadPulsRadar(),
             loadOwnerDashboardOre()
         ]);
+    }
+
+    async function loadPulsCharts() {
+        const d7 = new Date();
+        d7.setDate(d7.getDate() - 7);
+        const d7Str = d7.toISOString().split('T')[0];
+
+        const sel = document.getElementById('puls-chart-prod-select');
+        if (sel && sel.options.length === 0) {
+            const keyProds = catalogProduse.filter(p => {
+                const n = p.nume.toLowerCase();
+                return n.includes('monor') || n.includes('pahar') || n.includes('cafea') || n.includes('lapte');
+            }).slice(0, 8);
+
+            let selHtml = '';
+            keyProds.forEach(p => {
+                selHtml += `<option value="${p.id}">${escapeHtml(p.nume)}</option>`;
+            });
+            if (selHtml === '' && catalogProduse.length > 0) {
+                catalogProduse.slice(0, 5).forEach(p => {
+                    selHtml += `<option value="${p.id}">${escapeHtml(p.nume)}</option>`;
+                });
+            }
+            sel.innerHTML = selHtml;
+        }
+
+        const { data: logs } = await supabaseClient
+            .from('inventar_log')
+            .select('*')
+            .gte('data', d7Str)
+            .order('data', { ascending: true });
+
+        puls7DaysLogs = logs || [];
+
+        renderPulsChartConsum();
+        renderPulsChartOre();
+    }
+
+    function renderPulsChartConsum() {
+        const container = document.getElementById('puls-chart-consum-container');
+        const select = document.getElementById('puls-chart-prod-select');
+        if (!container || !select) return;
+
+        const prodId = parseInt(select.value) || (select.options[0] ? parseInt(select.options[0].value) : null);
+        if (!prodId) {
+            container.innerHTML = '<p style="color:var(--gray-text); font-size:12px; text-align:center; width:100%;">Niciun produs selectat.</p>';
+            return;
+        }
+
+        const selectedProd = catalogProduse.find(p => p.id === prodId);
+        const unitate = selectedProd ? (selectedProd.unitate || 'buc') : 'buc';
+
+        const dates = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            dates.push(d.toISOString().split('T')[0]);
+        }
+
+        const logsMapByDate = {};
+        puls7DaysLogs.filter(l => l.produs_id === prodId).forEach(l => {
+            if (!logsMapByDate[l.data]) logsMapByDate[l.data] = [];
+            logsMapByDate[l.data].push(parseFloat(String(l.stoc).replace(',', '.')) || 0);
+        });
+
+        const dailyVals = dates.map(dStr => {
+            const vals = logsMapByDate[dStr];
+            if (vals && vals.length > 0) {
+                const sum = vals.reduce((a, b) => a + b, 0);
+                return Math.round(sum * 10) / 10;
+            }
+            return 0;
+        });
+
+        const maxVal = Math.max(...dailyVals, 1);
+
+        let html = '';
+        dates.forEach((dStr, idx) => {
+            const dObj = new Date(dStr + 'T00:00:00');
+            const dayLabel = dObj.toLocaleDateString('ro-RO', { weekday: 'narrow', day: 'numeric' });
+            const val = dailyVals[idx];
+            const pct = Math.max(8, Math.round((val / maxVal) * 100));
+            const barColor = val > 0 ? 'linear-gradient(180deg, #7332e6 0%, #a855f7 100%)' : '#e2e8f0';
+
+            html += `
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+                    <div style="font-size: 10px; font-weight: bold; color: ${val > 0 ? '#7332e6' : 'var(--gray-text)'}; margin-bottom: 4px;">${val > 0 ? val : ''}</div>
+                    <div style="width: 100%; max-width: 24px; height: ${pct}%; background: ${barColor}; border-radius: 4px 4px 0 0; transition: height 0.3s;" title="${dStr}: ${val} ${unitate}"></div>
+                    <div style="font-size: 10px; color: var(--gray-text); margin-top: 6px; font-weight: bold; text-align: center;">${dayLabel}</div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    async function renderPulsChartOre() {
+        const container = document.getElementById('puls-chart-ore-container');
+        if (!container) return;
+
+        await fetchAngajati();
+
+        const now = new Date();
+        const startOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+        const { data: program } = await supabaseClient
+            .from('program_zile')
+            .select('angajat_id, ora_start, ora_sfarsit, ore_suplimentare')
+            .gte('data', startOfMonthStr)
+            .lte('data', todayStr);
+
+        const oreMap = {};
+        if (program) {
+            program.forEach(p => {
+                if (!p.ora_start || !p.ora_sfarsit) return;
+                const h1 = parseInt(p.ora_start.split(':')[0]);
+                const m1 = parseInt(p.ora_start.split(':')[1]);
+                const h2 = parseInt(p.ora_sfarsit.split(':')[0]);
+                const m2 = parseInt(p.ora_sfarsit.split(':')[1]);
+
+                const oreTura = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+                const extra = Number(p.ore_suplimentare || 0);
+                const total = oreTura + extra;
+
+                oreMap[p.angajat_id] = (oreMap[p.angajat_id] || 0) + total;
+            });
+        }
+
+        const sortedEmp = angajatiList.map(a => {
+            return {
+                nume: a.nume,
+                totalOre: Math.round(oreMap[a.id] || 0)
+            };
+        }).sort((a, b) => b.totalOre - a.totalOre);
+
+        if (sortedEmp.length === 0) {
+            container.innerHTML = '<p style="color:var(--gray-text); font-size:12px; text-align:center;">Niciun angajat găsit.</p>';
+            return;
+        }
+
+        const maxOre = Math.max(...sortedEmp.map(e => e.totalOre), 1);
+
+        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+        sortedEmp.forEach(emp => {
+            const pct = Math.max(5, Math.round((emp.totalOre / maxOre) * 100));
+            html += `
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                        <span style="font-weight:bold; color:var(--black-night);">${escapeHtml(emp.nume)}</span>
+                        <span style="font-weight:bold; color:#7332e6;">${emp.totalOre} ore</span>
+                    </div>
+                    <div style="background:#f1f5f9; height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="background:linear-gradient(90deg, #7332e6 0%, #3b82f6 100%); width:${pct}%; height:100%; border-radius:4px; transition:width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
     }
 
     async function loadPulsHero() {
         const heroEl = document.getElementById('puls-hero-cards');
         if (!heroEl) return;
 
+        await fetchAngajati();
+        const angMap = {};
+        angajatiList.forEach(a => angMap[a.id] = a.nume);
+
         const todayStr = new Date().toISOString().split('T')[0];
 
         const [resProduse, resProgram, resNotite, resLogs] = await Promise.all([
             supabaseClient.from('produse').select('id, nume, unitate, prag_minim, prag_galben, locatii').eq('activ', true),
-            supabaseClient.from('program_zile').select('angajat_nume, locatie, ora_start, ora_sfarsit').eq('data', todayStr),
+            supabaseClient.from('program_zile').select('angajat_id, locatie, ora_start, ora_sfarsit').eq('data', todayStr),
             supabaseClient.from('notite_tura').select('id, locatie, text, autor').eq('status', 'activa'),
             supabaseClient.from('inventar_log').select('produs_id, locatie, stoc, data').order('created_at', { ascending: false }).limit(300)
         ]);
@@ -2692,15 +3109,16 @@
             const locCode = locObj.code;
             const locLabel = locObj.label;
 
-            // Personal în tură azi
+            // Personal în tură azi (cu mapping angajat_id -> nume din angajatiList)
             const staff = programAzi.filter(p => normalizeLocatieCode(p.locatie) === locCode);
             let staffStr = '<span style="color:var(--gray-text);">Fără personal asignat azi</span>';
             if (staff.length > 0) {
                 staffStr = staff.map(s => {
+                    const empName = angMap[s.angajat_id] || 'Angajat';
                     const start = s.ora_start ? s.ora_start.substring(0, 5) : '';
                     const end = s.ora_sfarsit ? s.ora_sfarsit.substring(0, 5) : '';
                     const hours = (start && end) ? ` (${start}-${end})` : '';
-                    return `<b>${escapeHtml(s.angajat_nume)}</b>${hours}`;
+                    return `<b>${escapeHtml(empName)}</b>${hours}`;
                 }).join(', ');
             }
 
@@ -2773,15 +3191,18 @@
 
     async function loadPulsKpi() {
         const todayStr = new Date().toISOString().split('T')[0];
+        const localDateStr = new Date().toLocaleDateString('sv');
 
         const consumEl = document.getElementById('puls-kpi-consum-list');
         const monorEl = document.getElementById('puls-kpi-monor-list');
         const procEl = document.getElementById('puls-kpi-proceduri-list');
 
-        const [resInvLogs, resMonor, resBifari] = await Promise.all([
+        const [resInvLogs, resMonor, resBifari, resChecklists, resItemi] = await Promise.all([
             supabaseClient.from('inventar_log').select('*').order('created_at', { ascending: false }).limit(400),
             supabaseClient.from('inventar_log').select('*').order('created_at', { ascending: false }).limit(50),
-            supabaseClient.from('proceduri_bifari').select('locatie, checklist_id').eq('data', todayStr)
+            supabaseClient.from('proceduri_bifari').select('locatie, item_id').eq('data', localDateStr),
+            supabaseClient.from('proceduri_checklists').select('id, locatii').eq('activ', true),
+            supabaseClient.from('proceduri_itemi').select('id, checklist_id').eq('activ', true)
         ]);
 
         // KPI 1: Top 5 Consum Azi
@@ -2855,15 +3276,24 @@
         monorHtml += '</div>';
         if (monorEl) monorEl.innerHTML = monorHtml;
 
-        // KPI 3: Proceduri Azi
+        // KPI 3: Proceduri Azi (cu număr bifate / total itemi per locație)
         const bifariToday = resBifari.data || [];
+        const checklists = resChecklists.data || [];
+        const itemi = resItemi.data || [];
+
         let procHtml = '<div style="display:flex; flex-direction:column; gap:6px;">';
         Object.keys(locLabels).forEach(locCode => {
+            const chkIds = checklists.filter(c => c.locatii && c.locatii.includes(locCode)).map(c => c.id);
+            const totalItemsLoc = itemi.filter(i => chkIds.includes(i.checklist_id)).length;
             const bifariLoc = bifariToday.filter(b => normalizeLocatieCode(b.locatie) === locCode);
             const count = bifariLoc.length;
-            const badge = count > 0 
-                ? `<span style="background:#dcfce7; color:#15803d; font-weight:bold; padding:1px 6px; border-radius:8px;">✓ ${count} bifate</span>`
-                : `<span style="background:#f1f5f9; color:var(--gray-text); padding:1px 6px; border-radius:8px;">0 bifate</span>`;
+            const pct = totalItemsLoc > 0 ? Math.round((count / totalItemsLoc) * 100) : 0;
+
+            let badge = `<span style="background:#f1f5f9; color:var(--gray-text); padding:1px 6px; border-radius:8px;">0 / ${totalItemsLoc} (0%)</span>`;
+            if (count > 0) {
+                const isFull = pct >= 90;
+                badge = `<span style="background:${isFull ? '#dcfce7' : '#fef3c7'}; color:${isFull ? '#15803d' : '#b45309'}; font-weight:bold; padding:1px 6px; border-radius:8px;">✓ ${count}/${totalItemsLoc} (${pct}%)</span>`;
+            }
 
             procHtml += `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -2880,7 +3310,8 @@
         const radarEl = document.getElementById('puls-radar-container');
         if (!radarEl) return;
 
-        const alerts = [];
+        const locFilter = document.getElementById('puls-radar-loc-filter')?.value || 'Toate';
+
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
 
@@ -2896,7 +3327,6 @@
         const notite = resNotite.data || [];
         const program = resProgram.data || [];
 
-        // Radar 1: Produse sub prag critic STRICT (stoc < prag_minim)
         const latestStocMap = {};
         logs.forEach(l => {
             const key = `${l.produs_id}_${normalizeLocatieCode(l.locatie)}`;
@@ -2905,38 +3335,40 @@
             }
         });
 
+        // 1. Grupăm Alerte de Stoc pe produs
+        const groupedStockAlerts = {};
         produse.forEach(p => {
             const minPrag = parseFloat(p.prag_minim) || 0;
             if (minPrag > 0 && p.locatii) {
                 p.locatii.forEach(locCode => {
+                    if (locFilter !== 'Toate' && locCode !== locFilter) return;
+
                     const stocVal = latestStocMap[`${p.id}_${locCode}`];
                     if (stocVal !== undefined && stocVal < minPrag) {
-                        alerts.push({
-                            type: 'critical_stock',
-                            icon: '🔴',
-                            text: `<b>${getLocatieLabel(locCode)}</b>: ${escapeHtml(p.nume)} e sub prag critic (${stocVal} ${p.unitate || 'buc'} / prag: ${minPrag})`
-                        });
+                        if (!groupedStockAlerts[p.id]) {
+                            groupedStockAlerts[p.id] = {
+                                nume: p.nume,
+                                unitate: p.unitate || 'buc',
+                                prag: minPrag,
+                                locatii: []
+                            };
+                        }
+                        groupedStockAlerts[p.id].locatii.push({ locCode, stoc: stocVal });
                     }
                 });
             }
         });
 
-        // Radar 2: Notițe nerezolvate >24h
+        // 2. Notițe nerezolvate >24h
         const h24Ago = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        notite.forEach(n => {
-            const created = new Date(n.created_at);
-            if (created < h24Ago) {
-                const hoursOld = Math.round((now - created) / (1000 * 60 * 60));
-                alerts.push({
-                    type: 'old_note',
-                    icon: '📌',
-                    text: `<b>${getLocatieLabel(n.locatie)}</b>: Notiță nerezolvată de ${hoursOld}h ("${escapeHtml(n.text.substring(0, 30))}...")`
-                });
-            }
+        const oldNotes = notite.filter(n => {
+            if (locFilter !== 'Toate' && normalizeLocatieCode(n.locatie) !== locFilter) return false;
+            return new Date(n.created_at) < h24Ago;
         });
 
-        // Radar 3: Găuri de program în următoarele 7 zile
-        const locatiiList = ['Miroslava', 'Pacurari', 'Alexandru'];
+        // 3. Găuri de program
+        const locatiiList = locFilter === 'Toate' ? ['Miroslava', 'Pacurari', 'Alexandru'] : [locFilter];
+        const scheduleGaps = [];
         for (let i = 1; i <= 7; i++) {
             const d = new Date();
             d.setDate(d.getDate() + i);
@@ -2946,42 +3378,32 @@
             locatiiList.forEach(locCode => {
                 const hasStaff = program.some(p => p.data === dateStr && normalizeLocatieCode(p.locatie) === locCode);
                 if (!hasStaff) {
-                    alerts.push({
-                        type: 'schedule_gap',
-                        icon: '📅',
-                        text: `<b>${getLocatieLabel(locCode)}</b> neacoperită ${dateLabel} (fără personal asignat)`
-                    });
+                    scheduleGaps.push({ locCode, dateLabel });
                 }
             });
         }
 
-        // Radar 4: Inventar nefinalizat azi după ora de închidere per locație
+        // 4. Inventar nefinalizat după ora de închidere
         const curHour = now.getHours();
         const curMin = now.getMinutes();
         const curTimeMinutes = curHour * 60 + curMin;
-
-        const closingTimes = {
-            Alexandru: 16 * 60 + 30, // 16:30
-            Pacurari: 18 * 60 + 30,  // 18:30
-            Miroslava: 21 * 60       // 21:00
-        };
+        const closingTimes = { Alexandru: 16 * 60 + 30, Pacurari: 18 * 60 + 30, Miroslava: 21 * 60 };
+        const missingInventories = [];
 
         locatiiList.forEach(locCode => {
             const closeMin = closingTimes[locCode];
             if (curTimeMinutes > closeMin) {
                 const hasInvToday = logs.some(l => l.data === todayStr && normalizeLocatieCode(l.locatie) === locCode);
                 if (!hasInvToday) {
-                    alerts.push({
-                        type: 'missing_inventory',
-                        icon: '⏰',
-                        text: `<b>${getLocatieLabel(locCode)}</b>: Inventarul de azi nu este completat (trecut de ora de închidere)`
-                    });
+                    missingInventories.push(locCode);
                 }
             }
         });
 
-        // Afișare alerte Radar
-        if (alerts.length === 0) {
+        const stockAlertKeys = Object.keys(groupedStockAlerts);
+        const totalAlertsCount = stockAlertKeys.length + oldNotes.length + scheduleGaps.length + missingInventories.length;
+
+        if (totalAlertsCount === 0) {
             radarEl.style.border = '2px solid #bbf7d0';
             radarEl.style.background = '#f0fdf4';
             radarEl.innerHTML = `
@@ -2990,22 +3412,74 @@
                     <div style="font-size:12px; font-weight:normal; color:var(--gray-text); margin-top:2px;">Nicio alertă activă pe stocuri, program sau notițe.</div>
                 </div>
             `;
-        } else {
-            radarEl.style.border = '2px solid #fecdd3';
-            radarEl.style.background = '#fff5f5';
-            let html = `<div style="font-size:12px; font-weight:bold; color:#b91c1c; margin-bottom:8px;">${alerts.length} alerte ce necesită atenție:</div>`;
-            html += '<div style="display:flex; flex-direction:column; gap:6px;">';
-            alerts.forEach(a => {
-                html += `
-                    <div style="display:flex; align-items:center; gap:8px; background:white; padding:8px 10px; border-radius:8px; border:1px solid #fecdd3; font-size:12px;">
-                        <span>${a.icon}</span>
-                        <span style="color:var(--black-night); flex:1;">${a.text}</span>
-                    </div>
-                `;
-            });
-            html += '</div>';
-            radarEl.innerHTML = html;
+            return;
         }
+
+        radarEl.style.border = '2px solid #fecdd3';
+        radarEl.style.background = '#fff5f5';
+
+        let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">`;
+        html += `<span style="font-size:12px; font-weight:bold; color:#b91c1c;">${totalAlertsCount} alerte grupate pe produse:</span>`;
+        if (stockAlertKeys.length > 0) {
+            html += `<span style="font-size:11px; background:#fee2e2; color:#b91c1c; font-weight:bold; padding:2px 8px; border-radius:10px;">${stockAlertKeys.length} produse sub prag</span>`;
+        }
+        html += `</div><div style="display:flex; flex-direction:column; gap:6px;">`;
+
+        // Render Grouped Stock Alerts
+        stockAlertKeys.forEach(pId => {
+            const item = groupedStockAlerts[pId];
+            const locsText = item.locatii.map(l => `<b>${getLocatieLabel(l.locCode)}</b> (${l.stoc})`).join(', ');
+            html += `
+                <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #fecdd3; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span style="font-weight:bold; color:var(--black-night);">🔴 ${escapeHtml(item.nume)}</span>
+                        <div style="font-size:11px; color:var(--gray-text); margin-top:2px;">Sub prag critic la: ${locsText}</div>
+                    </div>
+                    <span style="font-size:11px; font-weight:bold; background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:6px; white-space:nowrap;">prag: ${item.prag} ${item.unitate}</span>
+                </div>
+            `;
+        });
+
+        // Render Old Notes
+        oldNotes.forEach(n => {
+            const created = new Date(n.created_at);
+            const hoursOld = Math.round((now - created) / (1000 * 60 * 60));
+            html += `
+                <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #fecdd3; font-size:12px; display:flex; align-items:center; gap:8px;">
+                    <span>📌</span>
+                    <div style="color:var(--black-night); flex:1;">
+                        <b>${getLocatieLabel(n.locatie)}</b>: Notiță de ${hoursOld}h ("${escapeHtml(n.text.substring(0, 40))}...")
+                    </div>
+                </div>
+            `;
+        });
+
+        // Render Schedule Gaps
+        scheduleGaps.forEach(g => {
+            html += `
+                <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #fecdd3; font-size:12px; display:flex; align-items:center; gap:8px;">
+                    <span>📅</span>
+                    <div style="color:var(--black-night); flex:1;">
+                        <b>${getLocatieLabel(g.locCode)}</b> neacoperită ${g.dateLabel} (fără personal asignat)
+                    </div>
+                </div>
+            `;
+        });
+
+        // Render Missing Inventory
+        missingInventories.forEach(locCode => {
+            html += `
+                <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #fecdd3; font-size:12px; display:flex; align-items:center; gap:8px;">
+                    <span>⏰</span>
+                    <div style="color:var(--black-night); flex:1;">
+                        <b>${getLocatieLabel(locCode)}</b>: Inventarul de azi nu este completat (trecut de ora de închidere)
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        radarEl.innerHTML = html;
     }
 
     async function openPulsLocationDetail(locCode) {
