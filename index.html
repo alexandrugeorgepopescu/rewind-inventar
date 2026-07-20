@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=6.3')
+          navigator.serviceWorker.register('sw.js?v=6.7')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v6.3 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v6.7 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -980,7 +980,14 @@
         <div id="ghid-sec-notite" class="hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h4 style="margin: 0; color: var(--black-night);">Notițe de Tură</h4>
-                <span id="notite-locatie-title" style="font-size: 13px; font-weight: bold; color: #7332e6;"></span>
+                <div style="display: inline-flex; align-items: center; gap: 4px; background: var(--alb-cald); border: 1px solid var(--yellow-coffee); border-radius: 20px; padding: 4px 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                    <span style="font-size: 13px;">📍</span>
+                    <select id="select-notite-locatie" onchange="onNotiteLocatieChange(this.value)" style="border: none; background: transparent; font-size: 13px; font-weight: bold; color: var(--black-night); outline: none; cursor: pointer; padding: 2px 0;">
+                        <option value="Miroslava">Miroslava</option>
+                        <option value="Pacurari">Kaufland Păcurari</option>
+                        <option value="Alexandru">Kaufland Alexandru</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Card Adăugare Notiță -->
@@ -1071,6 +1078,16 @@
     // Auth variables
     let currentUser = null;
     let allAngajati = [];
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
     // Inițializare
     document.addEventListener('DOMContentLoaded', async () => {
@@ -2324,17 +2341,58 @@
     let notiteTuraActive = [];
     let notiteTuraRezolvate = [];
 
+    function normalizeLocatieCode(loc) {
+        if (!loc) return '';
+        const l = String(loc).trim();
+        if (l.includes('Miroslava')) return 'Miroslava';
+        if (l.includes('Pacurari') || l.includes('Păcurari')) return 'Pacurari';
+        if (l.includes('Alexandru')) return 'Alexandru';
+        return l;
+    }
+
+    function getLocatieVariants(loc) {
+        const norm = normalizeLocatieCode(loc);
+        if (norm === 'Pacurari') return ['Pacurari', 'Kaufland Păcurari', 'Kaufland Pacurari', 'Păcurari'];
+        if (norm === 'Alexandru') return ['Alexandru', 'Kaufland Alexandru'];
+        if (norm === 'Miroslava') return ['Miroslava'];
+        return [loc, norm].filter(Boolean);
+    }
+
+    function getLocatieLabel(loc) {
+        const norm = normalizeLocatieCode(loc);
+        if (norm === 'Pacurari') return 'Kaufland Păcurari';
+        if (norm === 'Alexandru') return 'Kaufland Alexandru';
+        if (norm === 'Miroslava') return 'Miroslava';
+        return loc;
+    }
+
+    function onNotiteLocatieChange(newLoc) {
+        currentLocation = normalizeLocatieCode(newLoc);
+        localStorage.setItem('rewind_location', currentLocation);
+
+        const headerSelect = document.getElementById('select-locatie');
+        if (headerSelect) headerSelect.value = currentLocation;
+
+        const destSelect = document.getElementById('notita-destinatie-locatie');
+        if (destSelect) destSelect.value = currentLocation;
+
+        fetchNotiteTura();
+    }
+
     async function checkUnreadNotiteBadge() {
         const badge = document.getElementById('badge-notite-unread');
         if (!badge) return;
 
-        const loc = currentLocation || localStorage.getItem('rewind_location');
+        const rawLoc = currentLocation || localStorage.getItem('rewind_location');
+        const loc = normalizeLocatieCode(rawLoc);
         if (!loc) return;
+
+        const variants = getLocatieVariants(loc);
 
         const { count, error } = await supabaseClient
             .from('notite_tura')
             .select('id', { count: 'exact', head: true })
-            .eq('locatie', loc)
+            .in('locatie', variants)
             .eq('status', 'activa');
 
         if (!error && count > 0) {
@@ -2346,9 +2404,13 @@
     }
 
     async function fetchNotiteTura() {
-        const loc = currentLocation || localStorage.getItem('rewind_location');
-        const locTitle = document.getElementById('notite-locatie-title');
-        if (locTitle) locTitle.textContent = loc ? `📍 ${loc}` : '';
+        const rawLoc = currentLocation || localStorage.getItem('rewind_location');
+        const loc = normalizeLocatieCode(rawLoc);
+        
+        const pinSelect = document.getElementById('select-notite-locatie');
+        if (pinSelect && loc) {
+            pinSelect.value = loc;
+        }
 
         const destLocSelect = document.getElementById('notita-destinatie-locatie');
         if (destLocSelect && loc) {
@@ -2368,19 +2430,22 @@
             return;
         }
 
+        const variants = getLocatieVariants(loc);
+
         const { data, error } = await supabaseClient
             .from('notite_tura')
             .select('*')
-            .eq('locatie', loc)
+            .in('locatie', variants)
             .order('created_at', { ascending: false });
 
         if (loader) loader.classList.add('hidden');
 
         if (error) {
-            if (activeContainer) activeContainer.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea notițelor. Asigură-te că tabelul notite_tura există.</p>';
+            if (activeContainer) activeContainer.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea notițelor.</p>';
             return;
         }
 
+        // FĂRĂ EXPIRARE DE TIMP! Toate notițele active rămân VIZIBILE pe ecran până se apasă "Rezolvat"
         notiteTuraActive = (data || []).filter(n => n.status === 'activa');
         notiteTuraRezolvate = (data || []).filter(n => n.status === 'rezolvata').slice(0, 10);
 
@@ -2433,7 +2498,8 @@
         const textInput = document.getElementById('input-notita-text');
         const text = textInput ? textInput.value.trim() : '';
         const destLocSelect = document.getElementById('notita-destinatie-locatie');
-        const targetLoc = destLocSelect ? destLocSelect.value : (currentLocation || localStorage.getItem('rewind_location'));
+        const rawTargetLoc = destLocSelect ? destLocSelect.value : (currentLocation || localStorage.getItem('rewind_location'));
+        const targetLoc = normalizeLocatieCode(rawTargetLoc);
         const autor = operatorName || localStorage.getItem('rewind_user_nume') || 'Anonim';
 
         if (!text) return alert("Te rugăm să scrii textul notiței!");
@@ -2442,6 +2508,7 @@
         const btn = document.getElementById('btn-salveaza-notita');
         if (btn) { btn.disabled = true; btn.textContent = "Se salvează..."; }
 
+        // Salvăm întotdeauna valoarea scurtă standardizată (Pacurari, Alexandru, Miroslava)
         const { error } = await supabaseClient
             .from('notite_tura')
             .insert({
@@ -2457,6 +2524,12 @@
             alert("Eroare la salvarea notiței: " + error.message);
         } else {
             if (textInput) textInput.value = '';
+            // Sincronizăm locația vizualizată pe locația pentru care s-a adăugat notița
+            currentLocation = targetLoc;
+            localStorage.setItem('rewind_location', currentLocation);
+            const locSelectHeader = document.getElementById('select-locatie');
+            if (locSelectHeader) locSelectHeader.value = currentLocation;
+            
             fetchNotiteTura();
         }
     }
@@ -2491,7 +2564,7 @@
 
         let query = supabaseClient.from('notite_tura').select('*').order('created_at', { ascending: false });
 
-        if (loc !== 'Toate') query = query.eq('locatie', loc);
+        if (loc !== 'Toate') query = query.in('locatie', getLocatieVariants(loc));
         if (status !== 'Toate') query = query.eq('status', status);
 
         const { data, error } = await query;
