@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=6.7')
+          navigator.serviceWorker.register('sw.js?v=7.0')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v6.7 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v7.0 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -859,44 +859,73 @@
                 <div id="admin-notite-list"></div>
             </div>
 
-            <!-- SECTIUNE: DASHBOARD OWNER -->
+            <!-- SECTIUNE: DASHBOARD OWNER (PULS REWIND v7.0) -->
             <div id="admin-sec-dashboard-owner" class="hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--cloud-dancer); padding-bottom: 8px;">
-                    <h3 style="margin: 0; color: var(--black-night);"> Dashboard Panou de Control</h3>
-                    <button class="btn-secondary" onclick="loadOwnerDashboard()" style="margin:0; padding:6px 12px; font-size:12px;"> Actualizează</button>
+                    <div>
+                        <h3 style="margin: 0; color: #7332e6; font-family: 'DJ Forma', 'Montserrat', sans-serif; font-weight: 900; letter-spacing: 1px;">PULS REWIND</h3>
+                        <div id="puls-timestamp" style="font-size: 11px; color: var(--gray-text);">actualizat la --:--</div>
+                    </div>
+                    <button class="btn-secondary" onclick="loadOwnerDashboard()" style="margin:0; padding:6px 14px; font-size:12px; font-weight:bold;">Actualizează</button>
                 </div>
 
-                <div id="owner-dash-loader" class="loader hidden">Se încarcă datele panoului...</div>
-
-                <!-- CARD 1: FACTURI LUNA CURENTĂ -->
-                <div class="admin-product" style="border: 2px solid var(--yellow-coffee); margin-bottom: 20px; background: white;">
-                    <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--black-night); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                        <span> Facturi Luna Curentă</span>
-                        <span id="dash-facturi-total" style="font-size: 16px; font-weight: bold; color: #7332e6;">0 LEI</span>
-                    </h4>
-                    <div id="dash-facturi-breakdown" style="font-size: 13px;"></div>
+                <!-- 1. HERO: STAREA DE AZI (3 CARDURI SEMAFOR) -->
+                <div style="margin-bottom: 22px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">1. Starea de azi</h4>
+                    <div id="puls-hero-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+                        <div class="loader">Se încarcă starea locațiilor...</div>
+                    </div>
                 </div>
 
-                <!-- CARD 2: CONSUM AGREGAT (ULTIMELE 7 ZILE) -->
+                <!-- 2. ASTĂZI ÎN CIFRE (KPI-URI COMPACTE) -->
+                <div style="margin-bottom: 22px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">2. Astăzi în cifre</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+                        <!-- KPI 1: CONSUM AZI TOP 5 -->
+                        <div class="admin-product" onclick="openConsumZilnicFromPuls()" style="border: 2px solid var(--yellow-coffee); background: white; cursor: pointer;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h5 style="margin: 0; font-size: 13px; color: var(--black-night); font-weight: bold;">Top 5 Consum Azi</h5>
+                                <span style="font-size: 11px; color: #7332e6; font-weight: bold;">Consum Zilnic ➔</span>
+                            </div>
+                            <div id="puls-kpi-consum-list" style="font-size: 12px;">
+                                <div class="loader">Se încarcă...</div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 2: LAPTE MONOR -->
+                        <div class="admin-product" style="border: 2px solid #cbd5e1; background: white;">
+                            <h5 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: bold;">Stoc Lapte Monor</h5>
+                            <div id="puls-kpi-monor-list" style="font-size: 12px;">
+                                <div class="loader">Se încarcă...</div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 3: PROCEDURI AZI -->
+                        <div class="admin-product" style="border: 2px solid #cbd5e1; background: white;">
+                            <h5 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: bold;">Proceduri Azi</h5>
+                            <div id="puls-kpi-proceduri-list" style="font-size: 12px;">
+                                <div class="loader">Se încarcă...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. RADAR (ALERTE ÎN TIMP REAL) -->
+                <div style="margin-bottom: 22px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--black-night); font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">3. Radar Alerte</h4>
+                    <div id="puls-radar-container" class="admin-product" style="border: 2px solid #fecdd3; background: #fff5f5; padding: 14px;">
+                        <div class="loader">Se verifică alertele...</div>
+                    </div>
+                </div>
+
+                <!-- 4. ORE LUCRATE LUNA CURENTĂ (PÂNĂ AZI STRICT) -->
                 <div class="admin-product" style="border: 2px solid #cbd5e1; margin-bottom: 20px; background: white;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                        <h4 style="margin: 0; color: var(--black-night);"> Top 10 Consum (Ultimele 7 Zile)</h4>
-                        <select id="dash-consum-locatie" onchange="renderOwnerDashboardConsum()" style="margin: 0; font-size: 12px; padding: 4px 8px; width: auto;">
-                            <option value="Toate">Toate locațiile</option>
-                            <option value="Miroslava">Miroslava</option>
-                            <option value="Pacurari">Kaufland Păcurari</option>
-                            <option value="Alexandru">Kaufland Alexandru</option>
-                        </select>
+                        <h4 style="margin: 0; color: var(--black-night);">Ore Lucrate Luna Curentă (până azi inclusiv)</h4>
                     </div>
-                    <div id="dash-consum-list" style="font-size: 13px;"></div>
-                </div>
-
-                <!-- CARD 3: ORE LUCRATE LUNA CURENTĂ -->
-                <div class="admin-product" style="border: 2px solid #cbd5e1; margin-bottom: 20px; background: white;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                        <h4 style="margin: 0; color: var(--black-night);">Ore Lucrate Luna Curentă</h4>
+                    <div id="dash-ore-list" style="font-size: 13px;">
+                        <div class="loader">Se calculează orele...</div>
                     </div>
-                    <div id="dash-ore-list" style="font-size: 13px;"></div>
                 </div>
             </div>
         </div>
@@ -2608,170 +2637,482 @@
     document.getElementById('btn-salveaza-notita').addEventListener('click', adaugaNotitaTura);
 
     // ==========================================
-    // DASHBOARD OWNER (PANOU DE CONTROL)
+    // DASHBOARD OWNER (PULS REWIND v7.0 — ETAPA 1)
     // ==========================================
 
-    let ownerDashLogs7Days = [];
-
     async function loadOwnerDashboard() {
-        const loader = document.getElementById('owner-dash-loader');
-        if (loader) loader.classList.remove('hidden');
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+        const tsEl = document.getElementById('puls-timestamp');
+        if (tsEl) tsEl.textContent = 'actualizat la ' + timeStr;
 
-        await Promise.all([
-            loadOwnerDashboardFacturi(),
-            loadOwnerDashboardConsumData(),
+        await Promise.allSettled([
+            loadPulsHero(),
+            loadPulsKpi(),
+            loadPulsRadar(),
             loadOwnerDashboardOre()
         ]);
-
-        if (loader) loader.classList.add('hidden');
     }
 
-    async function loadOwnerDashboardFacturi() {
-        const totalEl = document.getElementById('dash-facturi-total');
-        const breakdownEl = document.getElementById('dash-facturi-breakdown');
+    async function loadPulsHero() {
+        const heroEl = document.getElementById('puls-hero-cards');
+        if (!heroEl) return;
 
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        const todayStr = new Date().toISOString().split('T')[0];
 
-        const { data, error } = await supabaseClient
-            .from('facturi')
-            .select('furnizor, valoare, created_at')
-            .gte('created_at', startOfMonth)
-            .lte('created_at', endOfMonth);
+        const [resProduse, resProgram, resNotite, resLogs] = await Promise.all([
+            supabaseClient.from('produse').select('id, nume, unitate, prag_minim, prag_galben, locatii').eq('activ', true),
+            supabaseClient.from('program_zile').select('angajat_nume, locatie, ora_start, ora_sfarsit').eq('data', todayStr),
+            supabaseClient.from('notite_tura').select('id, locatie, text, autor').eq('status', 'activa'),
+            supabaseClient.from('inventar_log').select('produs_id, locatie, stoc, data').order('created_at', { ascending: false }).limit(300)
+        ]);
 
-        if (error || !data) {
-            if (totalEl) totalEl.textContent = '0 LEI';
-            if (breakdownEl) breakdownEl.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare încărcare facturi.</p>';
-            return;
-        }
+        const produse = resProduse.data || [];
+        const programAzi = resProgram.data || [];
+        const notiteActive = resNotite.data || [];
+        const logs = resLogs.data || [];
 
-        let total = 0;
-        const furnizorMap = {};
-
-        data.forEach(f => {
-            const val = parseFloat(f.valoare) || 0;
-            total += val;
-            furnizorMap[f.furnizor] = (furnizorMap[f.furnizor] || 0) + val;
-        });
-
-        if (totalEl) totalEl.textContent = `${total.toLocaleString('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} LEI`;
-
-        const sortedFurnizori = Object.entries(furnizorMap).sort((a, b) => b[1] - a[1]);
-
-        if (sortedFurnizori.length === 0) {
-            if (breakdownEl) breakdownEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; padding:10px;">Nu există facturi cu valoare înregistrate în luna curentă.</p>';
-            return;
-        }
-
-        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
-        sortedFurnizori.forEach(([furnizor, suma]) => {
-            const pct = total > 0 ? Math.round((suma / total) * 100) : 0;
-            html += `
-                <div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                        <span style="font-weight:bold;">${escapeHtml(furnizor)}</span>
-                        <span><b>${suma.toLocaleString('ro-RO')} LEI</b> <small style="color:var(--gray-text);">(${pct}%)</small></span>
-                    </div>
-                    <div style="background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden;">
-                        <div style="background:#7332e6; width:${pct}%; height:100%;"></div>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-
-        if (breakdownEl) breakdownEl.innerHTML = html;
-    }
-
-    async function loadOwnerDashboardConsumData() {
-        const d = new Date();
-        d.setDate(d.getDate() - 7);
-        const date7DaysAgoStr = d.toISOString().split('T')[0];
-
-        const { data, error } = await supabaseClient
-            .from('inventar_log')
-            .select('*')
-            .gte('data', date7DaysAgoStr)
-            .order('data', { ascending: true });
-
-        if (!error && data) {
-            ownerDashLogs7Days = data;
-        } else {
-            ownerDashLogs7Days = [];
-        }
-
-        renderOwnerDashboardConsum();
-    }
-
-    function renderOwnerDashboardConsum() {
-        const listEl = document.getElementById('dash-consum-list');
-        const locSelect = document.getElementById('dash-consum-locatie');
-        const loc = locSelect ? locSelect.value : 'Toate';
-        if (!listEl) return;
-
-        let logs = ownerDashLogs7Days;
-        if (loc !== 'Toate') {
-            logs = logs.filter(l => l.locatie === loc);
-        }
-
-        const logsByProdLocDate = {};
+        const latestStocMap = {};
         logs.forEach(l => {
-            const key = `${l.produs_id}_${l.locatie}_${l.data}`;
-            logsByProdLocDate[key] = parseFloat(l.stoc);
+            const key = `${l.produs_id}_${normalizeLocatieCode(l.locatie)}`;
+            if (!(key in latestStocMap)) {
+                latestStocMap[key] = parseFloat(String(l.stoc).replace(',', '.')) || 0;
+            }
         });
 
-        const consumMap = {};
+        const locatiiList = [
+            { code: 'Miroslava', label: 'Miroslava' },
+            { code: 'Pacurari', label: 'Kaufland Păcurari' },
+            { code: 'Alexandru', label: 'Kaufland Alexandru' }
+        ];
 
-        catalogProduse.forEach(p => {
-            const targetLocs = loc === 'Toate' ? p.locatii : [loc];
+        let html = '';
 
-            targetLocs.forEach(l => {
-                let totalConsum = 0;
-                const dates = [...new Set(logs.map(log => log.data))].sort();
+        locatiiList.forEach(locObj => {
+            const locCode = locObj.code;
+            const locLabel = locObj.label;
 
-                for (let i = 1; i < dates.length; i++) {
-                    const dPrev = dates[i - 1];
-                    const dCrt = dates[i];
-                    const sPrev = logsByProdLocDate[`${p.id}_${l}_${dPrev}`];
-                    const sCrt = logsByProdLocDate[`${p.id}_${l}_${dCrt}`];
+            // Personal în tură azi
+            const staff = programAzi.filter(p => normalizeLocatieCode(p.locatie) === locCode);
+            let staffStr = '<span style="color:var(--gray-text);">Fără personal asignat azi</span>';
+            if (staff.length > 0) {
+                staffStr = staff.map(s => {
+                    const start = s.ora_start ? s.ora_start.substring(0, 5) : '';
+                    const end = s.ora_sfarsit ? s.ora_sfarsit.substring(0, 5) : '';
+                    const hours = (start && end) ? ` (${start}-${end})` : '';
+                    return `<b>${escapeHtml(s.angajat_nume)}</b>${hours}`;
+                }).join(', ');
+            }
 
-                    if (sPrev !== undefined && sCrt !== undefined) {
-                        const diff = sPrev - sCrt;
-                        if (diff > 0) {
-                            totalConsum += diff;
-                        }
+            // Semafor stoc: stoc < prag_minim (Roșu), stoc < prag_galben && stoc >= prag_minim (Galben)
+            let criticeCount = 0;
+            let atentionariCount = 0;
+            const locProduse = produse.filter(p => p.locatii && p.locatii.includes(locCode));
+
+            locProduse.forEach(p => {
+                const stocVal = latestStocMap[`${p.id}_${locCode}`];
+                if (stocVal !== undefined) {
+                    const minPrag = parseFloat(p.prag_minim) || 0;
+                    const galbenPrag = parseFloat(p.prag_galben) || 0;
+
+                    if (stocVal < minPrag) {
+                        criticeCount++;
+                    } else if (galbenPrag > 0 && stocVal < galbenPrag) {
+                        atentionariCount++;
                     }
-                }
-
-                if (totalConsum > 0) {
-                    if (!consumMap[p.id]) {
-                        consumMap[p.id] = { nume: p.nume, unitate: p.unitate || 'buc', total: 0 };
-                    }
-                    consumMap[p.id].total += totalConsum;
                 }
             });
-        });
 
-        const topList = Object.values(consumMap).sort((a, b) => b.total - a.total).slice(0, 10);
+            const locNotite = notiteActive.filter(n => normalizeLocatieCode(n.locatie) === locCode);
+            const notiteCount = locNotite.length;
 
-        if (topList.length === 0) {
-            listEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; padding:10px;">Nu există date de consum înregistrate în ultimele 7 zile.</p>';
-            return;
-        }
+            let borderStyle = '2px solid #22c55e';
+            let bgStyle = '#f0fdf4';
+            let statusBadge = '<span style="background:#dcfce7; color:#15803d; font-weight:bold; font-size:11px; padding:2px 8px; border-radius:10px;">🟢 Stoc OK</span>';
 
-        let html = '<div style="display:flex; flex-direction:column; gap:6px;">';
-        topList.forEach((item, idx) => {
+            if (criticeCount > 0) {
+                borderStyle = '2px solid #ef4444';
+                bgStyle = '#fef2f2';
+                statusBadge = `<span style="background:#fee2e2; color:#b91c1c; font-weight:bold; font-size:11px; padding:2px 8px; border-radius:10px;">🔴 ${criticeCount} critice</span>`;
+            } else if (atentionariCount > 0) {
+                borderStyle = '2px solid #f59e0b';
+                bgStyle = '#fffbeb';
+                statusBadge = `<span style="background:#fef3c7; color:#b45309; font-weight:bold; font-size:11px; padding:2px 8px; border-radius:10px;">🟡 ${atentionariCount} atenționări</span>`;
+            }
+
             html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
-                    <span><b>#${idx + 1}</b> ${escapeHtml(item.nume)}</span>
-                    <span style="font-weight:bold; background:#fef08a; padding:2px 8px; border-radius:10px; font-size:12px;">${item.total} ${item.unitate}</span>
+                <div onclick="openPulsLocationDetail('${locCode}')" style="background: ${bgStyle}; border: ${borderStyle}; border-radius: 12px; padding: 14px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 style="margin: 0; font-weight: bold; font-size: 15px; color: var(--black-night);">${escapeHtml(locLabel)}</h4>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            ${statusBadge}
+                            ${notiteCount > 0 ? `<span style="background:#e11d48; color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:10px;">🔴 ${notiteCount}</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--black-night); margin-bottom: 6px;">
+                        ${staffStr}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--gray-text); margin-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 6px;">
+                        <span>Tap pentru detalii stoc & notițe ➔</span>
+                    </div>
                 </div>
             `;
         });
-        html += '</div>';
 
-        listEl.innerHTML = html;
+        heroEl.innerHTML = html;
+    }
+
+    function openConsumZilnicFromPuls() {
+        const container = document.getElementById('centralizator-consum-container');
+        if (container) {
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+            if (typeof incarcaConsumZilnic === 'function') incarcaConsumZilnic();
+        }
+    }
+
+    async function loadPulsKpi() {
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        const consumEl = document.getElementById('puls-kpi-consum-list');
+        const monorEl = document.getElementById('puls-kpi-monor-list');
+        const procEl = document.getElementById('puls-kpi-proceduri-list');
+
+        const [resInvLogs, resMonor, resBifari] = await Promise.all([
+            supabaseClient.from('inventar_log').select('*').order('created_at', { ascending: false }).limit(400),
+            supabaseClient.from('inventar_log').select('*').order('created_at', { ascending: false }).limit(50),
+            supabaseClient.from('proceduri_bifari').select('locatie, checklist_id').eq('data', todayStr)
+        ]);
+
+        // KPI 1: Top 5 Consum Azi
+        const logs = resInvLogs.data || [];
+        const logsToday = logs.filter(l => l.data === todayStr);
+
+        if (logsToday.length === 0) {
+            if (consumEl) consumEl.innerHTML = '<p style="color:var(--gray-text); text-align:center;">Niciun inventar completat azi încă.</p>';
+        } else {
+            const prodConsumMap = {};
+            logsToday.forEach(l => {
+                const p = catalogProduse.find(cp => cp.id === l.produs_id);
+                const nume = p ? p.nume : `Produs #${l.produs_id}`;
+                const unitate = p ? (p.unitate || 'buc') : 'buc';
+                if (!prodConsumMap[l.produs_id]) {
+                    prodConsumMap[l.produs_id] = { nume, unitate, stoc: parseFloat(String(l.stoc).replace(',', '.')) || 0 };
+                }
+            });
+
+            const top5 = Object.values(prodConsumMap).slice(0, 5);
+            let html = '<div style="display:flex; flex-direction:column; gap:4px;">';
+            top5.forEach((item, idx) => {
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span><b>#${idx+1}</b> ${escapeHtml(item.nume)}</span>
+                        <span style="font-weight:bold; background:#fef08a; padding:1px 6px; border-radius:8px; font-size:11px;">${item.stoc} ${item.unitate}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            if (consumEl) consumEl.innerHTML = html;
+        }
+
+        // KPI 2: Lapte Monor Status
+        const monorLogs = (resMonor.data || []).filter(l => {
+            const p = catalogProduse.find(cp => cp.id === l.produs_id);
+            return p && p.nume && p.nume.toLowerCase().includes('monor');
+        });
+
+        const monorLocMap = { Miroslava: null, Pacurari: null, Alexandru: null };
+        monorLogs.forEach(l => {
+            const locCode = normalizeLocatieCode(l.locatie);
+            if (monorLocMap[locCode] === null) {
+                monorLocMap[locCode] = parseFloat(String(l.stoc).replace(',', '.')) || 0;
+            }
+        });
+
+        let monorHtml = '<div style="display:flex; flex-direction:column; gap:6px;">';
+        const locLabels = { Miroslava: 'Miroslava', Pacurari: 'Păcurari', Alexandru: 'Alexandru' };
+
+        Object.keys(locLabels).forEach(locCode => {
+            const val = monorLocMap[locCode];
+            let badge = '<span style="color:var(--gray-text);">fără date azi</span>';
+            if (val !== null) {
+                if (val < 10) {
+                    badge = `<span style="background:#fee2e2; color:#b91c1c; font-weight:bold; padding:1px 6px; border-radius:8px;">🔴 ${val} L</span>`;
+                } else if (val < 20) {
+                    badge = `<span style="background:#fef3c7; color:#b45309; font-weight:bold; padding:1px 6px; border-radius:8px;">🟡 ${val} L</span>`;
+                } else {
+                    badge = `<span style="background:#dcfce7; color:#15803d; font-weight:bold; padding:1px 6px; border-radius:8px;">🟢 ${val} L</span>`;
+                }
+            }
+
+            monorHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${locLabels[locCode]}</b></span>
+                    ${badge}
+                </div>
+            `;
+        });
+        monorHtml += '</div>';
+        if (monorEl) monorEl.innerHTML = monorHtml;
+
+        // KPI 3: Proceduri Azi
+        const bifariToday = resBifari.data || [];
+        let procHtml = '<div style="display:flex; flex-direction:column; gap:6px;">';
+        Object.keys(locLabels).forEach(locCode => {
+            const bifariLoc = bifariToday.filter(b => normalizeLocatieCode(b.locatie) === locCode);
+            const count = bifariLoc.length;
+            const badge = count > 0 
+                ? `<span style="background:#dcfce7; color:#15803d; font-weight:bold; padding:1px 6px; border-radius:8px;">✓ ${count} bifate</span>`
+                : `<span style="background:#f1f5f9; color:var(--gray-text); padding:1px 6px; border-radius:8px;">0 bifate</span>`;
+
+            procHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${locLabels[locCode]}</b></span>
+                    ${badge}
+                </div>
+            `;
+        });
+        procHtml += '</div>';
+        if (procEl) procEl.innerHTML = procHtml;
+    }
+
+    async function loadPulsRadar() {
+        const radarEl = document.getElementById('puls-radar-container');
+        if (!radarEl) return;
+
+        const alerts = [];
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+
+        const [resProduse, resLogs, resNotite, resProgram] = await Promise.all([
+            supabaseClient.from('produse').select('id, nume, unitate, prag_minim, locatii').eq('activ', true),
+            supabaseClient.from('inventar_log').select('produs_id, locatie, stoc, data').order('created_at', { ascending: false }).limit(300),
+            supabaseClient.from('notite_tura').select('*').eq('status', 'activa'),
+            supabaseClient.from('program_zile').select('locatie, data').gte('data', todayStr)
+        ]);
+
+        const produse = resProduse.data || [];
+        const logs = resLogs.data || [];
+        const notite = resNotite.data || [];
+        const program = resProgram.data || [];
+
+        // Radar 1: Produse sub prag critic STRICT (stoc < prag_minim)
+        const latestStocMap = {};
+        logs.forEach(l => {
+            const key = `${l.produs_id}_${normalizeLocatieCode(l.locatie)}`;
+            if (!(key in latestStocMap)) {
+                latestStocMap[key] = parseFloat(String(l.stoc).replace(',', '.')) || 0;
+            }
+        });
+
+        produse.forEach(p => {
+            const minPrag = parseFloat(p.prag_minim) || 0;
+            if (minPrag > 0 && p.locatii) {
+                p.locatii.forEach(locCode => {
+                    const stocVal = latestStocMap[`${p.id}_${locCode}`];
+                    if (stocVal !== undefined && stocVal < minPrag) {
+                        alerts.push({
+                            type: 'critical_stock',
+                            icon: '🔴',
+                            text: `<b>${getLocatieLabel(locCode)}</b>: ${escapeHtml(p.nume)} e sub prag critic (${stocVal} ${p.unitate || 'buc'} / prag: ${minPrag})`
+                        });
+                    }
+                });
+            }
+        });
+
+        // Radar 2: Notițe nerezolvate >24h
+        const h24Ago = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        notite.forEach(n => {
+            const created = new Date(n.created_at);
+            if (created < h24Ago) {
+                const hoursOld = Math.round((now - created) / (1000 * 60 * 60));
+                alerts.push({
+                    type: 'old_note',
+                    icon: '📌',
+                    text: `<b>${getLocatieLabel(n.locatie)}</b>: Notiță nerezolvată de ${hoursOld}h ("${escapeHtml(n.text.substring(0, 30))}...")`
+                });
+            }
+        });
+
+        // Radar 3: Găuri de program în următoarele 7 zile
+        const locatiiList = ['Miroslava', 'Pacurari', 'Alexandru'];
+        for (let i = 1; i <= 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const dateStr = d.toISOString().split('T')[0];
+            const dateLabel = d.toLocaleDateString('ro-RO', { weekday: 'short', day: '2-digit', month: '2-digit' });
+
+            locatiiList.forEach(locCode => {
+                const hasStaff = program.some(p => p.data === dateStr && normalizeLocatieCode(p.locatie) === locCode);
+                if (!hasStaff) {
+                    alerts.push({
+                        type: 'schedule_gap',
+                        icon: '📅',
+                        text: `<b>${getLocatieLabel(locCode)}</b> neacoperită ${dateLabel} (fără personal asignat)`
+                    });
+                }
+            });
+        }
+
+        // Radar 4: Inventar nefinalizat azi după ora de închidere per locație
+        const curHour = now.getHours();
+        const curMin = now.getMinutes();
+        const curTimeMinutes = curHour * 60 + curMin;
+
+        const closingTimes = {
+            Alexandru: 16 * 60 + 30, // 16:30
+            Pacurari: 18 * 60 + 30,  // 18:30
+            Miroslava: 21 * 60       // 21:00
+        };
+
+        locatiiList.forEach(locCode => {
+            const closeMin = closingTimes[locCode];
+            if (curTimeMinutes > closeMin) {
+                const hasInvToday = logs.some(l => l.data === todayStr && normalizeLocatieCode(l.locatie) === locCode);
+                if (!hasInvToday) {
+                    alerts.push({
+                        type: 'missing_inventory',
+                        icon: '⏰',
+                        text: `<b>${getLocatieLabel(locCode)}</b>: Inventarul de azi nu este completat (trecut de ora de închidere)`
+                    });
+                }
+            }
+        });
+
+        // Afișare alerte Radar
+        if (alerts.length === 0) {
+            radarEl.style.border = '2px solid #bbf7d0';
+            radarEl.style.background = '#f0fdf4';
+            radarEl.innerHTML = `
+                <div style="text-align:center; color:#15803d; font-weight:bold; font-size:14px; padding:6px 0;">
+                    Totul în parametri ✓
+                    <div style="font-size:12px; font-weight:normal; color:var(--gray-text); margin-top:2px;">Nicio alertă activă pe stocuri, program sau notițe.</div>
+                </div>
+            `;
+        } else {
+            radarEl.style.border = '2px solid #fecdd3';
+            radarEl.style.background = '#fff5f5';
+            let html = `<div style="font-size:12px; font-weight:bold; color:#b91c1c; margin-bottom:8px;">${alerts.length} alerte ce necesită atenție:</div>`;
+            html += '<div style="display:flex; flex-direction:column; gap:6px;">';
+            alerts.forEach(a => {
+                html += `
+                    <div style="display:flex; align-items:center; gap:8px; background:white; padding:8px 10px; border-radius:8px; border:1px solid #fecdd3; font-size:12px;">
+                        <span>${a.icon}</span>
+                        <span style="color:var(--black-night); flex:1;">${a.text}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            radarEl.innerHTML = html;
+        }
+    }
+
+    async function openPulsLocationDetail(locCode) {
+        let modal = document.getElementById('modal-puls-detalii');
+        if (!modal) {
+            const modalDiv = document.createElement('div');
+            modalDiv.id = 'modal-puls-detalii';
+            modalDiv.className = 'modal hidden';
+            modalDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; justify-content: center; align-items: center;';
+            modalDiv.innerHTML = `
+                <div style="background: white; border-radius: 16px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--cloud-dancer); padding-bottom: 10px;">
+                        <h3 id="modal-puls-detalii-titlu" style="margin: 0; color: var(--black-night);">Detalii Locație</h3>
+                        <button onclick="closePulsDetailModal()" style="background: var(--cloud-dancer); border: none; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; cursor: pointer;">✕</button>
+                    </div>
+                    <div id="modal-puls-detalii-content"></div>
+                </div>
+            `;
+            document.body.appendChild(modalDiv);
+            modal = modalDiv;
+        }
+
+        const titlu = document.getElementById('modal-puls-detalii-titlu');
+        const content = document.getElementById('modal-puls-detalii-content');
+
+        if (titlu) titlu.textContent = `📍 ${getLocatieLabel(locCode)}`;
+        if (content) content.innerHTML = '<div class="loader">Se încarcă detaliile...</div>';
+        modal.classList.remove('hidden');
+
+        const [resProduse, resLogs, resNotite] = await Promise.all([
+            supabaseClient.from('produse').select('id, nume, unitate, prag_minim, prag_galben, locatii').eq('activ', true),
+            supabaseClient.from('inventar_log').select('produs_id, locatie, stoc, data').order('created_at', { ascending: false }).limit(300),
+            supabaseClient.from('notite_tura').select('*').eq('status', 'activa')
+        ]);
+
+        const produse = resProduse.data || [];
+        const logs = resLogs.data || [];
+        const notite = resNotite.data || [];
+
+        const latestStocMap = {};
+        logs.forEach(l => {
+            const key = `${l.produs_id}_${normalizeLocatieCode(l.locatie)}`;
+            if (!(key in latestStocMap)) {
+                latestStocMap[key] = parseFloat(String(l.stoc).replace(',', '.')) || 0;
+            }
+        });
+
+        const locProduse = produse.filter(p => p.locatii && p.locatii.includes(locCode));
+        const subPrag = [];
+
+        locProduse.forEach(p => {
+            const stocVal = latestStocMap[`${p.id}_${locCode}`];
+            if (stocVal !== undefined) {
+                const minPrag = parseFloat(p.prag_minim) || 0;
+                const galbenPrag = parseFloat(p.prag_galben) || 0;
+                if (stocVal < minPrag) {
+                    subPrag.push({ nume: p.nume, stoc: stocVal, unitate: p.unitate || 'buc', prag: minPrag, tip: 'critic' });
+                } else if (galbenPrag > 0 && stocVal < galbenPrag) {
+                    subPrag.push({ nume: p.nume, stoc: stocVal, unitate: p.unitate || 'buc', prag: galbenPrag, tip: 'galben' });
+                }
+            }
+        });
+
+        const locNotite = notite.filter(n => normalizeLocatieCode(n.locatie) === locCode);
+
+        let html = '';
+
+        html += '<h4 style="margin:0 0 10px 0; font-size:13px; color:var(--black-night);">Produse sub prag</h4>';
+        if (subPrag.length === 0) {
+            html += '<p style="color:var(--success); font-size:12px; background:#dcfce7; padding:8px; border-radius:8px; text-align:center;">🟢 Niciun produs sub prag la această locație.</p>';
+        } else {
+            html += '<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:15px;">';
+            subPrag.forEach(item => {
+                const isRed = item.tip === 'critic';
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:${isRed ? '#fef2f2' : '#fffbeb'}; border:1px solid ${isRed ? '#fecdd3' : '#fef3c7'}; padding:8px 10px; border-radius:8px; font-size:12px;">
+                        <span><b>${escapeHtml(item.nume)}</b></span>
+                        <span style="font-weight:bold; color:${isRed ? '#b91c1c' : '#b45309'};">${item.stoc} ${item.unitate} (prag: ${item.prag})</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '<h4 style="margin:15px 0 10px 0; font-size:13px; color:var(--black-night);">Notițe Active Nerezolvate</h4>';
+        if (locNotite.length === 0) {
+            html += '<p style="color:var(--gray-text); font-size:12px; text-align:center;">Nicio notiță activă la această locație.</p>';
+        } else {
+            html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+            locNotite.forEach(n => {
+                const dateStr = new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                html += `
+                    <div style="background:#fff; border-left:4px solid #e11d48; padding:10px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.05); font-size:12px;">
+                        <div style="font-weight:bold; color:var(--black-night); margin-bottom:4px;">${escapeHtml(n.text)}</div>
+                        <div style="font-size:11px; color:var(--gray-text);">De la <b>${escapeHtml(n.autor)}</b> • ${dateStr}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        if (content) content.innerHTML = html;
+    }
+
+    function closePulsDetailModal() {
+        const modal = document.getElementById('modal-puls-detalii');
+        if (modal) modal.classList.add('hidden');
     }
 
     async function loadOwnerDashboardOre() {
@@ -2782,14 +3123,14 @@
 
         const now = new Date();
         const startOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const endOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+        // CORECTAT STRICT: lte('data', todayStr) exclude zilele viitoare pre-generate
         const { data, error } = await supabaseClient
             .from('program_zile')
             .select('angajat_id, ora_start, ora_sfarsit, ore_suplimentare')
             .gte('data', startOfMonthStr)
-            .lte('data', endOfMonthStr);
+            .lte('data', todayStr);
 
         if (error || !data) {
             listEl.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare citire ore lucrate.</p>';
