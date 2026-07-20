@@ -8,6 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Syne:wght@800;900&display=swap');
+
         :root {
             --cloud-dancer: #F0EEE9;
             --black-night: #212529;
@@ -16,6 +18,19 @@
             --gray-text: #6c757d;
             --error: #dc3545;
             --success: #198754;
+            --ultraviolet: #7332e6;
+        }
+
+        .screen-header-title {
+            font-family: 'DJ Forma', 'Montserrat', 'Syne', 'Inter', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #7332e6;
+            margin: 0 0 15px 0;
+            text-align: center;
+            display: block;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -403,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=5.7')
+          navigator.serviceWorker.register('sw.js?v=6.3')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -415,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v5.7 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v6.3 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -473,11 +488,12 @@
         <input type="password" id="login-pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN 4 cifre" style="margin-bottom: 20px; text-align: center; letter-spacing: 5px; font-size: 18px;">
         <button id="btn-login" class="btn btn-primary" style="width: 100%;">Intră în cont</button>
         <div id="login-error" style="color: red; margin-top: 15px; display: none;">PIN incorect sau utilizator inexistent!</div>
-        <button id="btn-install-pwa" class="btn-secondary hidden" onclick="installPWA()" style="width: 100%; margin-top: 15px; display: none;">📲 Descarcă Aplicația</button>
+        <button id="btn-install-pwa" class="btn-secondary hidden" onclick="installPWA()" style="width: 100%; margin-top: 15px; display: none;"> Descarcă Aplicația</button>
     </div>
 
     <div id="screen-inventar" class="screen">
         <div class="sticky-top-controls">
+            <h3 class="screen-header-title" style="text-align: center;">STOC</h3>
             <select id="select-locatie">
                 <option value="" disabled selected>Alege locația...</option>
                 <option value="Miroslava">Miroslava</option>
@@ -503,6 +519,7 @@
     
     <!-- ECRAN 2: CENTRALIZATOR -->
     <div id="screen-centralizator" class="screen">
+        <h3 class="screen-header-title" style="text-align: center;">RAPORT</h3>
         <div id="centralizator-monor-container" class="admin-product hidden" style="border: 2px solid var(--cloud-dancer); margin-bottom: 20px;">
             <h4 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                 Stoc Lapte Monor 
@@ -512,10 +529,11 @@
             <div id="monor-stoc-list"></div>
         </div>
 
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button id="btn-genereaza-raport" style="margin:0; flex:1;">Generează Live</button>
-            <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0; flex:1;">Istoric Salvate</button>
-            <button id="btn-centralizator-facturi" class="btn-secondary" style="margin:0; flex:1;">Facturi</button>
+        <div style="display:flex; gap:6px; margin-bottom:15px; flex-wrap:wrap;">
+            <button id="btn-genereaza-raport" style="margin:0; flex:1; min-width:80px; font-size:12px;">Generează Live</button>
+            <button id="btn-istoric-sesiuni" class="btn-secondary" style="margin:0; flex:1; min-width:80px; font-size:12px;">Istoric Salvate</button>
+            <button id="btn-centralizator-facturi" class="btn-secondary" style="margin:0; flex:1; min-width:80px; font-size:12px;">Facturi</button>
+            <button id="btn-centralizator-consum" class="btn-secondary" style="margin:0; flex:1; min-width:80px; font-size:12px; font-weight:bold;"> Consum</button>
         </div>
         <div id="centralizator-loader" class="loader hidden">Se procesează datele...</div>
         
@@ -552,11 +570,12 @@
                 <option value="Lactate Monor">Lactate Monor</option>
                 <option value="Alții">Alții</option>
             </select>
-            <select id="factura-locatie" style="margin-bottom: 15px;">
+            <select id="factura-locatie" style="margin-bottom: 10px;">
                 <option value="Miroslava">Kaufland Miroslava</option>
                 <option value="Pacurari">Kaufland Păcurari</option>
                 <option value="Alexandru">Kaufland Alexandru</option>
             </select>
+            <input type="number" step="0.01" id="factura-valoare" placeholder="Valoare totală factură (lei, opțional)..." style="margin-bottom: 15px;">
             
             <input type="file" id="factura-file" accept="image/*" capture="environment" style="display: none;">
             <button id="btn-adauga-factura" style="background: var(--black-night); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
@@ -572,11 +591,37 @@
                 </div>
             </div>
         </div>
+
+        <!-- SUB-ECRAN CONSUM ZILNIC -->
+        <div id="centralizator-consum-container" class="hidden" style="margin-top: 15px;">
+            <h3 style="text-align: center; margin-bottom: 15px; color: var(--black-night);"> Raport Consum Zilnic</h3>
+            
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                <select id="consum-locatie" style="flex: 1; min-width: 130px; margin:0;">
+                    <option value="Toate">Toate locațiile</option>
+                    <option value="Miroslava">Miroslava</option>
+                    <option value="Pacurari">Kaufland Păcurari</option>
+                    <option value="Alexandru">Kaufland Alexandru</option>
+                </select>
+                <input type="date" id="consum-data" style="flex: 1; min-width: 130px; margin:0;">
+            </div>
+            
+            <input type="text" id="consum-search" placeholder="Caută produs (ex: Pahare, Lapte)..." style="margin-bottom: 12px;">
+
+            <div id="consum-loader" class="loader hidden">Se calculează consumul...</div>
+            
+            <div id="consum-summary-bar" class="hidden" style="background: var(--cloud-dancer); padding: 10px 14px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 8px;">
+                <span id="consum-info-text" style="font-weight: bold; color: var(--black-night);"></span>
+                <button id="btn-whatsapp-consum" style="margin:0; padding:6px 12px; font-size:12px; background:#25D366; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:5px;"> Trimite pe WhatsApp</button>
+            </div>
+
+            <div id="consum-tabel-container"></div>
+        </div>
     </div>
 
     <!-- ECRAN 3: ADMIN -->
     <div id="screen-admin" class="screen">
-        <h2 style="text-align: center; margin-bottom: 20px;">Secțiune Management</h2>
+        <h3 class="screen-header-title" style="text-align: center;">ADMIN</h3>
         
         <div id="admin-dashboard">
             <div class="admin-grid-menu">
@@ -584,6 +629,8 @@
                 <div class="admin-menu-btn" onclick="switchAdminSection('program', this)">Program</div>
                 <div class="admin-menu-btn" onclick="switchAdminSection('salarizare', this)">Salarii</div>
                 <div class="admin-menu-btn" onclick="switchAdminSection('proceduri', this)">Ghid & Proceduri</div>
+                <div class="admin-menu-btn" onclick="switchAdminSection('notite-admin', this)">Notițe Tură</div>
+                <div class="admin-menu-btn" onclick="switchAdminSection('dashboard-owner', this)" style="background:var(--yellow-coffee); color:var(--black-night); font-weight:bold;"> Dashboard Owner</div>
             </div>
             
 
@@ -789,6 +836,69 @@
                     <div id="admin-retete-list" style="margin-top:20px;"></div>
                 </div>
             </div>
+
+            <!-- SECTIUNE: NOTIȚE TURĂ (ADMIN) -->
+            <div id="admin-sec-notite-admin" class="hidden">
+                <h4 style="margin-top:0; margin-bottom:15px; border-bottom:2px solid var(--cloud-dancer); padding-bottom:8px;">Istoric Notițe de Tură</h4>
+                
+                <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+                    <select id="admin-notite-locatie" style="flex:1; min-width:140px; margin:0;" onchange="loadAdminNotiteTura()">
+                        <option value="Toate">Toate locațiile</option>
+                        <option value="Miroslava">Miroslava</option>
+                        <option value="Pacurari">Kaufland Păcurari</option>
+                        <option value="Alexandru">Kaufland Alexandru</option>
+                    </select>
+                    <select id="admin-notite-status" style="flex:1; min-width:140px; margin:0;" onchange="loadAdminNotiteTura()">
+                        <option value="Toate">Toate statusurile</option>
+                        <option value="activa">În Așteptare (Active)</option>
+                        <option value="rezolvata">Rezolvate</option>
+                    </select>
+                </div>
+
+                <div id="admin-notite-loader" class="loader hidden">Se încarcă istoricul...</div>
+                <div id="admin-notite-list"></div>
+            </div>
+
+            <!-- SECTIUNE: DASHBOARD OWNER -->
+            <div id="admin-sec-dashboard-owner" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--cloud-dancer); padding-bottom: 8px;">
+                    <h3 style="margin: 0; color: var(--black-night);"> Dashboard Panou de Control</h3>
+                    <button class="btn-secondary" onclick="loadOwnerDashboard()" style="margin:0; padding:6px 12px; font-size:12px;"> Actualizează</button>
+                </div>
+
+                <div id="owner-dash-loader" class="loader hidden">Se încarcă datele panoului...</div>
+
+                <!-- CARD 1: FACTURI LUNA CURENTĂ -->
+                <div class="admin-product" style="border: 2px solid var(--yellow-coffee); margin-bottom: 20px; background: white;">
+                    <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--black-night); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <span> Facturi Luna Curentă</span>
+                        <span id="dash-facturi-total" style="font-size: 16px; font-weight: bold; color: #7332e6;">0 LEI</span>
+                    </h4>
+                    <div id="dash-facturi-breakdown" style="font-size: 13px;"></div>
+                </div>
+
+                <!-- CARD 2: CONSUM AGREGAT (ULTIMELE 7 ZILE) -->
+                <div class="admin-product" style="border: 2px solid #cbd5e1; margin-bottom: 20px; background: white;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <h4 style="margin: 0; color: var(--black-night);"> Top 10 Consum (Ultimele 7 Zile)</h4>
+                        <select id="dash-consum-locatie" onchange="renderOwnerDashboardConsum()" style="margin: 0; font-size: 12px; padding: 4px 8px; width: auto;">
+                            <option value="Toate">Toate locațiile</option>
+                            <option value="Miroslava">Miroslava</option>
+                            <option value="Pacurari">Kaufland Păcurari</option>
+                            <option value="Alexandru">Kaufland Alexandru</option>
+                        </select>
+                    </div>
+                    <div id="dash-consum-list" style="font-size: 13px;"></div>
+                </div>
+
+                <!-- CARD 3: ORE LUCRATE LUNA CURENTĂ -->
+                <div class="admin-product" style="border: 2px solid #cbd5e1; margin-bottom: 20px; background: white;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <h4 style="margin: 0; color: var(--black-night);">Ore Lucrate Luna Curentă</h4>
+                    </div>
+                    <div id="dash-ore-list" style="font-size: 13px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -796,7 +906,7 @@
 
     <!-- ECRAN 5: PROGRAM -->
     <div id="screen-program" class="screen">
-        <h3 style="text-align: center; margin-bottom: 15px;">Program de Lucru</h3>
+        <h3 class="screen-header-title" style="text-align: center;">PROGRAM</h3>
         <select id="program-locatie" style="margin-bottom: 15px;">
             <option value="" disabled selected>Alege locația...</option>
             <option value="Miroslava">Miroslava</option>
@@ -824,16 +934,19 @@
     </div>
 
     <div id="screen-cont" class="screen">
-        <div class="sticky-top-controls" style="display: flex; justify-content: space-between; align-items: center; background: white; padding-bottom: 10px; border-bottom: 1px solid var(--cloud-dancer); margin-bottom: 15px;">
-            <h3 style="margin: 0;">Contul Meu (<span id="cont-nume-display"></span>)</h3>
-            <div style="display: flex; gap: 10px;">
-                <button id="btn-goto-admin" class="btn" style="background: var(--yellow-coffee); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0; display: none;">⚙️ Admin</button>
-                <button id="btn-logout" class="btn" style="background: var(--cloud-dancer); color: var(--black-night); padding: 5px 15px; font-size: 14px; margin: 0;">Ieși din cont</button>
+        <h3 class="screen-header-title">CONT</h3>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--cloud-dancer); box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="font-weight: 900; font-size: 16px; color: var(--black-night);" id="cont-nume-display"></div>
+            <div style="display: flex; gap: 8px;">
+                <button id="btn-goto-admin" class="btn" style="background: var(--yellow-coffee); color: var(--black-night); padding: 6px 14px; font-size: 13px; margin: 0; display: none; font-weight: bold;">Admin</button>
+                <button id="btn-logout" class="btn" style="background: var(--cloud-dancer); color: var(--black-night); padding: 6px 14px; font-size: 13px; margin: 0;">Ieși din cont</button>
             </div>
         </div>
+
         <div id="push-settings-card" class="admin-product hidden" style="border: 2px solid var(--cloud-dancer); margin-bottom: 20px; text-align: center;">
             <h4 style="margin-bottom: 10px;">Setări Notificări</h4>
-            <div id="push-status-text" style="font-weight: bold; margin-bottom: 10px;">🔔 Stare: VERIFICARE...</div>
+            <div id="push-status-text" style="font-weight: bold; margin-bottom: 10px;">Stare: VERIFICARE...</div>
             <button id="btn-enable-push" class="btn" style="background: var(--black-night); color: white; display: none; margin: 0 auto;">Activează notificările</button>
             <div id="push-error-text" style="color: red; font-size: 12px; margin-top: 10px;"></div>
         </div>
@@ -845,14 +958,16 @@
 
     <!-- ECRAN GHID -->
     <div id="screen-ghid" class="screen">
-        <div class="sticky-top-controls" style="display: flex; justify-content: space-between; align-items: center; background: white; padding-bottom: 10px; border-bottom: 1px solid var(--cloud-dancer); margin-bottom: 15px;">
-            <h3 style="margin: 0;">Ghid & Training</h3>
-        </div>
+        <h3 class="screen-header-title">GHID</h3>
         
-        <!-- Toggle Chips: Proceduri / Rețetar -->
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <button id="chip-proceduri" class="btn" style="flex: 1; margin: 0; background: var(--black-night); color: white;">☑️ Proceduri</button>
-            <button id="chip-retetar" class="btn" style="flex: 1; margin: 0; background: var(--cloud-dancer); color: var(--black-night);">📖 Rețetar</button>
+        <!-- Toggle Chips: Proceduri / Notițe / Rețetar -->
+        <div style="display: flex; gap: 6px; margin-bottom: 15px;">
+            <button id="chip-proceduri" class="btn" style="flex: 1; margin: 0; padding: 10px 4px; font-size: 12px; background: var(--black-night); color: white;">️ Proceduri</button>
+            <button id="chip-notite" class="btn" style="flex: 1; margin: 0; padding: 10px 4px; font-size: 12px; background: var(--cloud-dancer); color: var(--black-night); position: relative;">
+                 Notițe
+                <span id="badge-notite-unread" class="hidden" style="position: absolute; top: -3px; right: -3px; background: #e11d48; color: white; font-size: 10px; font-weight: bold; border-radius: 10px; padding: 1px 5px; min-width: 12px; text-align: center;">0</span>
+            </button>
+            <button id="chip-retetar" class="btn" style="flex: 1; margin: 0; padding: 10px 4px; font-size: 12px; background: var(--cloud-dancer); color: var(--black-night);"> Rețetar</button>
         </div>
 
         <!-- Sectiunea 1: Proceduri -->
@@ -861,7 +976,46 @@
             <div id="proceduri-container"></div>
         </div>
 
-        <!-- Sectiunea 2: Rețetar -->
+        <!-- Sectiunea 2: Notițe de Tură -->
+        <div id="ghid-sec-notite" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; color: var(--black-night);">Notițe de Tură</h4>
+                <span id="notite-locatie-title" style="font-size: 13px; font-weight: bold; color: #7332e6;"></span>
+            </div>
+
+            <!-- Card Adăugare Notiță -->
+            <div class="admin-product" style="border: 2px solid var(--yellow-coffee); margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--black-night);">Adaugă Notiță Nouă</h4>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: var(--black-night);">Pentru locația:</label>
+                    <select id="notita-destinatie-locatie" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; margin: 0;">
+                        <option value="Miroslava">Miroslava</option>
+                        <option value="Pacurari">Kaufland Păcurari</option>
+                        <option value="Alexandru">Kaufland Alexandru</option>
+                    </select>
+                </div>
+                <textarea id="input-notita-text" rows="3" placeholder="Scrie notița pentru colega din tura următoare (ex: trebuie făcută frișcă, POS-ul a dat o eroare, am împrumutat 2 cutii pahare de la Păcurari)..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 13px; margin-bottom: 10px; box-sizing: border-box; font-family: inherit; resize: vertical;"></textarea>
+                <button id="btn-salveaza-notita" style="width: 100%; background: var(--black-night); color: white; font-weight: bold; margin: 0; padding: 12px;">Adaugă Notiță</button>
+            </div>
+
+            <!-- Notițe Active (Nerezolvate) -->
+            <div style="margin-bottom: 25px;">
+                <h4 style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span> Notițe Active (Nerezolvate)</span>
+                    <span id="notite-active-count" style="font-size: 12px; background: #ffe4e6; color: #e11d48; padding: 2px 8px; border-radius: 12px; font-weight: bold;">0</span>
+                </h4>
+                <div id="notite-loader" class="loader hidden">Se încarcă notițele...</div>
+                <div id="notite-active-container"></div>
+            </div>
+
+            <!-- Notițe Rezolvate (Istoric Recenta) -->
+            <div>
+                <h4 style="margin-bottom: 12px; color: var(--gray-text);"> Rezolvate Recente</h4>
+                <div id="notite-rezolvate-container"></div>
+            </div>
+        </div>
+
+        <!-- Sectiunea 3: Rețetar -->
         <div id="ghid-sec-retetar" class="hidden">
             <input type="text" id="search-retetar" placeholder="Caută rețetă sau tehnică..." style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--cloud-dancer);">
             <p id="retete-loader" style="text-align:center; color: var(--gray-text);">Se încarcă rețetarul...</p>
@@ -1054,8 +1208,12 @@
         
         if (user.tip === 'owner' || user.nume.toLowerCase() === 'alina') {
             document.getElementById('btn-goto-admin').style.display = 'block';
+            const btnConsum = document.getElementById('btn-centralizator-consum');
+            if (btnConsum) btnConsum.style.display = 'block';
         } else {
             document.getElementById('btn-goto-admin').style.display = 'none';
+            const btnConsum = document.getElementById('btn-centralizator-consum');
+            if (btnConsum) btnConsum.style.display = 'none';
         }
 
         const navInventar = document.querySelector('.nav-item[onclick*="inventar"]');
@@ -1086,7 +1244,7 @@
         card.classList.remove('hidden');
 
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            statusText.textContent = '🔕 Notificări: NESUPORTATE de acest browser/device';
+            statusText.textContent = ' Notificări: NESUPORTATE de acest browser/device';
             statusText.style.color = 'red';
             return;
         }
@@ -1096,12 +1254,12 @@
             let subscription = await registration.pushManager.getSubscription();
             
             if (!subscription) {
-                statusText.textContent = '🔕 Notificări: INACTIVE';
+                statusText.textContent = ' Notificări: INACTIVE';
                 statusText.style.color = 'var(--gray-text)';
                 btnEnable.style.display = 'block';
                 btnEnable.onclick = requestPushPermission;
             } else {
-                statusText.textContent = '🔔 Notificări: ACTIVE';
+                statusText.textContent = ' Notificări: ACTIVE';
                 statusText.style.color = 'var(--green-matcha)';
                 btnEnable.style.display = 'none';
                 await saveSubscription(subscription); // silent refresh
@@ -1131,7 +1289,7 @@
                 });
                 await saveSubscription(subscription);
                 
-                statusText.textContent = '🔔 Notificări: ACTIVE';
+                statusText.textContent = ' Notificări: ACTIVE';
                 statusText.style.color = 'var(--green-matcha)';
                 btnEnable.style.display = 'none';
             } else {
@@ -1156,18 +1314,18 @@
             const { data, error } = await supabaseClient.functions.invoke('send-notification', {
                 body: { 
                     isTest: true,
-                    title: '🔔 Test Notificare',
+                    title: ' Test Notificare',
                     body: 'Dacă vezi asta, notificările push funcționează perfect!'
                 }
             });
             
             if (error) throw error;
             
-            status.textContent = '✔ Trimis! Verifică telefonul Alinei.';
+            status.textContent = ' Trimis! Verifică telefonul Alinei.';
             status.style.color = 'var(--green-matcha)';
         } catch (e) {
             console.error("Eroare test push:", e);
-            status.textContent = '❌ Eroare: ' + e.message;
+            status.textContent = ' Eroare: ' + e.message;
             status.style.color = 'red';
         }
     }
@@ -1298,7 +1456,7 @@
                     <div>Ore lucrate: <strong>${parseFloat(f.ore_lucrate).toFixed(1).replace('.0','')}h</strong></div>
                     <div style="text-align:right;">Bonusuri: <strong>${parseFloat(f.bonusuri_total).toFixed(0)} lei</strong></div>
                     <div style="grid-column: span 2; margin-top: 5px; color: var(--success); font-weight: 500;">
-                        🗓️ Data plății: ${f.data_platii || '15 a lunii următoare'}
+                        ️ Data plății: ${f.data_platii || '15 a lunii următoare'}
                     </div>
                 </div>
             </div>`;
@@ -1340,6 +1498,10 @@
         
         if (screenId === 'ghid') {
             loadGhidData();
+        }
+        
+        if (screenId === 'notite') {
+            fetchNotiteTura();
         }
         
         window.scrollTo(0, 0);
@@ -1594,6 +1756,21 @@
 
         if (error) console.error("Save error", error);
         
+        if (data.stoc !== null && data.stoc.trim() !== '') {
+            const todayIso = new Date().toISOString().split('T')[0];
+            const valNum = parseFloat(data.stoc);
+            if (!isNaN(valNum)) {
+                await supabaseClient.from('inventar_log').upsert({
+                    produs_id: produsId,
+                    locatie: currentLocation,
+                    stoc: valNum,
+                    operator: operatorName,
+                    data: todayIso,
+                    created_at: new Date().toISOString()
+                }, { onConflict: 'produs_id, locatie, data' });
+            }
+        }
+        
         setTimeout(() => indicator.classList.remove('show'), 1000);
     }
 
@@ -1669,29 +1846,29 @@
 
                 // Construire mesaj
                 let bodyParts = [];
-                if (monorRosu) bodyParts.push(`🔴 Monor: ${itemMonor.stoc} buc (critic)`);
+                if (monorRosu) bodyParts.push(` Monor: ${itemMonor.stoc} buc (critic)`);
                 
                 if (redItems.length > 0) {
                     const shown = redItems.slice(0, 5);
                     const extras = redItems.length > 5 ? `\n...și încă ${redItems.length - 5}` : '';
-                    bodyParts.push(`🔴 Critic:\n- ${shown.join('\n- ')}${extras}`);
+                    bodyParts.push(` Critic:\n- ${shown.join('\n- ')}${extras}`);
                 }
                 
                 if (yellowItems.length > 0) {
                     const shown = yellowItems.slice(0, 5);
                     const extras = yellowItems.length > 5 ? `\n...și încă ${yellowItems.length - 5}` : '';
-                    bodyParts.push(`🟡 Atenție:\n- ${shown.join('\n- ')}${extras}`);
+                    bodyParts.push(` Atenție:\n- ${shown.join('\n- ')}${extras}`);
                 }
 
                 if (necesarItems.length > 0) {
-                    bodyParts.push(`📝 Necesar:\n- ${necesarItems.join('\n- ')}`);
+                    bodyParts.push(` Necesar:\n- ${necesarItems.join('\n- ')}`);
                 }
 
                 if (bodyParts.length > 0) {
                     // Titlu dinamic
-                    let title = `📋 Inventar: ${currentLocation}`;
-                    if (areLapteModificat && !areAlteleModificate) title = `🥛 Inventar Lapte: ${currentLocation}`;
-                    else title = `📋 Inventar: ${currentLocation} (${operatorName || 'Anonim'})`;
+                    let title = ` Inventar: ${currentLocation}`;
+                    if (areLapteModificat && !areAlteleModificate) title = ` Inventar Lapte: ${currentLocation}`;
+                    else title = ` Inventar: ${currentLocation} (${operatorName || 'Anonim'})`;
 
                     const finalBody = bodyParts.join('\n\n');
 
@@ -1719,11 +1896,11 @@
 
         btn.disabled = false;
         if (notificareTrimisa) {
-            btn.textContent = "✔ Trimis — Alina a fost anunțată";
+            btn.textContent = " Trimis — Alina a fost anunțată";
             btn.style.background = "var(--success)";
             btn.style.color = "white";
         } else {
-            btn.textContent = "✔ Inventar salvat și sincronizat";
+            btn.textContent = " Inventar salvat și sincronizat";
         }
         
         setTimeout(() => {
@@ -1793,7 +1970,7 @@
 
             let totalDisplay = sum.toString();
             if (hasNonNumeric) {
-                totalDisplay = `${sum > 0 ? sum + ' + ' : ''} "${rawVals.join(', ')}" (⚠ Verifică manual)`;
+                totalDisplay = `${sum > 0 ? sum + ' + ' : ''} "${rawVals.join(', ')}" ( Verifică manual)`;
             }
 
             const item = document.createElement('div');
@@ -1812,7 +1989,7 @@
 
             item.innerHTML = `
                 <div class="report-item-header">
-                    <span>📦 ${p.nume} <small>(${p.canal})</small></span>
+                    <span> ${p.nume} <small>(${p.canal})</small></span>
                     <span style="color:var(--error);">TOTAL: ${totalDisplay} ${p.unitate}</span>
                 </div>
                 ${locHTML}
@@ -1845,7 +2022,7 @@
             });
             let total = hasNonNumeric ? rawVals.join(' + ') : sum;
 
-            text += `📦 *${p.nume}* — ${total} ${p.unitate}\n`;
+            text += ` *${p.nume}* — ${total} ${p.unitate}\n`;
             
             if (canal === 'Metro' || canal === 'Online') {
                 for (const loc of ['Miroslava', 'Pacurari', 'Alexandru']) {
@@ -1871,28 +2048,30 @@
         const btnGen = document.getElementById('btn-genereaza-raport');
         const btnIst = document.getElementById('btn-istoric-sesiuni');
         const btnFac = document.getElementById('btn-centralizator-facturi');
+        const btnCon = document.getElementById('btn-centralizator-consum');
 
-        btnGen.className = 'btn-secondary';
-        btnGen.style.background = '';
-        btnGen.style.color = '';
-
-        btnIst.className = 'btn-secondary';
-        btnIst.style.background = '';
-        btnIst.style.color = '';
-
-        btnFac.className = 'btn-secondary';
-        btnFac.style.background = '';
-        btnFac.style.color = '';
+        [btnGen, btnIst, btnFac, btnCon].forEach(b => {
+            if (b) {
+                b.className = 'btn-secondary';
+                b.style.background = '';
+                b.style.color = '';
+            }
+        });
 
         const activeBtn = document.getElementById(activeBtnId);
         if (activeBtn) {
             activeBtn.className = '';
+            if (activeBtnId === 'btn-centralizator-consum') {
+                activeBtn.style.background = 'var(--yellow-coffee)';
+                activeBtn.style.color = 'var(--black-night)';
+            }
         }
     }
 
     document.getElementById('btn-istoric-sesiuni').addEventListener('click', () => {
         selectCentralizatorSub('btn-istoric-sesiuni');
         document.getElementById('centralizator-facturi-container').classList.add('hidden');
+        document.getElementById('centralizator-consum-container').classList.add('hidden');
         showIstoricSesiuni();
     });
 
@@ -1901,6 +2080,7 @@
         document.getElementById('raport-content').classList.add('hidden');
         document.getElementById('istoric-sesiuni').classList.add('hidden');
         document.getElementById('sesiune-view').classList.add('hidden');
+        document.getElementById('centralizator-consum-container').classList.add('hidden');
         document.getElementById('centralizator-facturi-container').classList.remove('hidden');
 
         // Sincronizam locatia pe dropdown
@@ -1911,11 +2091,684 @@
             locSelect.dispatchEvent(new Event('change'));
         }
     });
-    
+
+    document.getElementById('btn-centralizator-consum').addEventListener('click', () => {
+        if (!currentUser || (currentUser.tip !== 'owner' && currentUser.nume.toLowerCase() !== 'alina')) {
+            return alert("Această secțiune este accesibilă doar administratorilor (Alexandru și Alina).");
+        }
+        selectCentralizatorSub('btn-centralizator-consum');
+        document.getElementById('raport-content').classList.add('hidden');
+        document.getElementById('istoric-sesiuni').classList.add('hidden');
+        document.getElementById('sesiune-view').classList.add('hidden');
+        document.getElementById('centralizator-facturi-container').classList.add('hidden');
+        document.getElementById('centralizator-consum-container').classList.remove('hidden');
+
+        const savedLoc = localStorage.getItem('rewind_location');
+        const locSelect = document.getElementById('consum-locatie');
+        if (savedLoc && locSelect && locSelect.value === 'Toate') {
+            locSelect.value = savedLoc;
+        }
+
+        const dataInput = document.getElementById('consum-data');
+        if (!dataInput.value) {
+            const yesterday = new Date();
+            dataInput.value = yesterday.toISOString().split('T')[0];
+        }
+
+        incarcaRaportConsum();
+    });
+
+    document.getElementById('consum-locatie').addEventListener('change', incarcaRaportConsum);
+    document.getElementById('consum-data').addEventListener('change', incarcaRaportConsum);
+    document.getElementById('consum-search').addEventListener('input', renderTabelConsum);
+
+    let dateConsumCache = [];
+
+    async function incarcaRaportConsum() {
+        const loc = document.getElementById('consum-locatie').value;
+        const dataInput = document.getElementById('consum-data');
+        if (!dataInput.value) {
+            const yesterday = new Date();
+            dataInput.value = yesterday.toISOString().split('T')[0];
+        }
+        const selectedDateStr = dataInput.value;
+
+        const loader = document.getElementById('consum-loader');
+        const summaryBar = document.getElementById('consum-summary-bar');
+        const container = document.getElementById('consum-tabel-container');
+        
+        loader.classList.remove('hidden');
+        summaryBar.classList.add('hidden');
+        container.innerHTML = '';
+
+        const selDateObj = new Date(selectedDateStr);
+        const prevDateObj = new Date(selDateObj);
+        prevDateObj.setDate(prevDateObj.getDate() - 1);
+        const prevDateStr = prevDateObj.toISOString().split('T')[0];
+
+        let querySel = supabaseClient.from('inventar_log').select('*').eq('data', selectedDateStr);
+        let queryPrev = supabaseClient.from('inventar_log').select('*').eq('data', prevDateStr);
+
+        if (loc !== 'Toate') {
+            querySel = querySel.eq('locatie', loc);
+            queryPrev = queryPrev.eq('locatie', loc);
+        }
+
+        const [{ data: logsSel, error: errSel }, { data: logsPrev, error: errPrev }] = await Promise.all([
+            querySel,
+            queryPrev
+        ]);
+
+        if (errSel || errPrev) {
+            loader.classList.add('hidden');
+            container.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea datelor de consum. Asigură-te că tabelul inventar_log există.</p>';
+            return;
+        }
+
+        const prevMap = {};
+        if (logsPrev) {
+            logsPrev.forEach(l => {
+                const key = loc === 'Toate' ? `${l.produs_id}_${l.locatie}` : l.produs_id;
+                prevMap[key] = parseFloat(l.stoc);
+            });
+        }
+
+        const selMap = {};
+        if (logsSel) {
+            logsSel.forEach(l => {
+                const key = loc === 'Toate' ? `${l.produs_id}_${l.locatie}` : l.produs_id;
+                selMap[key] = parseFloat(l.stoc);
+            });
+        }
+
+        dateConsumCache = [];
+
+        catalogProduse.forEach(p => {
+            if (loc !== 'Toate' && !p.locatii.includes(loc)) return;
+
+            const targetLocs = loc === 'Toate' ? p.locatii : [loc];
+
+            targetLocs.forEach(l => {
+                const key = loc === 'Toate' ? `${p.id}_${l}` : p.id;
+                const stocPrev = prevMap[key] !== undefined ? prevMap[key] : null;
+                const stocSel = selMap[key] !== undefined ? selMap[key] : null;
+
+                if (stocPrev !== null || stocSel !== null) {
+                    let diff = null;
+                    let isRestock = false;
+
+                    if (stocPrev !== null && stocSel !== null) {
+                        diff = stocPrev - stocSel;
+                        if (diff < 0) {
+                            isRestock = true;
+                        }
+                    }
+
+                    dateConsumCache.push({
+                        produsId: p.id,
+                        nume: p.nume,
+                        unitate: p.unitate || 'buc',
+                        locatie: l,
+                        stocPrev: stocPrev,
+                        stocSel: stocSel,
+                        diff: diff,
+                        isRestock: isRestock
+                    });
+                }
+            });
+        });
+
+        loader.classList.add('hidden');
+        renderTabelConsum();
+    }
+
+    function renderTabelConsum() {
+        const container = document.getElementById('consum-tabel-container');
+        const summaryBar = document.getElementById('consum-summary-bar');
+        const infoText = document.getElementById('consum-info-text');
+        const filter = (document.getElementById('consum-search').value || '').toLowerCase().trim();
+        const selectedDateStr = document.getElementById('consum-data').value;
+        const loc = document.getElementById('consum-locatie').value;
+
+        let items = dateConsumCache.filter(item => {
+            if (!filter) return true;
+            return item.nume.toLowerCase().includes(filter) || item.locatie.toLowerCase().includes(filter);
+        });
+
+        if (items.length === 0) {
+            summaryBar.classList.add('hidden');
+            container.innerHTML = `<p style="text-align:center; color:var(--gray-text); padding:20px;">Nu există date de inventar înregistrate pentru data de ${selectedDateStr}.</p>`;
+            return;
+        }
+
+        summaryBar.classList.remove('hidden');
+        infoText.textContent = ` ${items.length} produse procesate (${loc} - ${selectedDateStr})`;
+
+        let html = `
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:13px; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <thead>
+                        <tr style="background:var(--cloud-dancer); text-align:left; border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:10px;">Produs</th>
+                            ${loc === 'Toate' ? '<th style="padding:10px;">Locație</th>' : ''}
+                            <th style="padding:10px; text-align:center;">Stoc Ieri</th>
+                            <th style="padding:10px; text-align:center;">Stoc Azi</th>
+                            <th style="padding:10px; text-align:center;">Consum / Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        items.forEach(item => {
+            let statusCell = '';
+            if (item.diff === null) {
+                statusCell = `<span style="color:var(--gray-text); font-style:italic;">Fără istoric</span>`;
+            } else if (item.isRestock) {
+                const adaugat = Math.abs(item.diff);
+                statusCell = `<span style="font-weight:bold; color:#137333; background:#e6f4ea; padding:4px 8px; border-radius:12px; font-size:11px;">Aprovizionat +${adaugat} ${item.unitate}</span>`;
+            } else if (item.diff > 0) {
+                statusCell = `<span style="font-weight:bold; color:var(--black-night); background:#fef08a; padding:4px 8px; border-radius:12px; font-size:12px;">${item.diff} ${item.unitate}</span>`;
+            } else {
+                statusCell = `<span style="color:var(--gray-text);">0 ${item.unitate}</span>`;
+            }
+
+            html += `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px; font-weight:bold;">${item.nume}</td>
+                    ${loc === 'Toate' ? `<td style="padding:10px; color:var(--gray-text);">${item.locatie}</td>` : ''}
+                    <td style="padding:10px; text-align:center;">${item.stocPrev !== null ? item.stocPrev + ' ' + item.unitate : '—'}</td>
+                    <td style="padding:10px; text-align:center;">${item.stocSel !== null ? item.stocSel + ' ' + item.unitate : '—'}</td>
+                    <td style="padding:10px; text-align:center;">${statusCell}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    document.getElementById('btn-whatsapp-consum').addEventListener('click', () => {
+        const selectedDateStr = document.getElementById('consum-data').value;
+        const loc = document.getElementById('consum-locatie').value;
+        if (dateConsumCache.length === 0) return alert("Nu există date de trimis.");
+
+        let text = ` *RAPORT CONSUM ZILNIC REWIND*\n📍 Locație: ${loc}\n Dată: ${selectedDateStr}\n-----------------------------------\n`;
+        
+        let count = 0;
+        dateConsumCache.forEach(item => {
+            if (item.diff !== null && item.diff > 0) {
+                count++;
+                text += `• *${item.nume}*: ${item.diff} ${item.unitate}${loc === 'Toate' ? ` (${item.locatie})` : ''}\n`;
+            } else if (item.isRestock) {
+                text += `• *${item.nume}*:  Aprovizionat +${Math.abs(item.diff)} ${item.unitate}${loc === 'Toate' ? ` (${item.locatie})` : ''}\n`;
+            }
+        });
+
+        if (count === 0 && !text.includes('Aprovizionat')) {
+            text += `Nu s-a înregistrat consum în această zi.\n`;
+        }
+
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    });
+
+    // ==========================================
+    // NOTIȚE DE TURĂ (PREDARE-PRIMIRE)
+    // ==========================================
+
+    let notiteTuraActive = [];
+    let notiteTuraRezolvate = [];
+
+    async function checkUnreadNotiteBadge() {
+        const badge = document.getElementById('badge-notite-unread');
+        if (!badge) return;
+
+        const loc = currentLocation || localStorage.getItem('rewind_location');
+        if (!loc) return;
+
+        const { count, error } = await supabaseClient
+            .from('notite_tura')
+            .select('id', { count: 'exact', head: true })
+            .eq('locatie', loc)
+            .eq('status', 'activa');
+
+        if (!error && count > 0) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    async function fetchNotiteTura() {
+        const loc = currentLocation || localStorage.getItem('rewind_location');
+        const locTitle = document.getElementById('notite-locatie-title');
+        if (locTitle) locTitle.textContent = loc ? `📍 ${loc}` : '';
+
+        const destLocSelect = document.getElementById('notita-destinatie-locatie');
+        if (destLocSelect && loc) {
+            destLocSelect.value = loc;
+        }
+
+        const loader = document.getElementById('notite-loader');
+        const activeContainer = document.getElementById('notite-active-container');
+        const rezolvateContainer = document.getElementById('notite-rezolvate-container');
+        const activeCount = document.getElementById('notite-active-count');
+
+        if (loader) loader.classList.remove('hidden');
+
+        if (!loc) {
+            if (loader) loader.classList.add('hidden');
+            if (activeContainer) activeContainer.innerHTML = '<p style="text-align:center; color:var(--gray-text);">Selectează mai întâi locația din antetul aplicației.</p>';
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('notite_tura')
+            .select('*')
+            .eq('locatie', loc)
+            .order('created_at', { ascending: false });
+
+        if (loader) loader.classList.add('hidden');
+
+        if (error) {
+            if (activeContainer) activeContainer.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la citirea notițelor. Asigură-te că tabelul notite_tura există.</p>';
+            return;
+        }
+
+        notiteTuraActive = (data || []).filter(n => n.status === 'activa');
+        notiteTuraRezolvate = (data || []).filter(n => n.status === 'rezolvata').slice(0, 10);
+
+        if (activeCount) activeCount.textContent = notiteTuraActive.length;
+
+        checkUnreadNotiteBadge();
+
+        if (activeContainer) {
+            if (notiteTuraActive.length === 0) {
+                activeContainer.innerHTML = '<p style="text-align:center; color:var(--gray-text); padding:15px; background:var(--cloud-dancer); border-radius:10px; font-size:13px;">Nu există notițe nerezolvate la această locație. Totul este în regulă!</p>';
+            } else {
+                let html = '';
+                notiteTuraActive.forEach(n => {
+                    const dateStr = new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    html += `
+                        <div style="background: white; border-left: 4px solid #e11d48; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
+                            <div style="font-size: 14px; font-weight: bold; color: var(--black-night); margin-bottom: 8px; white-space: pre-wrap;">${escapeHtml(n.text)}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--gray-text); flex-wrap: wrap; gap: 8px;">
+                                <span>Autor: <b>${escapeHtml(n.autor)}</b> • ${dateStr}</span>
+                                <button onclick="marcheazaNotitaRezolvata('${n.id}')" style="margin:0; padding:6px 12px; font-size:12px; background:#137333; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Am văzut / Rezolvat</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                activeContainer.innerHTML = html;
+            }
+        }
+
+        if (rezolvateContainer) {
+            if (notiteTuraRezolvate.length === 0) {
+                rezolvateContainer.innerHTML = '<p style="text-align:center; color:var(--gray-text); font-size:12px;">Nu există notițe rezolvate recent.</p>';
+            } else {
+                let html = '';
+                notiteTuraRezolvate.forEach(n => {
+                    const dateCreated = new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const dateResolved = n.rezolvat_la ? new Date(n.rezolvat_la).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                    html += `
+                        <div style="background: #f8fafc; border-left: 4px solid #22c55e; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; opacity: 0.85; font-size: 12px;">
+                            <div style="color: var(--black-night); text-decoration: line-through; margin-bottom: 4px;">${escapeHtml(n.text)}</div>
+                            <div style="font-size: 11px; color: var(--gray-text);">De la <b>${escapeHtml(n.autor)}</b> (${dateCreated}) • Rezolvat de <b>${escapeHtml(n.rezolvat_de || 'Colegă')}</b> ${dateResolved ? `(${dateResolved})` : ''}</div>
+                        </div>
+                    `;
+                });
+                rezolvateContainer.innerHTML = html;
+            }
+        }
+    }
+
+    async function adaugaNotitaTura() {
+        const textInput = document.getElementById('input-notita-text');
+        const text = textInput ? textInput.value.trim() : '';
+        const destLocSelect = document.getElementById('notita-destinatie-locatie');
+        const targetLoc = destLocSelect ? destLocSelect.value : (currentLocation || localStorage.getItem('rewind_location'));
+        const autor = operatorName || localStorage.getItem('rewind_user_nume') || 'Anonim';
+
+        if (!text) return alert("Te rugăm să scrii textul notiței!");
+        if (!targetLoc) return alert("Selectează mai întâi locația destinată!");
+
+        const btn = document.getElementById('btn-salveaza-notita');
+        if (btn) { btn.disabled = true; btn.textContent = "Se salvează..."; }
+
+        const { error } = await supabaseClient
+            .from('notite_tura')
+            .insert({
+                locatie: targetLoc,
+                autor: autor,
+                text: text,
+                status: 'activa'
+            });
+
+        if (btn) { btn.disabled = false; btn.textContent = "Adaugă Notiță"; }
+
+        if (error) {
+            alert("Eroare la salvarea notiței: " + error.message);
+        } else {
+            if (textInput) textInput.value = '';
+            fetchNotiteTura();
+        }
+    }
+
+    async function marcheazaNotitaRezolvata(id) {
+        const rezolvator = operatorName || localStorage.getItem('rewind_user_nume') || 'Colegă';
+
+        const { error } = await supabaseClient
+            .from('notite_tura')
+            .update({
+                status: 'rezolvata',
+                rezolvat_de: rezolvator,
+                rezolvat_la: new Date().toISOString()
+            })
+            .eq('id', id);
+
+        if (error) {
+            alert("Eroare la actualizarea notiței: " + error.message);
+        } else {
+            fetchNotiteTura();
+        }
+    }
+
+    async function loadAdminNotiteTura() {
+        const loc = document.getElementById('admin-notite-locatie').value;
+        const status = document.getElementById('admin-notite-status').value;
+        const loader = document.getElementById('admin-notite-loader');
+        const list = document.getElementById('admin-notite-list');
+
+        if (loader) loader.classList.remove('hidden');
+        if (list) list.innerHTML = '';
+
+        let query = supabaseClient.from('notite_tura').select('*').order('created_at', { ascending: false });
+
+        if (loc !== 'Toate') query = query.eq('locatie', loc);
+        if (status !== 'Toate') query = query.eq('status', status);
+
+        const { data, error } = await query;
+
+        if (loader) loader.classList.add('hidden');
+
+        if (error) {
+            if (list) list.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare la încărcarea istoricului.</p>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            if (list) list.innerHTML = '<p style="text-align:center; color:var(--gray-text); padding:20px;">Nu există notițe înregistrate pe acest filtru.</p>';
+            return;
+        }
+
+        let html = '';
+        data.forEach(n => {
+            const dateCreated = new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const dateResolved = n.rezolvat_la ? new Date(n.rezolvat_la).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            const isActive = n.status === 'activa';
+
+            html += `
+                <div style="background: white; border-left: 4px solid ${isActive ? '#e11d48' : '#22c55e'}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: bold; color: var(--black-night);">📍 ${escapeHtml(n.locatie)}</span>
+                        <span style="font-size: 11px; font-weight: bold; background: ${isActive ? '#ffe4e6' : '#e6f4ea'}; color: ${isActive ? '#e11d48' : '#137333'}; padding: 2px 8px; border-radius: 10px;">${isActive ? 'În așteptare' : 'Rezolvată'}</span>
+                    </div>
+                    <div style="margin-bottom: 8px; white-space: pre-wrap; color: var(--black-night);">${escapeHtml(n.text)}</div>
+                    <div style="font-size: 11px; color: var(--gray-text);">
+                        Autor: <b>${escapeHtml(n.autor)}</b> • Data: ${dateCreated}
+                        ${!isActive ? `<br>Rezolvat de: <b>${escapeHtml(n.rezolvat_de || '—')}</b> la ${dateResolved}` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        if (list) list.innerHTML = html;
+    }
+
+    document.getElementById('btn-salveaza-notita').addEventListener('click', adaugaNotitaTura);
+
+    // ==========================================
+    // DASHBOARD OWNER (PANOU DE CONTROL)
+    // ==========================================
+
+    let ownerDashLogs7Days = [];
+
+    async function loadOwnerDashboard() {
+        const loader = document.getElementById('owner-dash-loader');
+        if (loader) loader.classList.remove('hidden');
+
+        await Promise.all([
+            loadOwnerDashboardFacturi(),
+            loadOwnerDashboardConsumData(),
+            loadOwnerDashboardOre()
+        ]);
+
+        if (loader) loader.classList.add('hidden');
+    }
+
+    async function loadOwnerDashboardFacturi() {
+        const totalEl = document.getElementById('dash-facturi-total');
+        const breakdownEl = document.getElementById('dash-facturi-breakdown');
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+        const { data, error } = await supabaseClient
+            .from('facturi')
+            .select('furnizor, valoare, created_at')
+            .gte('created_at', startOfMonth)
+            .lte('created_at', endOfMonth);
+
+        if (error || !data) {
+            if (totalEl) totalEl.textContent = '0 LEI';
+            if (breakdownEl) breakdownEl.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare încărcare facturi.</p>';
+            return;
+        }
+
+        let total = 0;
+        const furnizorMap = {};
+
+        data.forEach(f => {
+            const val = parseFloat(f.valoare) || 0;
+            total += val;
+            furnizorMap[f.furnizor] = (furnizorMap[f.furnizor] || 0) + val;
+        });
+
+        if (totalEl) totalEl.textContent = `${total.toLocaleString('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} LEI`;
+
+        const sortedFurnizori = Object.entries(furnizorMap).sort((a, b) => b[1] - a[1]);
+
+        if (sortedFurnizori.length === 0) {
+            if (breakdownEl) breakdownEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; padding:10px;">Nu există facturi cu valoare înregistrate în luna curentă.</p>';
+            return;
+        }
+
+        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+        sortedFurnizori.forEach(([furnizor, suma]) => {
+            const pct = total > 0 ? Math.round((suma / total) * 100) : 0;
+            html += `
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                        <span style="font-weight:bold;">${escapeHtml(furnizor)}</span>
+                        <span><b>${suma.toLocaleString('ro-RO')} LEI</b> <small style="color:var(--gray-text);">(${pct}%)</small></span>
+                    </div>
+                    <div style="background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden;">
+                        <div style="background:#7332e6; width:${pct}%; height:100%;"></div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        if (breakdownEl) breakdownEl.innerHTML = html;
+    }
+
+    async function loadOwnerDashboardConsumData() {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        const date7DaysAgoStr = d.toISOString().split('T')[0];
+
+        const { data, error } = await supabaseClient
+            .from('inventar_log')
+            .select('*')
+            .gte('data', date7DaysAgoStr)
+            .order('data', { ascending: true });
+
+        if (!error && data) {
+            ownerDashLogs7Days = data;
+        } else {
+            ownerDashLogs7Days = [];
+        }
+
+        renderOwnerDashboardConsum();
+    }
+
+    function renderOwnerDashboardConsum() {
+        const listEl = document.getElementById('dash-consum-list');
+        const locSelect = document.getElementById('dash-consum-locatie');
+        const loc = locSelect ? locSelect.value : 'Toate';
+        if (!listEl) return;
+
+        let logs = ownerDashLogs7Days;
+        if (loc !== 'Toate') {
+            logs = logs.filter(l => l.locatie === loc);
+        }
+
+        const logsByProdLocDate = {};
+        logs.forEach(l => {
+            const key = `${l.produs_id}_${l.locatie}_${l.data}`;
+            logsByProdLocDate[key] = parseFloat(l.stoc);
+        });
+
+        const consumMap = {};
+
+        catalogProduse.forEach(p => {
+            const targetLocs = loc === 'Toate' ? p.locatii : [loc];
+
+            targetLocs.forEach(l => {
+                let totalConsum = 0;
+                const dates = [...new Set(logs.map(log => log.data))].sort();
+
+                for (let i = 1; i < dates.length; i++) {
+                    const dPrev = dates[i - 1];
+                    const dCrt = dates[i];
+                    const sPrev = logsByProdLocDate[`${p.id}_${l}_${dPrev}`];
+                    const sCrt = logsByProdLocDate[`${p.id}_${l}_${dCrt}`];
+
+                    if (sPrev !== undefined && sCrt !== undefined) {
+                        const diff = sPrev - sCrt;
+                        if (diff > 0) {
+                            totalConsum += diff;
+                        }
+                    }
+                }
+
+                if (totalConsum > 0) {
+                    if (!consumMap[p.id]) {
+                        consumMap[p.id] = { nume: p.nume, unitate: p.unitate || 'buc', total: 0 };
+                    }
+                    consumMap[p.id].total += totalConsum;
+                }
+            });
+        });
+
+        const topList = Object.values(consumMap).sort((a, b) => b.total - a.total).slice(0, 10);
+
+        if (topList.length === 0) {
+            listEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; padding:10px;">Nu există date de consum înregistrate în ultimele 7 zile.</p>';
+            return;
+        }
+
+        let html = '<div style="display:flex; flex-direction:column; gap:6px;">';
+        topList.forEach((item, idx) => {
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
+                    <span><b>#${idx + 1}</b> ${escapeHtml(item.nume)}</span>
+                    <span style="font-weight:bold; background:#fef08a; padding:2px 8px; border-radius:10px; font-size:12px;">${item.total} ${item.unitate}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        listEl.innerHTML = html;
+    }
+
+    async function loadOwnerDashboardOre() {
+        const listEl = document.getElementById('dash-ore-list');
+        if (!listEl) return;
+
+        await fetchAngajati();
+
+        const now = new Date();
+        const startOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const endOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        const { data, error } = await supabaseClient
+            .from('program_zile')
+            .select('angajat_id, ora_start, ora_sfarsit, ore_suplimentare')
+            .gte('data', startOfMonthStr)
+            .lte('data', endOfMonthStr);
+
+        if (error || !data) {
+            listEl.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare citire ore lucrate.</p>';
+            return;
+        }
+
+        const oreMap = {};
+        data.forEach(p => {
+            if (!p.ora_start || !p.ora_sfarsit) return;
+            const h1 = parseInt(p.ora_start.split(':')[0]);
+            const m1 = parseInt(p.ora_start.split(':')[1]);
+            const h2 = parseInt(p.ora_sfarsit.split(':')[0]);
+            const m2 = parseInt(p.ora_sfarsit.split(':')[1]);
+
+            const oreTura = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+            const extra = Number(p.ore_suplimentare || 0);
+            const total = oreTura + extra;
+
+            oreMap[p.angajat_id] = (oreMap[p.angajat_id] || 0) + total;
+        });
+
+        const sortedEmp = angajatiList.map(a => {
+            return {
+                nume: a.nume,
+                totalOre: Math.round(oreMap[a.id] || 0)
+            };
+        }).sort((a, b) => b.totalOre - a.totalOre);
+
+        if (sortedEmp.length === 0) {
+            listEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; padding:10px;">Nu există angajați înregistrați.</p>';
+            return;
+        }
+
+        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+        sortedEmp.forEach(emp => {
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
+                    <span style="font-weight:bold; color:var(--black-night);">${escapeHtml(emp.nume)}</span>
+                    <span style="font-weight:bold; color:#7332e6; background:#f3e8ff; padding:2px 10px; border-radius:10px; font-size:12px;">${emp.totalOre} ore lucrate</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        listEl.innerHTML = html;
+    }
+
     // Înlocuim click-ul original pe btn-genereaza-raport
     document.getElementById('btn-genereaza-raport').addEventListener('click', async () => {
         selectCentralizatorSub('btn-genereaza-raport');
         document.getElementById('centralizator-facturi-container').classList.add('hidden');
+        document.getElementById('centralizator-consum-container').classList.add('hidden');
         document.getElementById('istoric-sesiuni').classList.add('hidden');
         document.getElementById('sesiune-view').classList.add('hidden');
         document.getElementById('raport-content').classList.add('hidden');
@@ -2161,7 +3014,7 @@
         let text = `*COMANDĂ ${canal.toUpperCase()}* - ${dateString}\n\n`;
 
         dateCanal.forEach(l => {
-            text += `📦 *${l.produs_nume}* — ${l.total_necesar}\n`;
+            text += ` *${l.produs_nume}* — ${l.total_necesar}\n`;
             if (canal === 'Metro' || canal === 'Online') {
                 for (const [loc, data] of Object.entries(l.distributie)) {
                     if (data.necesar && data.necesar !== '—') {
@@ -2236,11 +3089,15 @@
 
                 if (uploadError) throw uploadError;
 
+                const valInput = document.getElementById('factura-valoare');
+                const valNum = valInput ? (parseFloat(valInput.value) || 0) : 0;
+
                 const { error: dbError } = await supabaseClient.from('facturi').insert([{
                     furnizor: furnizor,
                     poza_url: uploadData.path,
                     adaugat_de: operatorName || 'Anonim',
-                    locatie: locatie
+                    locatie: locatie,
+                    valoare: valNum
                 }]);
 
                 if (dbError) throw dbError;
@@ -2249,7 +3106,7 @@
                 await supabaseClient.functions.invoke('send-notification', {
                     body: {
                         isTest: true, // override payload logic
-                        title: `📸 Factură nouă: ${furnizor}`,
+                        title: ` Factură nouă: ${furnizor}`,
                         body: `${operatorName || 'Anonim'} a adăugat o factură nouă la ${locatie}.`
                     }
                 }).catch(e => console.error("Push factura error:", e));
@@ -2709,15 +3566,20 @@
         document.getElementById('admin-sec-program').classList.add('hidden');
         document.getElementById('admin-sec-salarizare').classList.add('hidden');
         document.getElementById('admin-sec-proceduri').classList.add('hidden');
+        const dashSec = document.getElementById('admin-sec-dashboard-owner');
+        if (dashSec) dashSec.classList.add('hidden');
         
         document.querySelectorAll('#admin-dashboard .admin-menu-btn').forEach(c => c.classList.remove('active'));
         chipEl.classList.add('active');
         
-        document.getElementById('admin-sec-' + sectionId).classList.remove('hidden');
+        const targetSec = document.getElementById('admin-sec-' + sectionId);
+        if (targetSec) targetSec.classList.remove('hidden');
         
         if (sectionId === 'program') initAdminProgram();
         if (sectionId === 'salarizare') initAdminSalarizare();
         if (sectionId === 'proceduri') initAdminProceduri();
+        if (sectionId === 'notite-admin') loadAdminNotiteTura();
+        if (sectionId === 'dashboard-owner') loadOwnerDashboard();
     }
 
     async function fetchAngajati() {
@@ -3148,7 +4010,7 @@
                     <div>
                         <strong>${p.nume || 'Perioadă'}</strong><br>
                         <span style="font-size:12px; color:var(--gray-text);">${p.data_start} — ${p.data_sfarsit}</span><br>
-                        <span style="font-size:11px; color:#7332e6; font-weight:bold;">📅 ${paymentInfo}</span>
+                        <span style="font-size:11px; color:#7332e6; font-weight:bold;"> ${paymentInfo}</span>
                     </div>
                     <span style="font-size:12px; font-weight:bold; color: ${p.status === 'activa' ? 'var(--success)' : 'var(--gray-text)'}">${p.status.toUpperCase()}</span>
                 `;
@@ -3512,10 +4374,26 @@
     document.getElementById('chip-proceduri').addEventListener('click', function() {
         this.style.background = 'var(--black-night)';
         this.style.color = 'white';
+        document.getElementById('chip-notite').style.background = 'var(--cloud-dancer)';
+        document.getElementById('chip-notite').style.color = 'var(--black-night)';
         document.getElementById('chip-retetar').style.background = 'var(--cloud-dancer)';
         document.getElementById('chip-retetar').style.color = 'var(--black-night)';
         document.getElementById('ghid-sec-proceduri').classList.remove('hidden');
+        document.getElementById('ghid-sec-notite').classList.add('hidden');
         document.getElementById('ghid-sec-retetar').classList.add('hidden');
+    });
+
+    document.getElementById('chip-notite').addEventListener('click', function() {
+        this.style.background = 'var(--black-night)';
+        this.style.color = 'white';
+        document.getElementById('chip-proceduri').style.background = 'var(--cloud-dancer)';
+        document.getElementById('chip-proceduri').style.color = 'var(--black-night)';
+        document.getElementById('chip-retetar').style.background = 'var(--cloud-dancer)';
+        document.getElementById('chip-retetar').style.color = 'var(--black-night)';
+        document.getElementById('ghid-sec-notite').classList.remove('hidden');
+        document.getElementById('ghid-sec-proceduri').classList.add('hidden');
+        document.getElementById('ghid-sec-retetar').classList.add('hidden');
+        fetchNotiteTura();
     });
 
     document.getElementById('chip-retetar').addEventListener('click', function() {
@@ -3523,8 +4401,11 @@
         this.style.color = 'white';
         document.getElementById('chip-proceduri').style.background = 'var(--cloud-dancer)';
         document.getElementById('chip-proceduri').style.color = 'var(--black-night)';
+        document.getElementById('chip-notite').style.background = 'var(--cloud-dancer)';
+        document.getElementById('chip-notite').style.color = 'var(--black-night)';
         document.getElementById('ghid-sec-retetar').classList.remove('hidden');
         document.getElementById('ghid-sec-proceduri').classList.add('hidden');
+        document.getElementById('ghid-sec-notite').classList.add('hidden');
     });
 
     // Căutare rețete
@@ -3751,7 +4632,7 @@
                 badge.textContent = `${completedCount}/${totalItems}`;
                 if (completedCount === totalItems && totalItems > 0) {
                     badge.className = 'badge-completed';
-                    badge.innerHTML = `✔ ${completedCount}/${totalItems}`;
+                    badge.innerHTML = ` ${completedCount}/${totalItems}`;
                 } else {
                     badge.className = '';
                     badge.textContent = `${completedCount}/${totalItems}`;
@@ -3927,7 +4808,7 @@
                             completionDetails = ` <span style="font-size:11px; color:var(--gray-text);">(${operator}, ${ora})</span>`;
                         }
 
-                        const statusSymbol = (completed === total && total > 0) ? '🟢' : '🟡';
+                        const statusSymbol = (completed === total && total > 0) ? '' : '';
 
                         locHtml += `
                             <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:13px;">
