@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=7.9')
+          navigator.serviceWorker.register('sw.js?v=8.1')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v7.9 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v8.1 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -1929,7 +1929,17 @@
                 let areAlteleModificate = false;
                 
                 const itemMonor = invData.find(i => i.produs_id === idMonor && modificariSesiune.has(i.produs_id));
-                const monorRosu = itemMonor && itemMonor.stoc !== null && parseFloat(itemMonor.stoc) < 20;
+                let monorAlertStr = '';
+                if (itemMonor && itemMonor.stoc !== null && itemMonor.stoc !== undefined) {
+                    const stocM = parseFloat(itemMonor.stoc);
+                    if (!isNaN(stocM)) {
+                        if (stocM < 20) {
+                            monorAlertStr = `🔴 Lapte Monor Critic: ${stocM} L (prag 20)`;
+                        } else if (stocM < 35) {
+                            monorAlertStr = `🟡 Lapte Monor Atenție: ${stocM} L (prag 35)`;
+                        }
+                    }
+                }
 
                 const redItems = [];
                 const yellowItems = [];
@@ -1946,12 +1956,12 @@
                     else areAlteleModificate = true;
 
                     // Verificare Necesar
-                    if (item.necesar !== null && parseFloat(item.necesar) > 0) {
+                    if (item.necesar !== null && item.necesar !== undefined && parseFloat(item.necesar) > 0) {
                         necesarItems.push(`${prod.nume} (${item.necesar} ${prod.unitate || 'buc'})`);
                     }
 
                     // Verificare Prag Minim (Roșu) și Galben
-                    if (item.stoc !== null && item.produs_id !== idMonor) {
+                    if (item.stoc !== null && item.stoc !== undefined && item.produs_id !== idMonor) {
                         const stoc = parseFloat(item.stoc);
                         const pragRosu = prod.prag_minim !== null ? parseFloat(prod.prag_minim) : null;
                         const pragGalben = prod.prag_galben !== null ? parseFloat(prod.prag_galben) : null;
@@ -1966,7 +1976,7 @@
 
                 // Construire mesaj
                 let bodyParts = [];
-                if (monorRosu) bodyParts.push(` Monor: ${itemMonor.stoc} buc (critic)`);
+                if (monorAlertStr) bodyParts.push(monorAlertStr);
                 
                 if (redItems.length > 0) {
                     const shown = redItems.slice(0, 5);
@@ -2927,8 +2937,7 @@
             loadPulsHero(),
             loadPulsKpi(),
             loadPulsCharts(),
-            loadPulsRadar(),
-            loadOwnerDashboardOre()
+            loadPulsRadar()
         ]);
     }
 
@@ -2973,7 +2982,7 @@
         const select = document.getElementById('puls-chart-prod-select');
         if (!container || !select) return;
 
-        const prodId = parseInt(select.value) || (select.options[0] ? parseInt(select.options[0].value) : null);
+        const prodId = select.value || (select.options[0] ? select.options[0].value : null);
         if (!prodId) {
             container.innerHTML = '<p style="color:var(--gray-text); font-size:12px; text-align:center; width:100%;">Niciun produs selectat.</p>';
             return;
@@ -3231,30 +3240,56 @@
             supabaseClient.from('proceduri_itemi').select('id, checklist_id').eq('activ', true)
         ]);
 
-        // KPI 1: Top 5 Consum Azi
+        // KPI 1: Top 5 Consum Azi (Consum real = Stoc Ieri - Stoc Azi)
         const logs = resInvLogs.data || [];
+        const yesterdayObj = new Date();
+        yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+        const yesterdayStr = yesterdayObj.toISOString().split('T')[0];
+
         const logsToday = logs.filter(l => l.data === todayStr);
+        const logsYesterday = logs.filter(l => l.data === yesterdayStr);
 
-        if (logsToday.length === 0) {
-            if (consumEl) consumEl.innerHTML = '<p style="color:var(--gray-text); text-align:center;">Niciun inventar completat azi încă.</p>';
-        } else {
-            const prodConsumMap = {};
-            logsToday.forEach(l => {
-                const p = catalogProduse.find(cp => cp.id === l.produs_id);
-                const nume = p ? p.nume : `Produs #${l.produs_id}`;
-                const unitate = p ? (p.unitate || 'buc') : 'buc';
-                if (!prodConsumMap[l.produs_id]) {
-                    prodConsumMap[l.produs_id] = { nume, unitate, stoc: parseFloat(String(l.stoc).replace(',', '.')) || 0 };
+        const prevMap = {};
+        logsYesterday.forEach(l => {
+            const key = `${l.produs_id}_${normalizeLocatieCode(l.locatie)}`;
+            prevMap[key] = parseFloat(String(l.stoc).replace(',', '.')) || 0;
+        });
+
+        const prodConsumMap = {};
+        logsToday.forEach(l => {
+            const locNorm = normalizeLocatieCode(l.locatie);
+            const key = `${l.produs_id}_${locNorm}`;
+            const stocSel = parseFloat(String(l.stoc).replace(',', '.')) || 0;
+            const stocPrev = prevMap[key] !== undefined ? prevMap[key] : null;
+
+            if (stocPrev !== null) {
+                const diff = stocPrev - stocSel;
+                if (diff > 0) {
+                    const p = catalogProduse.find(cp => cp.id === l.produs_id);
+                    if (p) {
+                        if (!prodConsumMap[l.produs_id]) {
+                            prodConsumMap[l.produs_id] = { nume: p.nume, unitate: p.unitate || 'buc', diff: 0 };
+                        }
+                        prodConsumMap[l.produs_id].diff += diff;
+                    }
                 }
-            });
+            }
+        });
 
-            const top5 = Object.values(prodConsumMap).slice(0, 5);
+        const sortedConsum = Object.values(prodConsumMap)
+            .sort((a, b) => b.diff - a.diff)
+            .slice(0, 5);
+
+        if (sortedConsum.length === 0) {
+            if (consumEl) consumEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; font-size:12px;">Niciun consum înregistrat azi încă.</p>';
+        } else {
             let html = '<div style="display:flex; flex-direction:column; gap:4px;">';
-            top5.forEach((item, idx) => {
+            sortedConsum.forEach((item, idx) => {
+                const formattedDiff = Math.round(item.diff * 100) / 100;
                 html += `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span><b>#${idx+1}</b> ${escapeHtml(item.nume)}</span>
-                        <span style="font-weight:bold; background:#fef08a; padding:1px 6px; border-radius:8px; font-size:11px;">${item.stoc} ${item.unitate}</span>
+                        <span style="font-weight:bold; background:#fef08a; color:var(--black-night); padding:1px 6px; border-radius:8px; font-size:11px;">-${formattedDiff} ${item.unitate}</span>
                     </div>
                 `;
             });
@@ -3262,11 +3297,13 @@
             if (consumEl) consumEl.innerHTML = html;
         }
 
-        // KPI 2: Lapte Monor Status
-        const monorLogs = (resMonor.data || []).filter(l => {
-            const p = catalogProduse.find(cp => cp.id === l.produs_id);
-            return p && p.nume && p.nume.toLowerCase().includes('monor');
-        });
+        // KPI 2: Lapte Status folosind pragurile dinamice din catalog (20 roșu, 35 galben)
+        const idMonor = 'ce7ec325-980f-4ddd-937b-be6a0d9fe124';
+        const prodMonor = catalogProduse.find(cp => cp.id === idMonor);
+        const pragRosuMonor = prodMonor && prodMonor.prag_minim !== null ? parseFloat(prodMonor.prag_minim) : 20;
+        const pragGalbenMonor = prodMonor && prodMonor.prag_galben !== null ? parseFloat(prodMonor.prag_galben) : 35;
+
+        const monorLogs = (resMonor.data || []).filter(l => l.produs_id === idMonor);
 
         const monorLocMap = { Miroslava: null, Pacurari: null, Alexandru: null };
         monorLogs.forEach(l => {
@@ -3283,9 +3320,9 @@
             const val = monorLocMap[locCode];
             let badge = '<span style="color:var(--gray-text);">fără date azi</span>';
             if (val !== null) {
-                if (val < 10) {
+                if (val < pragRosuMonor) {
                     badge = `<span style="background:#fee2e2; color:#b91c1c; font-weight:bold; padding:1px 6px; border-radius:8px;">🔴 ${val} L</span>`;
-                } else if (val < 20) {
+                } else if (val < pragGalbenMonor) {
                     badge = `<span style="background:#fef3c7; color:#b45309; font-weight:bold; padding:1px 6px; border-radius:8px;">🟡 ${val} L</span>`;
                 } else {
                     badge = `<span style="background:#dcfce7; color:#15803d; font-weight:bold; padding:1px 6px; border-radius:8px;">🟢 ${val} L</span>`;
@@ -3613,69 +3650,6 @@
     function closePulsDetailModal() {
         const modal = document.getElementById('modal-puls-detalii');
         if (modal) modal.classList.add('hidden');
-    }
-
-    async function loadOwnerDashboardOre() {
-        const listEl = document.getElementById('dash-ore-list');
-        if (!listEl) return;
-
-        await fetchAngajati();
-
-        const now = new Date();
-        const startOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        // CORECTAT STRICT: lte('data', todayStr) exclude zilele viitoare pre-generate
-        const { data, error } = await supabaseClient
-            .from('program_zile')
-            .select('angajat_id, ora_start, ora_sfarsit, ore_suplimentare')
-            .gte('data', startOfMonthStr)
-            .lte('data', todayStr);
-
-        if (error || !data) {
-            listEl.innerHTML = '<p style="color:var(--danger); text-align:center;">Eroare citire ore lucrate.</p>';
-            return;
-        }
-
-        const oreMap = {};
-        data.forEach(p => {
-            if (!p.ora_start || !p.ora_sfarsit) return;
-            const h1 = parseInt(p.ora_start.split(':')[0]);
-            const m1 = parseInt(p.ora_start.split(':')[1]);
-            const h2 = parseInt(p.ora_sfarsit.split(':')[0]);
-            const m2 = parseInt(p.ora_sfarsit.split(':')[1]);
-
-            const oreTura = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
-            const extra = Number(p.ore_suplimentare || 0);
-            const total = oreTura + extra;
-
-            oreMap[p.angajat_id] = (oreMap[p.angajat_id] || 0) + total;
-        });
-
-        const sortedEmp = angajatiList.map(a => {
-            return {
-                nume: a.nume,
-                totalOre: Math.round(oreMap[a.id] || 0)
-            };
-        }).sort((a, b) => b.totalOre - a.totalOre);
-
-        if (sortedEmp.length === 0) {
-            listEl.innerHTML = '<p style="color:var(--gray-text); text-align:center; padding:10px;">Nu există angajați înregistrați.</p>';
-            return;
-        }
-
-        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
-        sortedEmp.forEach(emp => {
-            html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
-                    <span style="font-weight:bold; color:var(--black-night);">${escapeHtml(emp.nume)}</span>
-                    <span style="font-weight:bold; color:#7332e6; background:#f3e8ff; padding:2px 10px; border-radius:10px; font-size:12px;">${emp.totalOre} ore lucrate</span>
-                </div>
-            `;
-        });
-        html += '</div>';
-
-        listEl.innerHTML = html;
     }
 
     // Înlocuim click-ul original pe btn-genereaza-raport
@@ -4252,7 +4226,7 @@
     }
 
     async function deleteProductPermanently(prodId, prodNume) {
-        if (!confirm(`Ești sigur că vrei să ȘTERGI DEFINITIV produsul "${prodNume}"?\n\nProdusul va fi eliminat din baza de date.`)) return;
+        if (!confirm(`Ești sigur că vrei să ȘTERGI DEFINITIV produsul "${prodNume}"?\n\nAceastă acțiune va șterge definitiv și tot istoricul de consum al acestui produs.`)) return;
 
         const { error } = await supabaseClient.from('produse').delete().eq('id', prodId);
         if (error) {
