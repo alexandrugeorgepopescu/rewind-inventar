@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=7.7')
+          navigator.serviceWorker.register('sw.js?v=7.8')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v7.7 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v7.8 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -1845,7 +1845,7 @@
         const indicator = document.getElementById('saving-indicator');
         indicator.classList.add('show');
         
-        const data = stateInventar[produsId];
+        const data = stateInventar[produsId] || { stoc: '', necesar: '' };
         
         const { error } = await supabaseClient.from('inventar').upsert({
             produs_id: produsId,
@@ -1858,9 +1858,9 @@
 
         if (error) console.error("Save error", error);
         
-        if (data.stoc !== null && data.stoc.trim() !== '') {
+        if (data.stoc !== null && data.stoc !== undefined && String(data.stoc).trim() !== '') {
             const todayIso = new Date().toISOString().split('T')[0];
-            const valNum = parseFloat(data.stoc);
+            const valNum = parseFloat(String(data.stoc).replace(',', '.'));
             if (!isNaN(valNum)) {
                 await supabaseClient.from('inventar_log').upsert({
                     produs_id: produsId,
@@ -1883,7 +1883,7 @@
         catalogProduse.forEach(p => {
             if (p.locatii.includes(currentLocation)) {
                 total++;
-                if (stateInventar[p.id] && stateInventar[p.id].stoc.trim() !== '') completed++;
+                if (stateInventar[p.id] && stateInventar[p.id].stoc !== null && stateInventar[p.id].stoc !== undefined && String(stateInventar[p.id].stoc).trim() !== '') completed++;
             }
         });
         document.getElementById('progress-bar').style.width = `${total===0?0:(completed/total)*100}%`;
@@ -1893,18 +1893,27 @@
     document.getElementById('btn-finalizare').addEventListener('click', async () => {
         const btn = document.getElementById('btn-finalizare');
         const originalText = btn.textContent;
-        btn.textContent = 'Se verifică stocul...';
+        btn.textContent = 'Se salvează și se verifică...';
         btn.disabled = true;
         let notificareTrimisa = false;
 
         try {
-            // Verificare stoc vs prag
+            // Forțăm salvarea imediată a oricărei modificări din coada de debounce
+            clearTimeout(saveTimeout);
+            if (modificariSesiune.size > 0) {
+                const listModif = Array.from(modificariSesiune);
+                for (const prodId of listModif) {
+                    await saveToSupabase(prodId);
+                }
+            }
+
+            // Verificare stoc vs prag pe datele proaspăt salvate în baza de date
             const { data: invData } = await supabaseClient
                 .from('inventar')
                 .select('produs_id, stoc, necesar')
                 .eq('locatie', currentLocation);
             
-            if (invData && catalogProduse && modificariSesiune.size > 0) {
+            if (invData && catalogProduse && invData.length > 0) {
                 const idMonor = 'ce7ec325-980f-4ddd-937b-be6a0d9fe124';
                 
                 let areLapteModificat = false;
