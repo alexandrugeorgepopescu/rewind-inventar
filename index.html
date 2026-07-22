@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=7.8')
+          navigator.serviceWorker.register('sw.js?v=7.9')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v7.8 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v7.9 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -1033,7 +1033,16 @@
             <h4 style="margin-bottom: 10px;">Setări Notificări</h4>
             <div id="push-status-text" style="font-weight: bold; margin-bottom: 10px;">Stare: VERIFICARE...</div>
             <button id="btn-enable-push" class="btn" style="background: var(--black-night); color: white; display: none; margin: 0 auto;">Activează notificările</button>
+            <button id="btn-test-push" class="btn" style="background: var(--yellow-coffee); color: var(--black-night); margin: 10px auto 0; font-weight: bold; display: block;" onclick="testPushNotification()">Trimite Test Push (Alina)</button>
+            <div id="test-push-status" style="font-size: 11px; margin-top: 5px; font-weight: bold;"></div>
             <div id="push-error-text" style="color: red; font-size: 12px; margin-top: 10px;"></div>
+            
+            <div style="font-size:11px; color:var(--gray-text); text-align:left; margin-top:15px; border-top:1px dashed #cbd5e1; padding-top:10px; line-height:1.4;">
+                <strong>💡 Ghid depanare notificări (Android/iOS):</strong><br>
+                • Asigură-te că permisiunile de notificare sunt active în Android/iOS pentru browserul tău (Chrome, Safari, etc.) și pentru aplicația REWIND adăugată pe ecran (Settings -> Apps -> REWIND -> Notifications -> Allow).<br>
+                • Dezactivează „Battery Saver” sau optimizarea bateriei pentru aplicația REWIND, altfel sistemul blochează notificările în fundal.<br>
+                • Dacă tot nu funcționează, șterge aplicația REWIND de pe ecran, curăță cache-ul din browser și adaugă din nou PWA pe ecran (Add to Home Screen).
+            </div>
         </div>
         
         <div id="cont-fluturasi-container">
