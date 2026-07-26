@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=8.2')
+          navigator.serviceWorker.register('sw.js?v=8.3')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v8.2 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v8.3 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -1029,13 +1029,15 @@
             </div>
         </div>
 
-        <div id="push-settings-card" class="admin-product hidden" style="border: 2px solid var(--cloud-dancer); margin-bottom: 20px; text-align: center;">
-            <h4 style="margin-bottom: 10px;">Setări Notificări</h4>
-            <div id="push-status-text" style="font-weight: bold; margin-bottom: 10px;">Stare: VERIFICARE...</div>
-            <button id="btn-enable-push" class="btn" style="background: var(--black-night); color: white; display: none; margin: 0 auto;">Activează notificările</button>
-            <div id="push-error-text" style="color: red; font-size: 12px; margin-top: 10px;"></div>
+        <div id="push-settings-card" class="admin-product hidden" style="border: 2px solid #fee2e2; background: #fff5f5; margin-bottom: 20px; text-align: center; border-radius: 12px; padding: 15px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);">
+            <h4 style="margin-bottom: 8px; color: #b91c1c; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                ⚠️ Notificările sunt oprite
+            </h4>
+            <p id="push-status-text" style="font-size: 13px; color: #7f1d1d; margin-bottom: 12px; line-height: 1.4;">Apasă butonul de mai jos pentru a le reactiva, altfel nu vei mai primi alerte de stoc sau program.</p>
+            <button id="btn-enable-push" class="btn" style="background: #b91c1c; color: white; margin: 0 auto; padding: 10px 20px; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 6px rgba(185, 28, 28, 0.2); display: none;">Activează notificările</button>
+            <div id="push-error-text" style="color: #b91c1c; font-size: 12px; margin-top: 10px; font-weight: bold;"></div>
             
-            <div style="font-size:11px; color:var(--gray-text); text-align:left; margin-top:15px; border-top:1px dashed #cbd5e1; padding-top:10px; line-height:1.4;">
+            <div style="font-size:11px; color:#991b1b; text-align:left; margin-top:15px; border-top:1px dashed #fca5a5; padding-top:10px; line-height:1.4; opacity: 0.9;">
                 <strong>💡 Ghid depanare notificări (Android/iOS):</strong><br>
                 • Asigură-te că permisiunile de notificare sunt active în Android/iOS pentru browserul tău (Chrome, Safari, etc.) și pentru aplicația REWIND adăugată pe ecran (Settings -> Apps -> REWIND -> Notifications -> Allow).<br>
                 • Dezactivează „Battery Saver” sau optimizarea bateriei pentru aplicația REWIND, altfel sistemul blochează notificările în fundal.<br>
@@ -1345,12 +1347,11 @@
 
     async function checkPushSubscription() {
         const card = document.getElementById('push-settings-card');
-        const statusText = document.getElementById('push-status-text');
         const btnEnable = document.getElementById('btn-enable-push');
         const errText = document.getElementById('push-error-text');
         
         if (!card) return;
-        card.classList.add('hidden'); // Păstrăm cardul ascuns în mod normal
+        card.classList.add('hidden'); // Ascuns implicit
 
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             return;
@@ -1361,39 +1362,63 @@
             let subscription = await registration.pushManager.getSubscription();
             
             if (!subscription) {
-                // Dacă permisiunea este deja acordată, ne abonăm silențios
                 if (Notification.permission === 'granted') {
-                    const sub = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
-                    });
-                    await saveSubscription(sub);
-                } else if (Notification.permission === 'default') {
-                    // Afișăm cardul doar dacă permisiunea trebuie cerută pentru prima dată
+                    // Reînnoire automată silențioasă în fundal
+                    try {
+                        const sub = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+                        });
+                        await saveSubscription(sub);
+                    } catch (err) {
+                        console.error("Eroare abonare automată fundal:", err);
+                        card.classList.remove('hidden'); // Afișăm cardul de avarie
+                        if (errText) errText.textContent = "Abonarea automată a eșuat. Apasă pentru a activa manual.";
+                        if (btnEnable) {
+                            btnEnable.style.display = 'block';
+                            btnEnable.onclick = requestPushPermission;
+                        }
+                    }
+                } else {
+                    // Permisiunea lipsește sau e refuzată -> arătăm cardul de avarie
                     card.classList.remove('hidden');
-                    statusText.textContent = ' Notificări: INACTIVE';
-                    statusText.style.color = 'var(--gray-text)';
-                    btnEnable.style.display = 'block';
-                    btnEnable.onclick = requestPushPermission;
+                    if (btnEnable) {
+                        btnEnable.style.display = 'block';
+                        btnEnable.onclick = requestPushPermission;
+                    }
                 }
             } else {
-                await saveSubscription(subscription); // silent refresh
+                // Reînnoire silențioasă
+                try {
+                    await saveSubscription(subscription);
+                } catch (err) {
+                    console.error("Eroare salvare abonament fundal:", err);
+                    card.classList.remove('hidden'); // Afișăm cardul de avarie
+                    if (errText) errText.textContent = "Salvarea notificărilor a eșuat.";
+                    if (btnEnable) {
+                        btnEnable.style.display = 'block';
+                        btnEnable.onclick = requestPushPermission;
+                    }
+                }
             }
         } catch (err) {
             console.error("Eroare la verificare push:", err);
+            card.classList.remove('hidden');
+            if (errText) errText.textContent = "Eroare la citirea notificărilor.";
         }
     }
 
     async function requestPushPermission() {
         const card = document.getElementById('push-settings-card');
-        const statusText = document.getElementById('push-status-text');
         const btnEnable = document.getElementById('btn-enable-push');
         const errText = document.getElementById('push-error-text');
-        errText.textContent = '';
+        if (errText) errText.textContent = '';
         
         try {
-            btnEnable.textContent = 'Se activează...';
-            btnEnable.disabled = true;
+            if (btnEnable) {
+                btnEnable.textContent = 'Se activează...';
+                btnEnable.disabled = true;
+            }
             
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
@@ -1406,17 +1431,40 @@
                 
                 if (card) card.classList.add('hidden'); // Ascundem cardul după activare cu succes
             } else {
-                errText.textContent = 'Permisiune refuzată de utilizator.';
-                btnEnable.textContent = 'Activează notificările';
-                btnEnable.disabled = false;
+                if (errText) errText.textContent = 'Permisiune refuzată de utilizator.';
+                if (btnEnable) {
+                    btnEnable.textContent = 'Activează notificările';
+                    btnEnable.disabled = false;
+                }
             }
         } catch (err) {
             console.error("Eroare la activare push:", err);
-            errText.textContent = 'Eroare tehnică la activare.';
-            btnEnable.textContent = 'Activează notificările';
-            btnEnable.disabled = false;
+            if (errText) errText.textContent = 'Eroare tehnică la activare.';
+            if (btnEnable) {
+                btnEnable.textContent = 'Activează notificările';
+                btnEnable.disabled = false;
+            }
         }
     }
+
+    async function testPushNotification() {
+        console.log("Se trimite test push...");
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('send-notification', {
+                body: { 
+                    isTest: true,
+                    title: ' Test Notificare REWIND',
+                    body: 'Dacă vezi asta din consolă, notificările push funcționează perfect!'
+                }
+            });
+            if (error) throw error;
+            console.log("Test push trimis cu succes! Răspuns:", data);
+        } catch (e) {
+            console.error("Eroare la trimiterea testului push:", e);
+        }
+    }
+    window.testPushNotification = testPushNotification;
+
 
 
 
