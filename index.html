@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=8.1')
+          navigator.serviceWorker.register('sw.js?v=8.2')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v8.1 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v8.2 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -1033,8 +1033,6 @@
             <h4 style="margin-bottom: 10px;">Setări Notificări</h4>
             <div id="push-status-text" style="font-weight: bold; margin-bottom: 10px;">Stare: VERIFICARE...</div>
             <button id="btn-enable-push" class="btn" style="background: var(--black-night); color: white; display: none; margin: 0 auto;">Activează notificările</button>
-            <button id="btn-test-push" class="btn" style="background: var(--yellow-coffee); color: var(--black-night); margin: 10px auto 0; font-weight: bold; display: block;" onclick="testPushNotification()">Trimite Test Push (Alina)</button>
-            <div id="test-push-status" style="font-size: 11px; margin-top: 5px; font-weight: bold;"></div>
             <div id="push-error-text" style="color: red; font-size: 12px; margin-top: 10px;"></div>
             
             <div style="font-size:11px; color:var(--gray-text); text-align:left; margin-top:15px; border-top:1px dashed #cbd5e1; padding-top:10px; line-height:1.4;">
@@ -1352,11 +1350,9 @@
         const errText = document.getElementById('push-error-text');
         
         if (!card) return;
-        card.classList.remove('hidden');
+        card.classList.add('hidden'); // Păstrăm cardul ascuns în mod normal
 
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            statusText.textContent = ' Notificări: NESUPORTATE de acest browser/device';
-            statusText.style.color = 'red';
             return;
         }
         
@@ -1365,23 +1361,31 @@
             let subscription = await registration.pushManager.getSubscription();
             
             if (!subscription) {
-                statusText.textContent = ' Notificări: INACTIVE';
-                statusText.style.color = 'var(--gray-text)';
-                btnEnable.style.display = 'block';
-                btnEnable.onclick = requestPushPermission;
+                // Dacă permisiunea este deja acordată, ne abonăm silențios
+                if (Notification.permission === 'granted') {
+                    const sub = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                    await saveSubscription(sub);
+                } else if (Notification.permission === 'default') {
+                    // Afișăm cardul doar dacă permisiunea trebuie cerută pentru prima dată
+                    card.classList.remove('hidden');
+                    statusText.textContent = ' Notificări: INACTIVE';
+                    statusText.style.color = 'var(--gray-text)';
+                    btnEnable.style.display = 'block';
+                    btnEnable.onclick = requestPushPermission;
+                }
             } else {
-                statusText.textContent = ' Notificări: ACTIVE';
-                statusText.style.color = 'var(--green-matcha)';
-                btnEnable.style.display = 'none';
                 await saveSubscription(subscription); // silent refresh
             }
         } catch (err) {
             console.error("Eroare la verificare push:", err);
-            errText.textContent = "Eroare citire status notificări.";
         }
     }
 
     async function requestPushPermission() {
+        const card = document.getElementById('push-settings-card');
         const statusText = document.getElementById('push-status-text');
         const btnEnable = document.getElementById('btn-enable-push');
         const errText = document.getElementById('push-error-text');
@@ -1400,9 +1404,7 @@
                 });
                 await saveSubscription(subscription);
                 
-                statusText.textContent = ' Notificări: ACTIVE';
-                statusText.style.color = 'var(--green-matcha)';
-                btnEnable.style.display = 'none';
+                if (card) card.classList.add('hidden'); // Ascundem cardul după activare cu succes
             } else {
                 errText.textContent = 'Permisiune refuzată de utilizator.';
                 btnEnable.textContent = 'Activează notificările';
@@ -1416,30 +1418,7 @@
         }
     }
 
-    async function testPushNotification() {
-        const status = document.getElementById('test-push-status');
-        status.textContent = 'Se trimite...';
-        status.style.color = 'var(--black-night)';
-        
-        try {
-            const { data, error } = await supabaseClient.functions.invoke('send-notification', {
-                body: { 
-                    isTest: true,
-                    title: ' Test Notificare',
-                    body: 'Dacă vezi asta, notificările push funcționează perfect!'
-                }
-            });
-            
-            if (error) throw error;
-            
-            status.textContent = ' Trimis! Verifică telefonul Alinei.';
-            status.style.color = 'var(--green-matcha)';
-        } catch (e) {
-            console.error("Eroare test push:", e);
-            status.textContent = ' Eroare: ' + e.message;
-            status.style.color = 'red';
-        }
-    }
+
 
     async function saveSubscription(subscription) {
         const sub = JSON.parse(JSON.stringify(subscription));
@@ -2010,17 +1989,18 @@
                         }
                     });
                     
-                    if (errPush) throw errPush;
-                    
-                    notificareTrimisa = true;
+                    if (errPush) {
+                        console.error("Push esuat:", errPush);
+                    } else {
+                        notificareTrimisa = true;
+                    }
                 }
                 
                 // DACA A AJUNS AICI FARA EROARE -> GOLIM COSUL
                 modificariSesiune.clear();
             }
         } catch (e) {
-            console.error("Eroare la trimiterea notificarii:", e);
-            alert("Eroare la trimiterea notificărilor: " + (e.message || JSON.stringify(e)));
+            console.warn("Notificare esuata (inventarul s-a salvat):", e);
             notificareTrimisa = false; // nu afisam verde daca a picat
         }
 
