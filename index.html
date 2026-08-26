@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=8.3')
+          navigator.serviceWorker.register('sw.js?v=8.4')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v8.3 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v8.4 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -3075,7 +3075,7 @@
 
         const { data: program } = await supabaseClient
             .from('program_zile')
-            .select('angajat_id, ora_start, ora_sfarsit, ore_suplimentare')
+            .select('angajat_id, data, locatie, ora_start, ora_sfarsit, ore_suplimentare')
             .gte('data', startOfMonthStr)
             .lte('data', todayStr);
 
@@ -3088,7 +3088,14 @@
                 const h2 = parseInt(p.ora_sfarsit.split(':')[0]);
                 const m2 = parseInt(p.ora_sfarsit.split(':')[1]);
 
-                const oreTura = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+                let oreTura = ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+                if (oreTura < 0) oreTura += 24;
+
+                // Plafonare la 8 ore pentru locația Kaufland Alexandru de la 1 Septembrie 2026
+                if (p.locatie === 'Alexandru' && p.data >= '2026-09-01') {
+                    oreTura = Math.min(oreTura, 8);
+                }
+
                 const extra = Number(p.ore_suplimentare || 0);
                 const total = oreTura + extra;
 
@@ -5112,6 +5119,12 @@
                 const m2 = parseInt(entry.ora_sfarsit.split(':')[1]);
                 let diff = (h2 + m2/60) - (h1 + m1/60);
                 if (diff < 0) diff += 24;
+                
+                // Plafonare la 8 ore pentru locația Kaufland Alexandru de la 1 Septembrie 2026
+                if (entry.locatie === 'Alexandru' && entry.data >= '2026-09-01') {
+                    diff = Math.min(diff, 8);
+                }
+                
                 oreLucrate += diff;
                 oreLucrate += parseFloat(entry.ore_suplimentare || 0);
             });
@@ -5260,6 +5273,12 @@
                 const m2 = parseInt(entry.ora_sfarsit.split(':')[1]);
                 let diff = (h2 + m2/60) - (h1 + m1/60);
                 if (diff < 0) diff += 24;
+                
+                // Plafonare la 8 ore pentru locația Kaufland Alexandru de la 1 Septembrie 2026
+                if (entry.locatie === 'Alexandru' && entry.data >= '2026-09-01') {
+                    diff = Math.min(diff, 8);
+                }
+                
                 oreLucrate += diff;
                 oreLucrate += parseFloat(entry.ore_suplimentare || 0);
             });
