@@ -418,7 +418,7 @@
     <script>
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js?v=8.4')
+          navigator.serviceWorker.register('sw.js?v=8.5')
             .then(reg => {
                 // Forțăm browserul să caute imediat actualizări
                 reg.update();
@@ -430,7 +430,7 @@
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Dacă există deja o versiune activă, înseamnă că s-a instalat o actualizare
-                                    console.log('Noua versiune v8.4 detectată. Se reîncarcă pagina...');
+                                    console.log('Noua versiune v8.5 detectată. Se reîncarcă pagina...');
                                     window.location.reload();
                                 }
                             }
@@ -1029,6 +1029,26 @@
             </div>
         </div>
 
+        <!-- Card Trimitere / Copiere Link Aplicație Mobil -->
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 16px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                    📲 Trimitere Link Aplicație
+                </div>
+                <span style="background: var(--yellow-coffee); color: var(--black-night); font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Mobil / PWA</span>
+            </div>
+            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px; line-height: 1.4;">Trimite pe WhatsApp sau copiază link-ul direct al aplicației pentru adăugare pe ecran (Safari / Chrome).</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="partajeazaLinkAplicatie()" class="btn" style="flex: 1; min-width: 130px; background: var(--yellow-coffee); color: var(--black-night); font-weight: bold; margin: 0; font-size: 13px; padding: 10px 14px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📤 Trimite pe WhatsApp
+                </button>
+                <button onclick="copiazaLinkAplicatie()" class="btn" style="flex: 1; min-width: 130px; background: rgba(255,255,255,0.15); color: white; font-weight: bold; margin: 0; font-size: 13px; padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📋 Copiază Link
+                </button>
+            </div>
+            <div id="app-share-feedback" style="font-size: 12px; font-weight: bold; color: var(--yellow-coffee); margin-top: 10px; text-align: center; display: none;"></div>
+        </div>
+
         <div id="push-settings-card" class="admin-product hidden" style="border: 2px solid #fee2e2; background: #fff5f5; margin-bottom: 20px; text-align: center; border-radius: 12px; padding: 15px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);">
             <h4 style="margin-bottom: 8px; color: #b91c1c; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 ⚠️ Notificările sunt oprite
@@ -1464,6 +1484,55 @@
         }
     }
     window.testPushNotification = testPushNotification;
+
+    // --- PARTAJARE / COPIERE LINK APLICAȚIE ---
+    function partajeazaLinkAplicatie() {
+        const appUrl = 'https://alexandrugeorgepopescu.github.io/rewind-inventar/';
+        const shareText = 'Aplicația REWIND Inventar: ' + appUrl;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'REWIND Inventar',
+                text: 'Deschide aplicația REWIND Inventar și adaug-o pe ecranul principal:',
+                url: appUrl
+            }).catch(err => console.log('Partajare anulată', err));
+        } else {
+            const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText);
+            window.open(waUrl, '_blank');
+        }
+    }
+    window.partajeazaLinkAplicatie = partajeazaLinkAplicatie;
+
+    function copiazaLinkAplicatie() {
+        const appUrl = 'https://alexandrugeorgepopescu.github.io/rewind-inventar/';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(appUrl).then(() => {
+                showShareFeedback("✓ Link-ul a fost copiat! Îl poți trimite pe WhatsApp către Carina.");
+            }).catch(() => fallbackCopy(appUrl));
+        } else {
+            fallbackCopy(appUrl);
+        }
+    }
+    window.copiazaLinkAplicatie = copiazaLinkAplicatie;
+
+    function fallbackCopy(text) {
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showShareFeedback("✓ Link-ul a fost copiat!");
+    }
+
+    function showShareFeedback(msg) {
+        const feedback = document.getElementById('app-share-feedback');
+        if (feedback) {
+            feedback.textContent = msg;
+            feedback.style.display = 'block';
+            setTimeout(() => { feedback.style.display = 'none'; }, 5000);
+        }
+    }
 
 
 
